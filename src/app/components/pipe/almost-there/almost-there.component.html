@@ -1,0 +1,10 @@
+<app-client-skeleton *ngIf="!ready"></app-client-skeleton>
+
+@if (displayData$ | async; as displayData) {
+  <div class="max-w-screen-lg">
+    <app-client-info [displayData]="displayData.clientInfo"></app-client-info>
+    @if (showBucket) {
+      <app-client-bucket [bucket]="displayData.bucket"></app-client-bucket>
+    }
+  </div>
+}

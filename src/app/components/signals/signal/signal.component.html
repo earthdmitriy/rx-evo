@@ -1,0 +1,11 @@
+<div class="max-w-screen-lg">
+  @if (clientReady() === false) {
+    <app-client-skeleton></app-client-skeleton>
+  }
+  @if (clientReady()) {
+    <app-client-info [displayData]="client()"></app-client-info>
+  }
+  @if (showBucket() && bucketReady()) {
+    <app-client-bucket [bucket]="populatedBucket()"></app-client-bucket>
+  }
+</div>

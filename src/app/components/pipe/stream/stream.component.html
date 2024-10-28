@@ -1,0 +1,24 @@
+<div class="max-w-screen-lg">
+  <div [class.loading]="clientLoading$ | async">
+    @if (client$ | async; as data) {
+      <app-client-info [displayData]="data"></app-client-info>
+    }
+  </div>
+
+  @if (showBucket) {
+    <div [class.loading]="combinedLoading$ | async">
+      @if (populatedBucket$ | async; as data) {
+        <app-client-bucket [bucket]="data"></app-client-bucket>
+      }
+    </div>
+  }
+  <!--
+  @if (clientLoading$ | async) {
+    <app-client-skeleton></app-client-skeleton>
+  } @else {
+    @if (client$ | async; as data) {
+      <app-client-info [displayData]="data"></app-client-info>
+    }
+  }
+  -->
+</div>

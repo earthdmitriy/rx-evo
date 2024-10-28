@@ -1,0 +1,9 @@
+<app-client-skeleton *ngIf="!ready"></app-client-skeleton>
+
+<div *ngIf="ready" class="max-w-screen-lg">
+  <app-client-info [displayData]="displayData.clientInfo"></app-client-info>
+  <app-client-bucket
+    *ngIf="showBucket"
+    [bucket]="displayData.bucket"
+  ></app-client-bucket>
+</div>

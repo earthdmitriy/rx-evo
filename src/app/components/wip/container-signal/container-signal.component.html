@@ -1,0 +1,21 @@
+<div class="max-w-screen-lg">
+  <div [class.loading]="clientRequest.loading()">
+    @if (clientRequest.error()) {
+      <div>Failed to load client</div>
+    }
+    @if (clientRequest.data(); as data) {
+      <app-client-info [displayData]="data"></app-client-info>
+    }
+  </div>
+
+  @if (showBucket()) {
+    <div [class.loading]="combined.loading()">
+      @if (combined.error()) {
+        <div>Failed to load bucket</div>
+      }
+      @if (combinedData(); as data) {
+        <app-client-bucket [bucket]="data"></app-client-bucket>
+      }
+    </div>
+  }
+</div>
