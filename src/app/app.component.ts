@@ -84,6 +84,10 @@ export class AppComponent {
           title: 'Tiny-store',
           path: '/wip/tiny-store',
         },
+        {
+          title: 'Resource',
+          path: '/wip/resource',
+        },
       ],
     },
   ];

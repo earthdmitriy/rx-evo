@@ -10,6 +10,7 @@ import { ContainerRxInputWrapperComponent } from './components/wip/container-rx/
 import { ContainerSignalInputWrapperComponent } from './components/wip/container-signal/container-signal-input-wrapper.component';
 import { TinyStoreComponent } from './components/wip/tiny-store/tiny-store.component';
 import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
+import { ResourceInputWrapperComponent } from './components/wip/resource/resource-input-wrapper.component';
 
 export const routes: Routes = [
   {
@@ -57,6 +58,10 @@ export const routes: Routes = [
       {
         path: 'tiny-store',
         component: TinyStoreInputWrapperComponent,
+      },
+      {
+        path: 'resource',
+        component: ResourceInputWrapperComponent,
       },
     ],
   },
