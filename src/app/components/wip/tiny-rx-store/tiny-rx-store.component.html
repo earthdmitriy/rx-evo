@@ -1,0 +1,21 @@
+<div class="max-w-screen-lg">
+  <div [class.loading]="clientStore.loading | async">
+    @if (clientStore.error | async) {
+      <div>Failed to load client</div>
+    }
+    @if (clientStore.data | async; as data) {
+      <app-client-info [displayData]="data"></app-client-info>
+    }
+  </div>
+
+  @if (showBucket()) {
+    <div [class.loading]="populatedBucketStore.loading | async">
+      @if (populatedBucketStore.error | async) {
+        <div>Failed to load bucket</div>
+      }
+      @if (populatedBucketStore.data | async; as data) {
+        <app-client-bucket [bucket]="data"></app-client-bucket>
+      }
+    </div>
+  }
+</div>

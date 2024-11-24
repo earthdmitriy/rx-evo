@@ -5,31 +5,20 @@ import {
   computed,
   inject,
   input,
-  signal,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import {
-  filter,
-  tap,
-  switchMap,
-  Observable,
-  combineLatest,
-  map,
-  shareReplay,
-  BehaviorSubject,
-} from 'rxjs';
+import { toObservable } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, filter } from 'rxjs';
 import { BucketApiService } from '../../../services/BucketApi.service';
 import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
-import { PopulatedBucket, prepareBucket } from '../../../services/utils';
 import { combineResponses, wrapMapRequest } from '../../../services/rx-utils';
+import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 
 @Component({
   selector: 'app-container-signal',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,

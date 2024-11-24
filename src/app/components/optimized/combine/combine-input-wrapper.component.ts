@@ -1,14 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { CombineComponent } from './combine.component';
-import { interval, map, startWith } from 'rxjs';
-import { clientCount } from '../../../services/consts';
-import { createCounter$ } from '../../../services/utils';
 import { EventBusService } from '../../../services/EventBus.service';
+import { CombineComponent } from './combine.component';
 
 @Component({
   selector: 'app-combine-input-wrapper',
-  standalone: true,
   imports: [CommonModule, CombineComponent],
   template: `<app-combine
     *ngIf="counter$ | async as counter"

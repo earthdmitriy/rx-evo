@@ -1,13 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject } from '@angular/core';
-import { ChaosComponent } from './chaos.component';
-import { interval, map, startWith } from 'rxjs';
-import { createCounter$ } from '../../../services/utils';
+import { Component, inject } from '@angular/core';
 import { EventBusService } from '../../../services/EventBus.service';
+import { ChaosComponent } from './chaos.component';
 
 @Component({
   selector: 'app-chaos-input-wrapper',
-  standalone: true,
   imports: [CommonModule, ChaosComponent],
   template: `<app-chaos
     *ngIf="counter$ | async as counter"

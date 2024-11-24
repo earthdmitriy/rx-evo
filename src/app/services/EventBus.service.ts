@@ -18,10 +18,10 @@ export class EventBusService {
         switchMap(() =>
           createCounter$(this.clientId$.value).pipe(
             takeUntil(
-              this.toggleAutoIncrement$.pipe(filter((toggle) => !toggle))
-            )
-          )
-        )
+              this.toggleAutoIncrement$.pipe(filter((toggle) => !toggle)),
+            ),
+          ),
+        ),
       )
       .subscribe((id) => this.clientId$.next(id));
   }

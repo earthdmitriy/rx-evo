@@ -4,7 +4,6 @@ import { Client } from '../../../services/ClientApi.service';
 
 @Component({
   selector: 'app-client-info',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './client-info.component.html',
   styleUrl: './client-info.component.less',

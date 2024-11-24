@@ -1,13 +1,14 @@
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { BucketApiService } from '../../../services/BucketApi.service';
 import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
-import { ResourceComponent } from './resource.component';
+import { TinyRxStoreComponent } from './tiny-rx-store.component';
 
-describe('ResourceComponent', () => {
+describe('TinyRxStoreComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ResourceComponent],
+      imports: [TinyRxStoreComponent],
       providers: [
         {
           provide: ClientApiService,
@@ -25,74 +26,70 @@ describe('ResourceComponent', () => {
     }).compileComponents();
   });
 
-  it('should create the ResourceComponent', () => {
-    const fixture = TestBed.createComponent(ResourceComponent);
+  it('should create the TinyRxStoreComponent', () => {
+    const fixture = TestBed.createComponent(TinyRxStoreComponent);
     const component = fixture.componentInstance;
     expect(component).toBeTruthy();
   });
 
   it(`should populate client`, async () => {
-    const fixture = TestBed.createComponent(ResourceComponent);
+    const fixture = TestBed.createComponent(TinyRxStoreComponent);
     const component = fixture.componentInstance;
 
     fixture.componentRef.setInput('clientId', 1);
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const client = component.clientResource.value();
+    const client = await firstValueFrom(component.clientStore.data);
 
     expect(client).toBeTruthy();
     expect(client?.clientId).toBe(1);
   });
 
-  // fail
-  /*it(`should populate client loading`, async () => {
-    const fixture = TestBed.createComponent(ResourceComponent);
+  it(`should populate client loading`, async () => {
+    const fixture = TestBed.createComponent(TinyRxStoreComponent);
     const component = fixture.componentInstance;
 
     fixture.componentRef.setInput('clientId', 1);
 
-    const client = component.clientResource.value();
-    const loading = component.clientResource.isLoading();
-
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const newLoading = component.clientResource.isLoading();
+    const loading = await firstValueFrom(component.clientStore.loading);
 
-    expect(loading).toBe(true);
-    expect(newLoading).toBe(false);
-  });*/
+    expect(loading).toBe(false);
+  });
 
-  // fail
-  /*it(`loading materialize data`, async () => {
-    const fixture = TestBed.createComponent(ResourceComponent);
+  it(`loading materialize data`, async () => {
+    const fixture = TestBed.createComponent(TinyRxStoreComponent);
     const component = fixture.componentInstance;
+
+    const loadingEvents: boolean[] = [];
+
+    component.clientStore.loading.subscribe((x) => loadingEvents.push(x));
 
     fixture.componentRef.setInput('clientId', 1);
 
-    const loading = component.clientResource.isLoading();
-
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const newLoading = component.clientResource.isLoading();
-    const client = component.clientResource.value();
+    const loading = await firstValueFrom(component.clientStore.loading);
+    const client = await firstValueFrom(component.clientStore.data);
 
     expect(client).toBeTruthy();
-    expect(loading).toBe(true);
-    expect(newLoading).toBe(false);
-  });*/
+    expect(loading).toBe(false);
+    expect(loadingEvents).toEqual([true, false]);
+  });
 
   it(`should handle changing inputs`, async () => {
-    const fixture = TestBed.createComponent(ResourceComponent);
+    const fixture = TestBed.createComponent(TinyRxStoreComponent);
     const component = fixture.componentInstance;
 
     fixture.componentRef.setInput('clientId', 1);
     fixture.detectChanges();
     await fixture.whenStable(); // required in case of some dalays in async code
 
-    const client = component.clientResource.value();
+    const client = await firstValueFrom(component.clientStore.data);
 
     expect(client).toBeTruthy();
     expect(client?.clientId).toBe(1);
@@ -101,7 +98,7 @@ describe('ResourceComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable(); // required in case of some dalays in async code
 
-    const newClient = component.clientResource.value();
+    const newClient = await firstValueFrom(component.clientStore.data);
 
     expect(newClient).toBeTruthy();
     expect(newClient?.clientId).toBe(2);

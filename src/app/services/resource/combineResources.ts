@@ -1,5 +1,4 @@
-import { registerLocaleData } from '@angular/common';
-import { computed, Resource, ResourceRef, ResourceStatus } from '@angular/core';
+import { computed, Resource, ResourceStatus } from '@angular/core';
 
 // magic
 type UnwrapResource<T> = T extends Resource<infer U> ? U : T;
@@ -9,6 +8,15 @@ type UnwrapResources<T extends unknown[]> = T extends [
 ]
   ? [UnwrapResource<Head>, ...UnwrapResources<Tail>]
   : [];
+
+const resourceStatusPriorities: { [key in ResourceStatus]: number } = {
+  [ResourceStatus.Idle]: 0,
+  [ResourceStatus.Resolved]: 1,
+  [ResourceStatus.Local]: 2,
+  [ResourceStatus.Error]: 3,
+  [ResourceStatus.Loading]: 4,
+  [ResourceStatus.Reloading]: 5,
+};
 
 export const combineResources = <T extends [...Resource<unknown>[]], Result>(
   args: [...T],
@@ -28,7 +36,13 @@ export const combineResources = <T extends [...Resource<unknown>[]], Result>(
   const status = computed(() =>
     args
       .map((s) => s.status())
-      .reduce((acc, curr) => Math.max(acc, curr), 0 as ResourceStatus),
+      .reduce(
+        (acc, curr) =>
+          resourceStatusPriorities[acc] > resourceStatusPriorities[curr]
+            ? acc
+            : curr,
+        ResourceStatus.Idle,
+      ),
   );
 
   const reload = () => args.reduce((acc, res) => acc && res.reload(), true);

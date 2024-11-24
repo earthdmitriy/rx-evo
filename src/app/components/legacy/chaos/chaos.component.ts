@@ -1,18 +1,11 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnDestroy,
-  OnInit,
-} from '@angular/core';
-import { Client, ClientApiService } from '../../../services/ClientApi.service';
+import { Component, Input, OnInit } from '@angular/core';
 import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
+import { Client, ClientApiService } from '../../../services/ClientApi.service';
 import {
   Product,
   ProductsApiService,
 } from '../../../services/ProductsApi.service';
-import { Subject } from 'rxjs';
 import { ClientWithBucket, prepareData } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
@@ -20,7 +13,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 
 @Component({
   selector: 'app-chaos',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,
@@ -29,7 +21,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   ],
   templateUrl: './chaos.component.html',
   styleUrl: './chaos.component.less',
-  //changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ChaosComponent implements OnInit {
   @Input() public clientId!: number;

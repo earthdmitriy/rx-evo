@@ -1,14 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { interval, map, startWith } from 'rxjs';
-import { clientCount } from '../../../services/consts';
-import { createCounter$ } from '../../../services/utils';
-import { ContainerRxComponent } from './container-rx.component';
 import { EventBusService } from '../../../services/EventBus.service';
+import { ContainerRxComponent } from './container-rx.component';
 
 @Component({
   selector: 'app-rx-input-wrapper',
-  standalone: true,
   imports: [CommonModule, ContainerRxComponent],
   template: `<app-container-rx
     *ngIf="counter$ | async as counter"

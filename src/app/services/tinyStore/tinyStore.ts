@@ -1,58 +1,14 @@
-import {
-  DestroyRef,
-  Signal,
-  computed,
-  effect,
-  inject,
-  signal,
-} from '@angular/core';
-import {
-  takeUntilDestroyed,
-  toObservable,
-  toSignal,
-} from '@angular/core/rxjs-interop';
-import {
-  Observable,
-  catchError,
-  filter,
-  map,
-  of,
-  retry,
-  shareReplay,
-  startWith,
-  switchMap,
-  timer,
-} from 'rxjs';
+import { DestroyRef, Signal, computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { toLazySignal } from 'ngxtension/to-lazy-signal';
-
-const loading = Symbol('loading');
-const error = Symbol('error');
-
-export type ResponseLoading = {
-  state: typeof loading;
-};
-
-export type ResponseError = { state: typeof error; message: string };
-export type ResponseWithStatus<T> = ResponseLoading | ResponseError | T;
-
-export const isLoading = <T>(
-  response: ResponseWithStatus<T>,
-): response is ResponseLoading =>
-  (response as ResponseLoading)?.state === loading;
-export const isError = <T>(
-  response: ResponseWithStatus<T>,
-): response is ResponseError => (response as ResponseError)?.state === error;
-export const isSuccess = <T>(response: ResponseWithStatus<T>): response is T =>
-  !isLoading(response) && !isError(response);
+import { Observable, filter, map, of, shareReplay, switchMap } from 'rxjs';
+import { isError, isLoading, isSuccess, wrapResponse } from './shared';
 
 export type TinyStore<Result = unknown> = {
   data: Signal<Readonly<Result> | null>;
   error: Signal<boolean>;
   loading: Signal<boolean>;
 };
-
-const defauleAttempts = 3 as const;
-const defaultTimeoute = 1000 as const;
 
 export const createTinyStore = <Input, Response, Result = Response>(options: {
   input?: Signal<Input | undefined>;
@@ -62,6 +18,8 @@ export const createTinyStore = <Input, Response, Result = Response>(options: {
   timeout?: number;
   debounce?: boolean;
 }): TinyStore<Result> => {
+  const destroyRef = inject(DestroyRef);
+
   const {
     input,
     loader,
@@ -69,39 +27,19 @@ export const createTinyStore = <Input, Response, Result = Response>(options: {
       response: Response,
       input: Input,
     ) => Result,
-    attempts = defauleAttempts,
-    timeout = defaultTimeoute,
-    debounce = false,
+    attempts,
+    timeout,
   } = options;
-  const destroyRef = inject(DestroyRef);
 
   const source$ = input
     ? toObservable(input).pipe(filter(Boolean))
     : of(true as Input);
 
-  const wrapResponse =
-    <T>() =>
-    (source: Observable<T>): Observable<ResponseWithStatus<Readonly<T>>> =>
-      source.pipe(
-        // retry failed requests
-        retry({
-          count: attempts,
-          delay: (err, attempt) => timer(timeout * attempt),
-        }),
-        // immediately emit 'loading', useful to show spinners or skeletons
-        startWith({ state: loading } as ResponseLoading),
-        // if retry failed - handle error
-        catchError((error) =>
-          of<ResponseError>({ state: error, message: String(error) }),
-        ),
-        takeUntilDestroyed(destroyRef),
-      );
-
   const result$ = source$.pipe(
     switchMap((input) =>
       loader(input).pipe(
         map((result) => processResponse(result, input)),
-        wrapResponse(),
+        wrapResponse(attempts, timeout, destroyRef),
       ),
     ),
     shareReplay({ bufferSize: 1, refCount: true }),

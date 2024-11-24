@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, of } from 'rxjs';
-import { randomDelay } from './utils';
-import { clientCount, maxBucketSize, productCount } from './consts';
 import { SKIPDELAY_TOKEN } from '../app.config';
+import { clientCount, maxBucketSize, productCount } from './consts';
+import { randomDelay } from './utils';
 
 export type Bucket = {
   clientId: number;

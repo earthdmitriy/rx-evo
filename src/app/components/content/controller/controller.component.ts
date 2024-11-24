@@ -1,17 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { EventBusService } from '../../../services/EventBus.service';
-import {
-  FormBuilder,
-  FormsModule,
-  NonNullableFormBuilder,
-  ReactiveFormsModule,
-} from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { EventBusService } from '../../../services/EventBus.service';
 
 @Component({
   selector: 'app-controller',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './controller.component.html',
   styleUrl: './controller.component.less',

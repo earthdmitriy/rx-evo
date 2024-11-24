@@ -1,9 +1,9 @@
 import { TestBed } from '@angular/core/testing';
-import { StreamComponent } from './stream.component';
 import { firstValueFrom, shareReplay, skip } from 'rxjs';
-import { ClientApiService } from '../../../services/ClientApi.service';
 import { BucketApiService } from '../../../services/BucketApi.service';
+import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
+import { StreamComponent } from './stream.component';
 
 describe('StreamComponent', () => {
   beforeEach(async () => {

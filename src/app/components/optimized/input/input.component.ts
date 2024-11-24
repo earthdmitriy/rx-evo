@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   Input,
   OnChanges,
@@ -9,8 +8,8 @@ import {
   SimpleChanges,
 } from '@angular/core';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
-import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
-import { Client, ClientApiService } from '../../../services/ClientApi.service';
+import { BucketApiService } from '../../../services/BucketApi.service';
+import { ClientApiService } from '../../../services/ClientApi.service';
 import {
   Product,
   ProductsApiService,
@@ -22,7 +21,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 
 @Component({
   selector: 'app-input',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,
@@ -31,7 +29,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   ],
   templateUrl: './input.component.html',
   styleUrl: './input.component.less',
-  //changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class InputComponent implements OnInit, OnChanges, OnDestroy {
   @Input() public clientId!: number;

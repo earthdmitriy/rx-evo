@@ -5,34 +5,18 @@ import {
   Input,
   inject,
 } from '@angular/core';
-import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
-import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
-import {
-  ReplaySubject,
-  BehaviorSubject,
-  switchMap,
-  Observable,
-  combineLatest,
-  map,
-  tap,
-  shareReplay,
-  forkJoin,
-  take,
-} from 'rxjs';
+import { BehaviorSubject, ReplaySubject, map } from 'rxjs';
 import { BucketApiService } from '../../../services/BucketApi.service';
 import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
-import {
-  ClientWithBucket,
-  prepareBucket,
-  prepareData,
-} from '../../../services/utils';
 import { combineResponses, wrapMapRequest } from '../../../services/rx-utils';
+import { prepareBucket } from '../../../services/utils';
+import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
+import { ClientInfoComponent } from '../../content/client-info/client-info.component';
+import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 
 @Component({
   selector: 'app-container-rx',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,

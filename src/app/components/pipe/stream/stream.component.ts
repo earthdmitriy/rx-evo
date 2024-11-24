@@ -7,7 +7,6 @@ import {
 } from '@angular/core';
 import {
   BehaviorSubject,
-  Observable,
   ReplaySubject,
   combineLatest,
   map,
@@ -18,18 +17,13 @@ import {
 import { BucketApiService } from '../../../services/BucketApi.service';
 import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
-import {
-  ClientWithBucket,
-  prepareBucket,
-  prepareData,
-} from '../../../services/utils';
+import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 
 @Component({
   selector: 'app-stream',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,

@@ -13,11 +13,10 @@ type RouteNode = {
 };
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet, CommonModule, RouterModule, ControllerComponent],
-  templateUrl: './app.component.html',
-  styleUrl: './app.component.less',
+    selector: 'app-root',
+    imports: [RouterOutlet, CommonModule, RouterModule, ControllerComponent],
+    templateUrl: './app.component.html',
+    styleUrl: './app.component.less'
 })
 export class AppComponent {
   public readonly routes: RootNode[] = [
@@ -79,6 +78,10 @@ export class AppComponent {
         {
           title: 'Container-Signal',
           path: '/wip/container-signal',
+        },
+        {
+          title: 'Tiny-rx-store',
+          path: '/wip/tiny-rx-store',
         },
         {
           title: 'Tiny-store',

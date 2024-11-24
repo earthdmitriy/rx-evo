@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
-import { Observable, firstValueFrom, of, tap } from 'rxjs';
-import { randomDelay } from './utils';
-import { clientCount } from './consts';
+import { Observable, firstValueFrom, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../app.config';
+import { clientCount } from './consts';
+import { randomDelay } from './utils';
 
 export type Client = {
   clientId: number;

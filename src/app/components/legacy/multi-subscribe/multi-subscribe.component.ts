@@ -1,10 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  Input,
-  OnInit,
-} from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
 import { Client, ClientApiService } from '../../../services/ClientApi.service';
 import {
@@ -12,13 +7,12 @@ import {
   ProductsApiService,
 } from '../../../services/ProductsApi.service';
 import { ClientWithBucket, prepareData } from '../../../services/utils';
-import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
+import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 
 @Component({
   selector: 'app-multi-subscribe',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,
@@ -27,7 +21,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   ],
   templateUrl: './multi-subscribe.component.html',
   styleUrl: './multi-subscribe.component.less',
-  //changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MultiSubscribeComponent implements OnInit {
   @Input() public clientId!: number;

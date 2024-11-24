@@ -4,7 +4,6 @@ import { PopulatedBucket } from '../../../services/utils';
 
 @Component({
   selector: 'app-client-bucket',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './client-bucket.component.html',
   styleUrl: './client-bucket.component.less',

@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
-import { firstValueFrom, shareReplay, skip } from 'rxjs';
-import { ClientApiService } from '../../../services/ClientApi.service';
 import { BucketApiService } from '../../../services/BucketApi.service';
+import { ClientApiService } from '../../../services/ClientApi.service';
 import { ProductsApiService } from '../../../services/ProductsApi.service';
 import { SignalComponent } from './signal.component';
 

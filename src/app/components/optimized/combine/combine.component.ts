@@ -1,20 +1,9 @@
 import { CommonModule } from '@angular/common';
-import {
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  Input,
-  OnDestroy,
-  OnInit,
-  inject,
-} from '@angular/core';
-import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
-import { Client, ClientApiService } from '../../../services/ClientApi.service';
-import {
-  Product,
-  ProductsApiService,
-} from '../../../services/ProductsApi.service';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { BucketApiService } from '../../../services/BucketApi.service';
+import { ClientApiService } from '../../../services/ClientApi.service';
+import { ProductsApiService } from '../../../services/ProductsApi.service';
 import { ClientWithBucket, prepareData } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
@@ -22,7 +11,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 
 @Component({
   selector: 'app-combine',
-  standalone: true,
   imports: [
     CommonModule,
     ClientInfoComponent,
@@ -31,7 +19,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   ],
   templateUrl: './combine.component.html',
   styleUrl: './combine.component.less',
-  //changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CombineComponent implements OnInit, OnDestroy {
   @Input() public clientId!: number;

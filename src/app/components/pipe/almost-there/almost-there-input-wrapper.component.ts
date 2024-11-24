@@ -1,14 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { AlmostThereComponent } from './almost-there.component';
-import { interval, map, startWith } from 'rxjs';
-import { clientCount } from '../../../services/consts';
-import { createCounter$ } from '../../../services/utils';
 import { EventBusService } from '../../../services/EventBus.service';
+import { AlmostThereComponent } from './almost-there.component';
 
 @Component({
   selector: 'app-almost-there-input-wrapper',
-  standalone: true,
   imports: [CommonModule, AlmostThereComponent],
   template: `<app-almost-there
     *ngIf="counter$ | async as counter"
