@@ -1,8 +1,14 @@
-import { DestroyRef, Signal, computed, inject } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { DestroyRef, Signal, computed } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { toLazySignal } from 'ngxtension/to-lazy-signal';
-import { Observable, filter, map, of, shareReplay, switchMap } from 'rxjs';
-import { isError, isLoading, isSuccess, wrapResponse } from './shared';
+import { Observable, filter, map, of, shareReplay, switchMap, tap } from 'rxjs';
+import {
+  isError,
+  isLoading,
+  isSuccess,
+  tryGetDestroyRef,
+  wrapResponse,
+} from './shared';
 
 export type TinyStore<Result = unknown> = {
   data: Signal<Readonly<Result> | null>;
@@ -16,10 +22,8 @@ export const createTinyStore = <Input, Response, Result = Response>(options: {
   processResponse?: (response: Response, input: Input) => Result;
   attempts?: number;
   timeout?: number;
-  debounce?: boolean;
+  destroyRef?: DestroyRef;
 }): TinyStore<Result> => {
-  const destroyRef = inject(DestroyRef);
-
   const {
     input,
     loader,
@@ -29,7 +33,11 @@ export const createTinyStore = <Input, Response, Result = Response>(options: {
     ) => Result,
     attempts,
     timeout,
+    destroyRef = tryGetDestroyRef(),
   } = options;
+
+  // force refCount if no injector (and, probably, no injection context)
+  const refCount = !destroyRef;
 
   const source$ = input
     ? toObservable(input).pipe(filter(Boolean))
@@ -39,10 +47,11 @@ export const createTinyStore = <Input, Response, Result = Response>(options: {
     switchMap((input) =>
       loader(input).pipe(
         map((result) => processResponse(result, input)),
-        wrapResponse(attempts, timeout, destroyRef),
+        wrapResponse(attempts, timeout),
       ),
     ),
-    shareReplay({ bufferSize: 1, refCount: true }),
+    destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
+    shareReplay({ bufferSize: 1, refCount }),
   );
 
   return {

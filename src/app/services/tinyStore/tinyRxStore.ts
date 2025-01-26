@@ -1,14 +1,25 @@
-import { DestroyRef, inject } from '@angular/core';
+import { DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  Observable,
   combineLatest,
   filter,
   map,
+  Observable,
   of,
   shareReplay,
+  startWith,
+  Subject,
   switchMap,
+  takeUntil,
+  tap,
 } from 'rxjs';
-import { isError, isLoading, isSuccess, wrapResponse } from './shared';
+import {
+  isError,
+  isLoading,
+  isSuccess,
+  tryGetDestroyRef,
+  wrapResponse,
+} from './shared';
 
 export type TinyRxStore<Result = unknown> = {
   data: Observable<Readonly<Result>>;
@@ -23,9 +34,12 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
   input?: Observable<Input | undefined>;
   loader: (input: Input) => Observable<Response>;
   processResponse?: (response: Response, input: Input) => Result;
+  // with active subscribers - refetch
+  // without subscribers - clear cache
+  flush?: Observable<unknown>;
   attempts?: number;
   timeout?: number;
-  debounce?: boolean;
+  destroyRef?: DestroyRef;
 }): TinyRxStore<Result> => {
   const {
     input,
@@ -34,21 +48,28 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
       response: Response,
       input: Input,
     ) => Result,
+    flush = new Subject<void>(),
     attempts = defaultAttempts,
     timeout = defaultTimeoute,
+    destroyRef = tryGetDestroyRef(),
   } = options;
-  const destroyRef = inject(DestroyRef);
+
+  // force refCount if no injector (and, probably, no injection context)
+  const refCount = !destroyRef;
 
   const source$ = input ? input.pipe(filter(Boolean)) : of(true as Input);
 
-  const result$ = source$.pipe(
+  const result$ = combineLatest([source$, flush.pipe(startWith(null))]).pipe(
+    map(([input]) => input),
     switchMap((input) =>
       loader(input).pipe(
         map((result) => processResponse(result, input)),
-        wrapResponse(attempts, timeout, destroyRef),
+        wrapResponse(attempts, timeout),
+        takeUntil(flush),
       ),
     ),
-    shareReplay({ bufferSize: 1, refCount: true }),
+    destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
+    shareReplay({ bufferSize: 1, refCount }),
   );
 
   return {

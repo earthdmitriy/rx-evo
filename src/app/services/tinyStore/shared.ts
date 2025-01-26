@@ -1,5 +1,4 @@
-import { DestroyRef } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { assertInInjectionContext, DestroyRef, inject } from '@angular/core';
 import { catchError, Observable, of, retry, startWith, timer } from 'rxjs';
 
 export const loading = Symbol('loading');
@@ -25,12 +24,22 @@ export const isSuccess = <T>(response: ResponseWithStatus<T>): response is T =>
 const defauleAttempts = 3 as const;
 const defaultTimeoute = 1000 as const;
 
+export const isInIjectionContext = () => {
+  try {
+    assertInInjectionContext(() => '');
+  } catch {
+    return false;
+  }
+  return true;
+};
+
+export const tryGetDestroyRef = () => {
+  if (isInIjectionContext()) return inject(DestroyRef);
+  return undefined;
+};
+
 export const wrapResponse =
-  <T>(
-    attempts: number = defauleAttempts,
-    timeout: number = defaultTimeoute,
-    destroyRef?: DestroyRef,
-  ) =>
+  <T>(attempts: number = defauleAttempts, timeout: number = defaultTimeoute) =>
   (source: Observable<T>): Observable<ResponseWithStatus<Readonly<T>>> =>
     source.pipe(
       // retry failed requests
@@ -41,8 +50,7 @@ export const wrapResponse =
       // immediately emit 'loading', useful to show spinners or skeletons
       startWith({ state: loading } as ResponseLoading),
       // if retry failed - handle error
-      catchError((error) =>
-        of<ResponseError>({ state: error, message: String(error) }),
+      catchError((errorMsg) =>
+        of<ResponseError>({ state: error, message: String(errorMsg) }),
       ),
-      takeUntilDestroyed(destroyRef),
     );
