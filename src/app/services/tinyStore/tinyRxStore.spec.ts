@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
+  BehaviorSubject,
   delay,
   firstValueFrom,
   map,
   of,
   ReplaySubject,
-  Subject,
   take,
   toArray,
 } from 'rxjs';
@@ -15,13 +15,13 @@ import { createTinyRxStore } from './tinyRxStore';
 @Injectable()
 class SampleService {
   input = new ReplaySubject<number>(1);
-  flush = new Subject<void>();
+  available = new BehaviorSubject(true);
   makeRequest = jest.fn((value) => of(value * 2).pipe(delay(1)));
   store = createTinyRxStore({
     input: this.input,
     loader: (value) => this.makeRequest(value),
     attempts: 0,
-    flush: this.flush,
+    available: this.available,
   });
 }
 
@@ -158,12 +158,14 @@ describe('TinyRxStore', () => {
     );
     expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
 
-    sampleService.flush.next();
+    sampleService.available.next(false);
+    sampleService.available.next(true);
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
 
     const res2 = await firstValueFrom(sampleService.store.data);
 
-    expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
     expect(res2).toEqual(0);
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
   });
 });
 
@@ -190,7 +192,7 @@ describe('TinyRxStore out of injection context', () => {
   it('dont keep state after flush', async () => {
     sampleService.input.next(1);
 
-    sampleService.store.data.subscribe();
+    // sampleService.store.data.subscribe();
 
     const res = await firstValueFrom(sampleService.store.data);
 
@@ -205,7 +207,8 @@ describe('TinyRxStore out of injection context', () => {
     );
     expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
 
-    sampleService.flush.next();
+    sampleService.available.next(false);
+    sampleService.available.next(true);
 
     const res2 = await firstValueFrom(sampleService.store.data);
 

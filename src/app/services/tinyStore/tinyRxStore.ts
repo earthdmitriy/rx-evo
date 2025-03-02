@@ -1,22 +1,20 @@
 import { DestroyRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  BehaviorSubject,
   combineLatest,
   filter,
   map,
   Observable,
   of,
-  shareReplay,
-  startWith,
-  Subject,
   switchMap,
-  takeUntil,
   tap,
 } from 'rxjs';
 import {
   isError,
   isLoading,
   isSuccess,
+  publishWhile,
   tryGetDestroyRef,
   wrapResponse,
 } from './shared';
@@ -25,6 +23,7 @@ export type TinyRxStore<Result = unknown> = {
   data: Observable<Readonly<Result>>;
   error: Observable<boolean>;
   loading: Observable<boolean>;
+  available: Observable<boolean>;
 };
 
 const defaultAttempts = 3 as const;
@@ -36,7 +35,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
   processResponse?: (response: Response, input: Input) => Result;
   // with active subscribers - refetch
   // without subscribers - clear cache
-  flush?: Observable<unknown>;
+  available?: Observable<boolean>;
   attempts?: number;
   timeout?: number;
   destroyRef?: DestroyRef;
@@ -48,7 +47,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
       response: Response,
       input: Input,
     ) => Result,
-    flush = new Subject<void>(),
+    available = new BehaviorSubject(true),
     attempts = defaultAttempts,
     timeout = defaultTimeoute,
     destroyRef = tryGetDestroyRef(),
@@ -59,23 +58,23 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
 
   const source$ = input ? input.pipe(filter(Boolean)) : of(true as Input);
 
-  const result$ = combineLatest([source$, flush.pipe(startWith(null))]).pipe(
+  const result$ = combineLatest([source$, available]).pipe(
     map(([input]) => input),
     switchMap((input) =>
       loader(input).pipe(
         map((result) => processResponse(result, input)),
         wrapResponse(attempts, timeout),
-        takeUntil(flush),
       ),
     ),
     destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
-    shareReplay({ bufferSize: 1, refCount }),
+    publishWhile(available, { refCount }),
   );
 
   return {
     data: result$.pipe(filter(isSuccess)),
     error: result$.pipe(map(isError)),
     loading: result$.pipe(map(isLoading)),
+    available,
   };
 };
 // magic
@@ -90,14 +89,31 @@ type UnwrapTinyStores<T extends unknown[]> = T extends [
 export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
   args: [...T],
   processResponse: (data: UnwrapTinyStores<T>) => Result,
-): TinyRxStore<Result> => ({
-  loading: combineLatest(args.map((s) => s.loading)).pipe(
-    map((args) => args.some((r) => r)),
-  ),
-  error: combineLatest(args.map((s) => s.error)).pipe(
-    map((args) => args.some((r) => r)),
-  ),
-  data: combineLatest(args.map((s) => s.data)).pipe(
-    map((args) => processResponse(args as UnwrapTinyStores<T>)),
-  ),
-});
+  destroyRef?: DestroyRef,
+): TinyRxStore<Result> => {
+  const ref = destroyRef ?? tryGetDestroyRef();
+  // force refCount if no injector (and, probably, no injection context)
+  const refCount = !destroyRef;
+  const available = combineLatest(args.map((s) => s.available)).pipe(
+    map((args) => args.every(Boolean)),
+    ref ? takeUntilDestroyed(destroyRef) : tap(),
+  );
+  return {
+    loading: combineLatest(args.map((s) => s.loading)).pipe(
+      map((args) => args.some((r) => r)),
+      ref ? takeUntilDestroyed(destroyRef) : tap(),
+      publishWhile(available, { refCount }),
+    ),
+    error: combineLatest(args.map((s) => s.error)).pipe(
+      map((args) => args.some((r) => r)),
+      ref ? takeUntilDestroyed(destroyRef) : tap(),
+      publishWhile(available, { refCount }),
+    ),
+    data: combineLatest(args.map((s) => s.data)).pipe(
+      map((args) => processResponse(args as UnwrapTinyStores<T>)),
+      ref ? takeUntilDestroyed(destroyRef) : tap(),
+      publishWhile(available, { refCount }),
+    ),
+    available,
+  };
+};
