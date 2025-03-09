@@ -3,18 +3,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   BehaviorSubject,
   combineLatest,
+  debounceTime,
   filter,
   map,
   Observable,
   of,
+  shareReplay,
   switchMap,
   tap,
 } from 'rxjs';
+import { publishWhile } from './publishWhile';
 import {
   isError,
   isLoading,
   isSuccess,
-  publishWhile,
   tryGetDestroyRef,
   wrapResponse,
 } from './shared';
@@ -23,11 +25,11 @@ export type TinyRxStore<Result = unknown> = {
   data: Observable<Readonly<Result>>;
   error: Observable<boolean>;
   loading: Observable<boolean>;
-  available: Observable<boolean>;
+  active: Observable<boolean>;
 };
 
 const defaultAttempts = 3 as const;
-const defaultTimeoute = 1000 as const;
+const defaultTimeout = 1000 as const;
 
 export const createTinyRxStore = <Input, Response, Result = Response>(options: {
   input?: Observable<Input | undefined>;
@@ -35,7 +37,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
   processResponse?: (response: Response, input: Input) => Result;
   // with active subscribers - refetch
   // without subscribers - clear cache
-  available?: Observable<boolean>;
+  active?: Observable<boolean>;
   attempts?: number;
   timeout?: number;
   destroyRef?: DestroyRef;
@@ -47,9 +49,9 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
       response: Response,
       input: Input,
     ) => Result,
-    available = new BehaviorSubject(true),
+    active = new BehaviorSubject(true),
     attempts = defaultAttempts,
-    timeout = defaultTimeoute,
+    timeout = defaultTimeout,
     destroyRef = tryGetDestroyRef(),
   } = options;
 
@@ -58,7 +60,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
 
   const source$ = input ? input.pipe(filter(Boolean)) : of(true as Input);
 
-  const result$ = combineLatest([source$, available]).pipe(
+  const result$ = combineLatest([source$, active]).pipe(
     map(([input]) => input),
     switchMap((input) =>
       loader(input).pipe(
@@ -67,14 +69,14 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
       ),
     ),
     destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
-    publishWhile(available, { refCount }),
+    publishWhile(active, { refCount }),
   );
 
   return {
     data: result$.pipe(filter(isSuccess)),
     error: result$.pipe(map(isError)),
     loading: result$.pipe(map(isLoading)),
-    available,
+    active: active,
   };
 };
 // magic
@@ -94,26 +96,28 @@ export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
   const ref = destroyRef ?? tryGetDestroyRef();
   // force refCount if no injector (and, probably, no injection context)
   const refCount = !destroyRef;
-  const available = combineLatest(args.map((s) => s.available)).pipe(
+  const active = combineLatest(args.map((s) => s.active)).pipe(
     map((args) => args.every(Boolean)),
+    debounceTime(0),
     ref ? takeUntilDestroyed(destroyRef) : tap(),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
   return {
     loading: combineLatest(args.map((s) => s.loading)).pipe(
       map((args) => args.some((r) => r)),
       ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(available, { refCount }),
+      publishWhile(active, { refCount }),
     ),
     error: combineLatest(args.map((s) => s.error)).pipe(
       map((args) => args.some((r) => r)),
       ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(available, { refCount }),
+      publishWhile(active, { refCount }),
     ),
     data: combineLatest(args.map((s) => s.data)).pipe(
       map((args) => processResponse(args as UnwrapTinyStores<T>)),
       ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(available, { refCount }),
+      publishWhile(active, { refCount }),
     ),
-    available,
+    active,
   };
 };

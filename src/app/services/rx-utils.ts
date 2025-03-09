@@ -16,7 +16,6 @@ import {
   race,
   retry,
   shareReplay,
-  startWith,
   switchMap,
   take,
   tap,
@@ -31,16 +30,6 @@ export type ResponseLoading = {
 
 export type ResponseError = { state: 'error'; message: string };
 export type ResponseWithStatus<T> = ResponseLoading | ResponseError | T;
-
-export const isLoading = <T>(
-  response: ResponseWithStatus<T>,
-): response is ResponseLoading =>
-  (response as ResponseLoading)?.state === 'loading';
-export const isError = <T>(
-  response: ResponseWithStatus<T>,
-): response is ResponseError => (response as ResponseError)?.state === 'error';
-export const isSuccess = <T>(response: ResponseWithStatus<T>): response is T =>
-  !isLoading(response) && !isError(response);
 
 export type ResponseContainer<T = unknown> = Readonly<{
   loading$: Observable<boolean>;
@@ -189,27 +178,3 @@ export const combineResponses = <T extends [...ResponseContainer[]]>(
     toSignal: () => containerToSignal(result),
   };
 };
-
-/**
- * Rx operator
- * add it into web requst in API service
- *
- * For example:
- * `return this.http.get(url).pipe(wrapResponse);`
- */
-export const wrapResponse =
-  <T>() =>
-  (source: Observable<T>): Observable<ResponseWithStatus<Readonly<T>>> =>
-    source.pipe(
-      // retry failed requests
-      retry({
-        count: 3,
-        delay: (err, attempt) => timer(1000 * attempt),
-      }),
-      // immediately emit 'loading', useful to show spinners or skeletons
-      startWith({ state: 'loading' } as ResponseLoading),
-      // if retry failed - handle error
-      catchError((error) =>
-        of<ResponseError>({ state: 'error', message: error.toString() }),
-      ),
-    );

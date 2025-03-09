@@ -1,130 +1,40 @@
+import { concatMap, filter, firstValueFrom, of, ReplaySubject } from 'rxjs';
 import {
-  BehaviorSubject,
-  delay,
-  firstValueFrom,
-  merge,
-  of,
-  shareReplay,
-  switchMap,
-} from 'rxjs';
-import { publishWhile } from './shared';
+  isSuccess,
+  loadingSymbol,
+  ResponseLoading,
+  wrapResponse,
+} from './shared';
 
-describe('publishWhile', () => {
+describe('wrapResponse', () => {
   beforeEach(() => {});
-  it('shareReplay - validate test kit', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
 
-    const stream$ = source$.pipe(switchMap(doRequest), shareReplay(1));
+  it('start with loading', async () => {
+    const observable = of(1);
 
-    const res = await firstValueFrom(stream$);
-    const res2 = await firstValueFrom(stream$);
+    const wrapped = observable.pipe(wrapResponse());
 
-    expect(res).toEqual({ input: 1, count: 1 });
+    const res = await firstValueFrom(wrapped);
 
-    expect(res2).toEqual({ input: 1, count: 1 });
+    expect((res as ResponseLoading).state).toBe(loadingSymbol);
   });
 
-  it('buffer last value without active subscriber and refCount:false', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
+  it('keep stream alive after error', async () => {
+    const observable = new ReplaySubject<boolean>(1);
 
-    const stream$ = source$.pipe(
-      switchMap(doRequest),
-      publishWhile(available$, { refCount: false }),
+    const wrapped = observable.pipe(
+      concatMap((pass) => {
+        if (!pass) throw '';
+        return of(true);
+      }),
+      wrapResponse(0),
+      filter(isSuccess),
     );
+    observable.next(false);
+    observable.next(true);
 
-    const res = await firstValueFrom(stream$);
-    const res2 = await firstValueFrom(stream$);
+    const res = await firstValueFrom(wrapped);
 
-    expect(res).toEqual({ input: 1, count: 1 });
-    expect(res2).toEqual({ input: 1, count: 1 });
-  });
-
-  it('dont buffer last value without active subscriber and refCount:true', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
-
-    const stream$ = source$.pipe(
-      switchMap(doRequest),
-      publishWhile(available$),
-    );
-
-    const res = await firstValueFrom(stream$);
-    const res2 = await firstValueFrom(stream$);
-
-    expect(res).toEqual({ input: 1, count: 1 });
-    expect(res2).toEqual({ input: 1, count: 2 });
-  });
-
-  it('buffer last value with active subscriber', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
-
-    const stream$ = source$.pipe(
-      switchMap(doRequest),
-      publishWhile(available$),
-    );
-    stream$.subscribe();
-
-    const res = await firstValueFrom(stream$);
-    const res2 = await firstValueFrom(stream$);
-
-    expect(res).toEqual({ input: 1, count: 1 });
-    expect(res2).toEqual({ input: 1, count: 1 });
-  });
-
-  it('after flush active subscriber will get new value', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
-
-    const stream$ = source$.pipe(
-      switchMap(doRequest),
-      publishWhile(available$),
-    );
-    const results: { input: number; count: number }[] = [];
-
-    stream$.subscribe((value) => results.push(value));
-
-    available$.next(false);
-    available$.next(true);
-
-    expect(results).toEqual([
-      { input: 1, count: 1 },
-      { input: 1, count: 2 },
-    ]);
-  });
-
-  it('after flush new subscriber will get new value', async () => {
-    const source$ = new BehaviorSubject<number>(1);
-    let count = 0;
-    const doRequest = (input: number) => of({ input, count: ++count });
-    const available$ = new BehaviorSubject<boolean>(true);
-
-    const stream$ = source$.pipe(
-      switchMap(doRequest),
-      publishWhile(available$),
-    );
-
-    const res = await firstValueFrom(stream$);
-
-    expect(res).toEqual({ input: 1, count: 1 });
-
-    available$.next(false);
-    available$.next(true);
-
-    const res2 = await firstValueFrom(merge(stream$, of(0).pipe(delay(100))));
-
-    expect(res2).toEqual({ input: 1, count: 2 });
+    expect(res).toBe(true);
   });
 });

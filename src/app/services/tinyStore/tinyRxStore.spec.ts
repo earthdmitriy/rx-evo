@@ -2,11 +2,16 @@ import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
   BehaviorSubject,
+  concatMap,
   delay,
+  filter,
   firstValueFrom,
   map,
+  NEVER,
   of,
+  race,
   ReplaySubject,
+  shareReplay,
   take,
   toArray,
 } from 'rxjs';
@@ -21,7 +26,7 @@ class SampleService {
     input: this.input,
     loader: (value) => this.makeRequest(value),
     attempts: 0,
-    available: this.available,
+    active: this.available,
   });
 }
 
@@ -167,6 +172,26 @@ describe('TinyRxStore', () => {
     expect(res2).toEqual(0);
     expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
   });
+
+  it('second subscriber get loading state', async () => {
+    sampleService.makeRequest.mockImplementation((v) =>
+      of(v).pipe(concatMap(() => NEVER)),
+    );
+
+    sampleService.input.next(1);
+
+    const first$ = sampleService.store.loading.pipe(
+      filter((loading) => !loading),
+      map(() => 1),
+      shareReplay(1),
+    );
+    first$.subscribe();
+    const second$ = sampleService.store.loading.pipe(map(() => 2));
+
+    const res = await firstValueFrom(race([first$, second$]));
+
+    expect(res).toEqual(2);
+  });
 });
 
 describe('TinyRxStore out of injection context', () => {
@@ -192,7 +217,7 @@ describe('TinyRxStore out of injection context', () => {
   it('dont keep state after flush', async () => {
     sampleService.input.next(1);
 
-    // sampleService.store.data.subscribe();
+    sampleService.store.data.subscribe();
 
     const res = await firstValueFrom(sampleService.store.data);
 
