@@ -2,13 +2,8 @@ import { DestroyRef, Signal, computed } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { toLazySignal } from 'ngxtension/to-lazy-signal';
 import { Observable, filter, map, of, shareReplay, switchMap, tap } from 'rxjs';
-import {
-  isError,
-  isLoading,
-  isSuccess,
-  tryGetDestroyRef,
-  wrapResponse,
-} from './shared';
+import { wrapResponse } from './operators/wrapResponse';
+import { isError, isLoading, isSuccess, tryGetDestroyRef } from './shared';
 
 export type TinyStore<Result = unknown> = {
   data: Signal<Readonly<Result> | null>;

@@ -7,19 +7,16 @@ import {
   filter,
   map,
   Observable,
+  ObservedValueOf,
   of,
+  OperatorFunction,
   shareReplay,
   switchMap,
   tap,
 } from 'rxjs';
-import { publishWhile } from './publishWhile';
-import {
-  isError,
-  isLoading,
-  isSuccess,
-  tryGetDestroyRef,
-  wrapResponse,
-} from './shared';
+import { publishWhile } from './operators/publishWhile';
+import { wrapResponse } from './operators/wrapResponse';
+import { isError, isLoading, isSuccess, tryGetDestroyRef } from './shared';
 
 export type TinyRxStore<Result = unknown> = {
   data: Observable<Readonly<Result>>;
@@ -31,10 +28,16 @@ export type TinyRxStore<Result = unknown> = {
 const defaultAttempts = 3 as const;
 const defaultTimeout = 1000 as const;
 
+type TmapOperator = <T, O extends Observable<any>>(
+  project: (value: T, index: number) => O,
+) => OperatorFunction<T, ObservedValueOf<O>>;
+
 export const createTinyRxStore = <Input, Response, Result = Response>(options: {
   input?: Observable<Input | undefined>;
   loader: (input: Input) => Observable<Response>;
   processResponse?: (response: Response, input: Input) => Result;
+
+  mapOperator?: TmapOperator;
   // with active subscribers - refetch
   // without subscribers - clear cache
   active?: Observable<boolean>;
@@ -49,6 +52,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
       response: Response,
       input: Input,
     ) => Result,
+    mapOperator = switchMap,
     active = new BehaviorSubject(true),
     attempts = defaultAttempts,
     timeout = defaultTimeout,
@@ -62,7 +66,7 @@ export const createTinyRxStore = <Input, Response, Result = Response>(options: {
 
   const result$ = combineLatest([source$, active]).pipe(
     map(([input]) => input),
-    switchMap((input) =>
+    mapOperator((input) =>
       loader(input).pipe(
         map((result) => processResponse(result, input)),
         wrapResponse(attempts, timeout),

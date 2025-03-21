@@ -1,10 +1,6 @@
-import { concatMap, filter, firstValueFrom, of, ReplaySubject } from 'rxjs';
-import {
-  isSuccess,
-  loadingSymbol,
-  ResponseLoading,
-  wrapResponse,
-} from './shared';
+import { ReplaySubject, concatMap, filter, firstValueFrom, of } from 'rxjs';
+import { ResponseLoading, isSuccess, loadingSymbol } from '../shared';
+import { wrapResponse } from './wrapResponse';
 
 describe('wrapResponse', () => {
   beforeEach(() => {});
