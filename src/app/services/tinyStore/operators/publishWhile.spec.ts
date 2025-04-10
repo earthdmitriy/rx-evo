@@ -134,4 +134,31 @@ describe('publishWhile', () => {
 
     expect(res2).toEqual({ input: 1, count: 2 });
   });
+
+  it('active: true will not materialize stream without subscribers', async () => {
+    const source$ = new BehaviorSubject<number>(1);
+    let count = 0;
+    const doRequest = jest.fn((input: number) => of({ input, count: ++count }));
+    const active$ = new BehaviorSubject<boolean>(true);
+
+    const stream$ = source$.pipe(
+      switchMap(doRequest),
+      publishWhile(active$, { refCount: false }),
+    );
+
+    const res = await firstValueFrom(stream$);
+
+    expect(res).toEqual({ input: 1, count: 1 });
+    expect(doRequest.mock.calls.length).toEqual(1);
+
+    active$.next(false);
+    active$.next(true);
+
+    expect(doRequest.mock.calls.length).toEqual(1);
+
+    const res2 = await firstValueFrom(stream$);
+
+    expect(res2).toEqual({ input: 1, count: 2 });
+    expect(doRequest.mock.calls.length).toEqual(2);
+  });
 });

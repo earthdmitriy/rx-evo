@@ -8,7 +8,6 @@ import {
 import { toObservable } from '@angular/core/rxjs-interop';
 import { BucketApiService } from '../../../services/BucketApi.service';
 import { ClientApiService } from '../../../services/ClientApi.service';
-import { ProductsApiService } from '../../../services/ProductsApi.service';
 import {
   combineTinyRxStores,
   createTinyRxStore,
@@ -17,6 +16,7 @@ import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
+import { ProductsStoreService } from './products-store.service';
 
 @Component({
   selector: 'app-tiny-rx-store',
@@ -36,15 +36,11 @@ export class TinyRxStoreComponent {
 
   private readonly clientsApi = inject(ClientApiService);
   private readonly bucketApi = inject(BucketApiService);
-  private readonly productsApi = inject(ProductsApiService);
+  private readonly productsStore = inject(ProductsStoreService).store;
 
   public readonly clientStore = createTinyRxStore({
     input: toObservable(this.clientId),
     loader: (clientId) => this.clientsApi.getClient$(clientId),
-  });
-
-  private readonly productsStore = createTinyRxStore({
-    loader: () => this.productsApi.allProducts$(),
   });
 
   private readonly bucketStore = createTinyRxStore({

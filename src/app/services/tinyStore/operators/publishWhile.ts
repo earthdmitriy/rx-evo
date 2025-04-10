@@ -5,6 +5,15 @@ import {
   Subscription,
 } from 'rxjs';
 
+/**
+ * @param active$
+ * When false - clear buffer and don't emit any events. Rx streams don't completes and any subscribers cna wait till stream become active.
+ * When true - stream become active and materialize data when someone subscribes.
+ * @param options
+ * @see ShareReplay options
+ * by default { bufferSize = 1, refCount = true }
+ * @returns
+ */
 export const publishWhile =
   <T>(
     active$: Observable<boolean>,
@@ -15,9 +24,18 @@ export const publishWhile =
     const subject = new Subject<T>();
     const buffer: T[] = [];
 
+    let isActive = false;
+
     let activeSubscribers = 0;
 
+    let availabilitySubscription: Subscription | null = null;
     let sourceSubscription: Subscription | null = null;
+
+    const clear = () => {
+      sourceSubscription?.unsubscribe();
+      sourceSubscription = null;
+      buffer.length = 0;
+    };
 
     const subscribeToSource = () => {
       sourceSubscription?.unsubscribe();
@@ -41,19 +59,19 @@ export const publishWhile =
     const subscribeToAvailability = () => {
       availabilitySubscription?.unsubscribe();
       availabilitySubscription = active$.subscribe((available) => {
+        isActive = available;
         if (available) {
-          subscribeToSource();
+          if (activeSubscribers) subscribeToSource();
         } else {
-          buffer.shift();
-          sourceSubscription?.unsubscribe();
+          clear();
         }
       });
     };
 
-    let availabilitySubscription: Subscription | null = null;
     // return Observable, that share data
     return new Observable<T>((subscriber) => {
       activeSubscribers++;
+
       const innerSubscription: Subscription = subject.subscribe(subscriber);
       if (!availabilitySubscription) {
         subscribeToAvailability();
@@ -61,17 +79,20 @@ export const publishWhile =
         // send value from buffer to new subscriber
         buffer.forEach((value) => subscriber.next(value));
       }
+      if (isActive && !sourceSubscription) {
+        subscribeToSource();
+      }
 
       // return unsubscribe function
       return () => {
         activeSubscribers--;
         innerSubscription.unsubscribe();
-        if (!activeSubscribers && refCount) {
-          sourceSubscription?.unsubscribe();
+
+        if (!activeSubscribers && (!isActive || refCount)) {
+          clear();
+
           availabilitySubscription?.unsubscribe();
-          sourceSubscription = null;
           availabilitySubscription = null;
-          buffer.shift();
         }
       };
     });

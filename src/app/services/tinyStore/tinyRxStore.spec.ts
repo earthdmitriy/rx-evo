@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import {
   BehaviorSubject,
   concatMap,
+  defer,
   delay,
   filter,
   firstValueFrom,
@@ -21,7 +22,17 @@ import { createTinyRxStore } from './tinyRxStore';
 class SampleService {
   input = new ReplaySubject<number>(1);
   available = new BehaviorSubject(true);
-  makeRequest = jest.fn((value) => of(value * 2).pipe(delay(1)));
+  process = jest.fn((value) => {
+    return value * 2;
+  });
+  makeRequest = jest.fn((value) =>
+    defer(() =>
+      of(value).pipe(
+        delay(1),
+        map((v) => this.process(v)),
+      ),
+    ),
+  );
   store = createTinyRxStore({
     input: this.input,
     loader: (value) => this.makeRequest(value),
@@ -171,6 +182,51 @@ describe('TinyRxStore', () => {
 
     expect(res2).toEqual(0);
     expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
+  });
+
+  it('flush without subscribers dont materialize data', async () => {
+    sampleService.input.next(1);
+
+    expect(sampleService.process.mock.calls.length).toEqual(0);
+
+    expect(sampleService.process.mock.calls.length).toEqual(0);
+
+    sampleService.available.next(false);
+
+    expect(sampleService.process.mock.calls.length).toEqual(0);
+
+    sampleService.available.next(true);
+    expect(sampleService.process.mock.calls.length).toEqual(0);
+
+    const res = await firstValueFrom(sampleService.store.data);
+
+    expect(res).toEqual(2);
+    expect(sampleService.process.mock.calls.length).toEqual(1);
+  });
+
+  it('after flush dont materialize data without subscribers', async () => {
+    sampleService.input.next(1);
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(0);
+
+    const subscription = sampleService.store.data.subscribe();
+
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
+
+    subscription.unsubscribe();
+
+    sampleService.available.next(false);
+
+    sampleService.store.data.forEach;
+
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
+
+    sampleService.available.next(true);
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
+
+    const res2 = await firstValueFrom(sampleService.store.data);
+
+    expect(res2).toEqual(2);
+    expect(sampleService.process.mock.calls.length).toEqual(1);
   });
 
   it('second subscriber get loading state', async () => {
