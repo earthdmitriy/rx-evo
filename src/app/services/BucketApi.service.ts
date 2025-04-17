@@ -1,9 +1,10 @@
-import { Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../app.config';
 import { clientCount, maxBucketSize, productCount } from './consts';
-import { randomDelay } from './utils';
+import { EventBusService } from './EventBus.service';
+import { mapToError, randomDelay } from './utils';
 
 export type Bucket = {
   clientId: number;
@@ -28,6 +29,8 @@ const createBucket = (clientId: number) => ({
 })
 export class BucketApiService {
   private readonly logKey = 'bucket';
+  private readonly skipDelay = inject(SKIPDELAY_TOKEN);
+  private readonly eventBus = inject(EventBusService);
 
   private readonly cachedBuckets: { [id: number]: Bucket } = new Array(
     clientCount,
@@ -43,7 +46,10 @@ export class BucketApiService {
       this.cachedBuckets[clientId] ??
       (this.cachedBuckets[clientId] = createBucket(clientId));
 
-    return of(cached).pipe(randomDelay(this.skipDelay, this.logKey, clientId));
+    return of(cached).pipe(
+      randomDelay(this.skipDelay, this.logKey, clientId),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
 
   public getClientBucketProm(id: number) {
@@ -53,8 +59,9 @@ export class BucketApiService {
   public allBuckets$() {
     return of(
       Object.keys(this.cachedBuckets).map((id) => this.cachedBuckets[+id]),
-    ).pipe(randomDelay(this.skipDelay, this.logKey));
+    ).pipe(
+      randomDelay(this.skipDelay, this.logKey),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
-
-  constructor(@Inject(SKIPDELAY_TOKEN) private skipDelay = false) {}
 }

@@ -1,9 +1,10 @@
-import { Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
-import { Observable, firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, Observable, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../app.config';
 import { clientCount } from './consts';
-import { randomDelay } from './utils';
+import { EventBusService } from './EventBus.service';
+import { mapToError, randomDelay } from './utils';
 
 export type Client = {
   clientId: number;
@@ -30,6 +31,8 @@ const createClient = (id: number) => ({
 })
 export class ClientApiService {
   private readonly logKey = 'client';
+  private readonly skipDelay = inject(SKIPDELAY_TOKEN);
+  private readonly eventBus = inject(EventBusService);
 
   private readonly cachedClients: { [id: number]: Client } = new Array(
     clientCount,
@@ -44,7 +47,10 @@ export class ClientApiService {
   public getClient$(id: number): Observable<Client> {
     const cached =
       this.cachedClients[id] ?? (this.cachedClients[id] = createClient(id));
-    return of(cached).pipe(randomDelay(this.skipDelay, this.logKey, id));
+    return of(cached).pipe(
+      randomDelay(this.skipDelay, this.logKey, id),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
 
   public getClientProm(id: number) {
@@ -54,8 +60,9 @@ export class ClientApiService {
   public allClients$() {
     return of(
       Object.keys(this.cachedClients).map((id) => this.cachedClients[+id]),
-    ).pipe(randomDelay(this.skipDelay, this.logKey));
+    ).pipe(
+      randomDelay(this.skipDelay, this.logKey),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
-
-  constructor(@Inject(SKIPDELAY_TOKEN) private skipDelay = false) {}
 }

@@ -1,4 +1,16 @@
-import { delay, interval, map, pipe, startWith, tap } from 'rxjs';
+import {
+  delay,
+  interval,
+  map,
+  Observable,
+  of,
+  pipe,
+  startWith,
+  switchMap,
+  tap,
+  throwError,
+  withLatestFrom,
+} from 'rxjs';
 import { Bucket } from './BucketApi.service';
 import { Client } from './ClientApi.service';
 import { Product } from './ProductsApi.service';
@@ -29,6 +41,16 @@ export const randomDelay = <T>(
           unsubscribe: () => console.log(`request ${logKey} unsubsribe`),
         }),
       );
+
+export const mapToError =
+  <T>(error: Observable<boolean>) =>
+  (source: Observable<T>) =>
+    source.pipe(
+      withLatestFrom(error),
+      switchMap(([data, err]) =>
+        err ? throwError(() => 'some error') : of(data),
+      ),
+    ) as Observable<T>;
 
 export type PopulatedBucket = {
   goods: { product: Product; amount: number }[];

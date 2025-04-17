@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { BucketApiService } from '../../../services/BucketApi.service';
-import { ClientApiService } from '../../../services/ClientApi.service';
-import { ProductsApiService } from '../../../services/ProductsApi.service';
+import { of } from 'rxjs';
+import { SKIPDELAY_TOKEN } from '../../../app.config';
+import { EventBusService } from '../../../services/EventBus.service';
 import { TinyStoreComponent } from './tiny-store.component';
 
 describe('TinyStoreComponent', () => {
@@ -10,16 +10,12 @@ describe('TinyStoreComponent', () => {
       imports: [TinyStoreComponent],
       providers: [
         {
-          provide: ClientApiService,
-          useFactory: () => new ClientApiService(true),
+          provide: SKIPDELAY_TOKEN,
+          useValue: true,
         },
         {
-          provide: BucketApiService,
-          useFactory: () => new BucketApiService(true),
-        },
-        {
-          provide: ProductsApiService,
-          useFactory: () => new ProductsApiService(true),
+          provide: EventBusService,
+          useValue: { throwApiError$: of(false) },
         },
       ],
     }).compileComponents();

@@ -1,7 +1,7 @@
 <div class="max-w-screen-lg">
   <div [class.loading]="clientRequest.loading$ | async">
     @if (clientRequest.error$ | async) {
-      <div>Failed to load client</div>
+      <app-generic-error text="Failed to load client"></app-generic-error>
     }
     @if (clientRequest.data$ | async; as data) {
       <app-client-info [displayData]="data"></app-client-info>
@@ -10,7 +10,7 @@
 
   <div *ngIf="showBucket" [class.loading]="combined.loading$">
     @if (combined.error$ | async) {
-      <div>Failed to load bucket</div>
+      <app-generic-error text="Failed to load bucket"></app-generic-error>
     }
     @if (combinedData$ | async; as data) {
       <app-client-bucket [bucket]="data"></app-client-bucket>

@@ -1,9 +1,10 @@
-import { Inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, forkJoin, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../app.config';
 import { productCount } from './consts';
-import { randomDelay } from './utils';
+import { EventBusService } from './EventBus.service';
+import { mapToError, randomDelay } from './utils';
 
 export type Product = {
   productId: number;
@@ -26,6 +27,8 @@ const createProduct = (id: number) => ({
 })
 export class ProductsApiService {
   private readonly logKey = 'product';
+  private readonly skipDelay = inject(SKIPDELAY_TOKEN);
+  private readonly eventBus = inject(EventBusService);
 
   private readonly cachedProducts: { [id: number]: Product } = new Array(
     productCount,
@@ -47,7 +50,10 @@ export class ProductsApiService {
         material: faker.commerce.productMaterial(),
         price: faker.commerce.price(),
       });
-    return of(cached).pipe(randomDelay(this.skipDelay, this.logKey, productId));
+    return of(cached).pipe(
+      randomDelay(this.skipDelay, this.logKey, productId),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
 
   public getProducts$(productIds: number[]) {
@@ -57,12 +63,13 @@ export class ProductsApiService {
   public allProducts$() {
     return of(
       Object.keys(this.cachedProducts).map((id) => this.cachedProducts[+id]),
-    ).pipe(randomDelay(this.skipDelay, this.logKey));
+    ).pipe(
+      randomDelay(this.skipDelay, this.logKey),
+      mapToError(this.eventBus.throwApiError$),
+    );
   }
 
   public allProductsProm() {
     return firstValueFrom(this.allProducts$());
   }
-
-  constructor(@Inject(SKIPDELAY_TOKEN) private skipDelay = false) {}
 }

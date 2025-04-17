@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
+} from '@angular/core';
 import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
 import { Client, ClientApiService } from '../../../services/ClientApi.service';
 import {
@@ -22,7 +28,7 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   templateUrl: './chaos.component.html',
   styleUrl: './chaos.component.less',
 })
-export class ChaosComponent implements OnInit {
+export class ChaosComponent implements OnInit, OnChanges {
   @Input() public clientId!: number;
   @Input() public showBucket!: boolean;
 
@@ -36,6 +42,13 @@ export class ChaosComponent implements OnInit {
     this.fetchClient();
     this.fetchBucket();
     this.fetchProducts();
+  }
+
+  public ngOnChanges(changes: SimpleChanges): void {
+    if (changes['clientId'].currentValue) {
+      this.fetchClient();
+      this.fetchBucket();
+    }
   }
 
   private fetchClient() {

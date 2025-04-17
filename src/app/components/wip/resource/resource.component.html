@@ -1,7 +1,7 @@
 <div class="max-w-screen-lg">
   <div [class.loading]="clientResource.isLoading()">
     @if (clientResource.error()) {
-      <div>Failed to load client</div>
+      <app-generic-error text="Failed to load client"></app-generic-error>
     }
     @if (clientResource.value(); as data) {
       <app-client-info [displayData]="data"></app-client-info>
@@ -11,7 +11,7 @@
   @if (showBucket()) {
     <div [class.loading]="populatedBucketResource.isLoading()">
       @if (populatedBucketResource.error()) {
-        <div>Failed to load bucket</div>
+        <app-generic-error text="Failed to load bucket"></app-generic-error>
       }
       @if (populatedBucketResource.value(); as data) {
         <app-client-bucket [bucket]="data"></app-client-bucket>
