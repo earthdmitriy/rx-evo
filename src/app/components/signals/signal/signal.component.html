@@ -3,7 +3,9 @@
     <app-client-skeleton></app-client-skeleton>
   }
   @if (clientReady()) {
-    <app-client-info [displayData]="client()"></app-client-info>
+    @if (client(); as client) {
+      <app-client-info [displayData]="client"></app-client-info>
+    }
   }
   @if (showBucket() && bucketReady()) {
     <app-client-bucket [bucket]="populatedBucket()"></app-client-bucket>

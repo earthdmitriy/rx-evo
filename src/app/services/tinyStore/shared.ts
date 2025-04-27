@@ -7,7 +7,7 @@ export type ResponseLoading = {
   state: typeof loadingSymbol;
 };
 
-export type ResponseError = { state: typeof errorSymbol; message: string };
+export type ResponseError = { state: typeof errorSymbol; error: unknown };
 export type ResponseWithStatus<T> = ResponseLoading | ResponseError | T;
 
 export const isLoading = <T>(

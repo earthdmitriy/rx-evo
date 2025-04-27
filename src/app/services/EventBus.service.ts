@@ -9,7 +9,10 @@ export class EventBusService {
   public readonly clientId$ = new BehaviorSubject<number>(1);
   public readonly showBucket$ = new BehaviorSubject(true);
   public readonly toggleAutoIncrement$ = new BehaviorSubject(true);
-  public readonly throwApiError$ = new BehaviorSubject(false);
+  public readonly throwClientApiError$ = new BehaviorSubject(false);
+  public readonly throwBucketApiError$ = new BehaviorSubject(false);
+  public readonly throwProductApiError$ = new BehaviorSubject(false);
+  public readonly loggedIn$ = new BehaviorSubject(true);
 
   constructor() {
     console.log('EventBusService');

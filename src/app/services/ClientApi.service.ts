@@ -32,7 +32,7 @@ const createClient = (id: number) => ({
 export class ClientApiService {
   private readonly logKey = 'client';
   private readonly skipDelay = inject(SKIPDELAY_TOKEN);
-  private readonly eventBus = inject(EventBusService);
+  private readonly throwError$ = inject(EventBusService).throwClientApiError$;
 
   private readonly cachedClients: { [id: number]: Client } = new Array(
     clientCount,
@@ -49,7 +49,7 @@ export class ClientApiService {
       this.cachedClients[id] ?? (this.cachedClients[id] = createClient(id));
     return of(cached).pipe(
       randomDelay(this.skipDelay, this.logKey, id),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 
@@ -62,7 +62,7 @@ export class ClientApiService {
       Object.keys(this.cachedClients).map((id) => this.cachedClients[+id]),
     ).pipe(
       randomDelay(this.skipDelay, this.logKey),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 }

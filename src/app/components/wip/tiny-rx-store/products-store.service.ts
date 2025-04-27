@@ -13,5 +13,6 @@ export class ProductsStoreService {
 
   public readonly store = createTinyRxStore({
     loader: () => this.productsApi.allProducts$(),
+    processError: () => "Can't load products",
   });
 }

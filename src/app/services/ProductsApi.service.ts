@@ -28,7 +28,7 @@ const createProduct = (id: number) => ({
 export class ProductsApiService {
   private readonly logKey = 'product';
   private readonly skipDelay = inject(SKIPDELAY_TOKEN);
-  private readonly eventBus = inject(EventBusService);
+  private readonly throwError$ = inject(EventBusService).throwProductApiError$;
 
   private readonly cachedProducts: { [id: number]: Product } = new Array(
     productCount,
@@ -52,7 +52,7 @@ export class ProductsApiService {
       });
     return of(cached).pipe(
       randomDelay(this.skipDelay, this.logKey, productId),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 
@@ -65,7 +65,7 @@ export class ProductsApiService {
       Object.keys(this.cachedProducts).map((id) => this.cachedProducts[+id]),
     ).pipe(
       randomDelay(this.skipDelay, this.logKey),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 

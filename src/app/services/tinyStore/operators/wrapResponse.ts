@@ -22,6 +22,7 @@ export const wrapResponse =
   <T>(
     attempts: number = defauleAttempts,
     timeout: number = defaultTimeoute,
+    processError: (error: unknown) => unknown = (e) => e,
   ): OperatorFunction<T, ResponseWithStatus<Readonly<T>>> =>
   (source: Observable<T>): Observable<ResponseWithStatus<Readonly<T>>> =>
     source.pipe(
@@ -33,7 +34,7 @@ export const wrapResponse =
       // immediately emit 'loading', useful to show spinners or skeletons
       startWith({ state: loadingSymbol } as ResponseLoading),
       // if retry failed - handle error
-      catchError((errorMsg) =>
-        of<ResponseError>({ state: errorSymbol, message: String(errorMsg) }),
+      catchError((error) =>
+        of<ResponseError>({ state: errorSymbol, error: processError(error) }),
       ),
     );

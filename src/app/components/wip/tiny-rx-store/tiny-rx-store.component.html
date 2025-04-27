@@ -1,20 +1,26 @@
 <div class="max-w-screen-lg">
   <div [class.loading]="clientStore.loading | async">
-    @if (clientStore.error | async) {
-      <app-generic-error text="Failed to load client"></app-generic-error>
-    }
-    @if (clientStore.data | async; as data) {
-      <app-client-info [displayData]="data"></app-client-info>
+    @if (clientStore.error | async; as error) {
+      <app-generic-error [text]="error"></app-generic-error>
+    } @else {
+      <app-client-info
+        [displayData]="clientStore.data | async"
+      ></app-client-info>
     }
   </div>
 
   @if (showBucket()) {
     <div [class.loading]="populatedBucketStore.loading | async">
-      @if (populatedBucketStore.error | async) {
-        <app-generic-error text="Failed to load bucket"></app-generic-error>
-      }
-      @if (populatedBucketStore.data | async; as data) {
-        <app-client-bucket [bucket]="data"></app-client-bucket>
+      @if (populatedBucketStore.error | async; as errors) {
+        @for (error of errors; track error) {
+          @if (error) {
+            <app-generic-error [text]="error"></app-generic-error>
+          }
+        }
+      } @else {
+        @if (populatedBucketStore.data | async; as data) {
+          <app-client-bucket [bucket]="data"></app-client-bucket>
+        }
       }
     </div>
   }

@@ -9,12 +9,11 @@ import {
   firstValueFrom,
   map,
   NEVER,
+  Observable,
   of,
   race,
   ReplaySubject,
   shareReplay,
-  take,
-  toArray,
 } from 'rxjs';
 import { createTinyRxStore } from './tinyRxStore';
 
@@ -129,17 +128,15 @@ describe('TinyRxStore', () => {
       of(v).pipe(
         delay(1),
         map((v) => {
-          throw '';
+          throw 'err';
         }),
       ),
     );
 
     sampleService.input.next(1);
 
-    const res = await firstValueFrom(
-      sampleService.store.error.pipe(take(2), toArray()),
-    );
-    expect(res).toEqual([false, true]);
+    const res = await firstValueFrom(sampleService.store.error);
+    expect(res).toEqual('err');
   });
 
   it('keep state without subscribers', async () => {
@@ -247,6 +244,24 @@ describe('TinyRxStore', () => {
     const res = await firstValueFrom(race([first$, second$]));
 
     expect(res).toEqual(2);
+  });
+
+  it('map error', async () => {
+    const store = createTinyRxStore({
+      loader: (value): Observable<string> =>
+        of('something').pipe(
+          map((x) => {
+            throw '';
+          }),
+        ),
+      processError: (error, input) => {
+        return 'err' as const;
+      },
+    });
+
+    const res = await firstValueFrom(store.error);
+
+    expect(res).toEqual('err');
   });
 });
 

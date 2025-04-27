@@ -10,5 +10,5 @@ import { Client } from '../../../services/ClientApi.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClientInfoComponent {
-  public readonly displayData = input<Client>();
+  public readonly displayData = input<Client | null>(null);
 }

@@ -43,11 +43,13 @@ export class TinyRxStoreComponent {
   public readonly clientStore = createTinyRxStore({
     input: toObservable(this.clientId),
     loader: (clientId) => this.clientsApi.getClient$(clientId),
+    processError: () => "Can't load client",
   });
 
   private readonly bucketStore = createTinyRxStore({
     input: toObservable(this.clientId),
     loader: (clientId) => this.bucketApi.getClientBucket$(clientId),
+    processError: () => "Can't load bucket",
   });
 
   public readonly populatedBucketStore = combineTinyRxStores(

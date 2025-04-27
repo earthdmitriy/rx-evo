@@ -18,7 +18,10 @@ export class ControllerComponent {
 
   public readonly incrementCtrl = this.fb.control<boolean>(true);
   public readonly showBucketCtrl = this.fb.control<boolean>(true);
-  public readonly throwErrorCtrl = this.fb.control<boolean>(false);
+
+  public readonly throwClientCtrl = this.fb.control<boolean>(false);
+  public readonly throwProductsCtrl = this.fb.control<boolean>(false);
+  public readonly throwBucketCtrl = this.fb.control<boolean>(false);
 
   constructor() {
     this.incrementCtrl.valueChanges
@@ -27,9 +30,15 @@ export class ControllerComponent {
     this.showBucketCtrl.valueChanges
       .pipe(takeUntilDestroyed())
       .subscribe((value) => this.eventBus.showBucket$.next(value));
-    this.throwErrorCtrl.valueChanges
+    this.throwClientCtrl.valueChanges
       .pipe(takeUntilDestroyed())
-      .subscribe((value) => this.eventBus.throwApiError$.next(value));
+      .subscribe((value) => this.eventBus.throwClientApiError$.next(value));
+    this.throwProductsCtrl.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((value) => this.eventBus.throwProductApiError$.next(value));
+    this.throwBucketCtrl.valueChanges
+      .pipe(takeUntilDestroyed())
+      .subscribe((value) => this.eventBus.throwBucketApiError$.next(value));
   }
 
   public next() {

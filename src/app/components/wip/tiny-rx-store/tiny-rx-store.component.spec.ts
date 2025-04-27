@@ -15,7 +15,11 @@ describe('TinyRxStoreComponent', () => {
         },
         {
           provide: EventBusService,
-          useValue: { throwApiError$: of(false) },
+          useValue: {
+            throwClientApiError$: of(false),
+            throwBucketApiError$: of(false),
+            throwProductApiError$: of(false),
+          },
         },
       ],
     }).compileComponents();

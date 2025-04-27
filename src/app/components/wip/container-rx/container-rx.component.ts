@@ -33,7 +33,7 @@ export class ContainerRxComponent {
   @Input() public set clientId(value: number) {
     this.clientId$.next(value);
   }
-  private readonly clientId$ = new ReplaySubject<number>();
+  private readonly clientId$ = new ReplaySubject<number>(1);
   @Input() public showBucket!: boolean;
 
   private readonly clientsApi = inject(ClientApiService);

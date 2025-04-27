@@ -1,5 +1,5 @@
 import { ReplaySubject, concatMap, filter, firstValueFrom, of } from 'rxjs';
-import { ResponseLoading, isSuccess, loadingSymbol } from '../shared';
+import { ResponseLoading, isError, isSuccess, loadingSymbol } from '../shared';
 import { wrapResponse } from './wrapResponse';
 
 describe('wrapResponse', () => {
@@ -32,5 +32,23 @@ describe('wrapResponse', () => {
     const res = await firstValueFrom(wrapped);
 
     expect(res).toBe(true);
+  });
+
+  it('use error mapper', async () => {
+    const observable = new ReplaySubject<boolean>(1);
+
+    const wrapped = observable.pipe(
+      concatMap((pass) => {
+        if (!pass) throw '';
+        return of(true);
+      }),
+      wrapResponse(0,0, () => 'err'),
+      filter(isError),
+    );
+    observable.next(false);
+
+    const res = await firstValueFrom(wrapped);
+
+    expect(res.error).toEqual('err');
   });
 });

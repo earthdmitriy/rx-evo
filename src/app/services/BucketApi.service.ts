@@ -30,7 +30,7 @@ const createBucket = (clientId: number) => ({
 export class BucketApiService {
   private readonly logKey = 'bucket';
   private readonly skipDelay = inject(SKIPDELAY_TOKEN);
-  private readonly eventBus = inject(EventBusService);
+  private readonly throwError$ = inject(EventBusService).throwBucketApiError$;
 
   private readonly cachedBuckets: { [id: number]: Bucket } = new Array(
     clientCount,
@@ -48,7 +48,7 @@ export class BucketApiService {
 
     return of(cached).pipe(
       randomDelay(this.skipDelay, this.logKey, clientId),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 
@@ -61,7 +61,7 @@ export class BucketApiService {
       Object.keys(this.cachedBuckets).map((id) => this.cachedBuckets[+id]),
     ).pipe(
       randomDelay(this.skipDelay, this.logKey),
-      mapToError(this.eventBus.throwApiError$),
+      mapToError(this.throwError$),
     );
   }
 }
