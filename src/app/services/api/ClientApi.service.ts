@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, Observable, of } from 'rxjs';
-import { SKIPDELAY_TOKEN } from '../app.config';
-import { clientCount } from './consts';
-import { EventBusService } from './EventBus.service';
-import { mapToError, randomDelay } from './utils';
+import { SKIPDELAY_TOKEN } from '../../app.config';
+import { clientCount } from '../consts';
+import { EventBusService } from '../EventBus.service';
+import { mapToError, randomDelay } from '../utils';
 
 export type Client = {
   clientId: number;

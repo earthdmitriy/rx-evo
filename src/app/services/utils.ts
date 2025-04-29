@@ -11,9 +11,9 @@ import {
   throwError,
   withLatestFrom,
 } from 'rxjs';
-import { Bucket } from './BucketApi.service';
-import { Client } from './ClientApi.service';
-import { Product } from './ProductsApi.service';
+import { Bucket } from './api/BucketApi.service';
+import { Client } from './api/ClientApi.service';
+import { Product } from './api/ProductsApi.service';
 import { clientCount, randomDelayMs } from './consts';
 
 export const randomDelay = <T>(

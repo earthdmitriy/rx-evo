@@ -6,12 +6,18 @@ import {
   OnInit,
   SimpleChanges,
 } from '@angular/core';
-import { Bucket, BucketApiService } from '../../../services/BucketApi.service';
-import { Client, ClientApiService } from '../../../services/ClientApi.service';
+import {
+  Bucket,
+  BucketApiService,
+} from '../../../services/api/BucketApi.service';
+import {
+  Client,
+  ClientApiService,
+} from '../../../services/api/ClientApi.service';
 import {
   Product,
   ProductsApiService,
-} from '../../../services/ProductsApi.service';
+} from '../../../services/api/ProductsApi.service';
 import { ClientWithBucket, prepareData } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';

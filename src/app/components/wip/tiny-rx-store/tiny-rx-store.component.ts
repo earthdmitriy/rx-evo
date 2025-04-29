@@ -6,8 +6,8 @@ import {
   input,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { BucketApiService } from '../../../services/BucketApi.service';
-import { ClientApiService } from '../../../services/ClientApi.service';
+import { BucketApiService } from '../../../services/api/BucketApi.service';
+import { ClientApiService } from '../../../services/api/ClientApi.service';
 import {
   combineTinyRxStores,
   createTinyRxStore,

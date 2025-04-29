@@ -254,6 +254,75 @@ Unwrapping in template
 </div>
 ```
 
+### Handling separate error types
+```typescript
+  protected readonly store = createTinyRxStore({
+    input: this.clientId$,
+    loader: (clientId) => this.apiService.fetchClient(clientId),
+    processResponse: (response, clientId) => response.data,
+    processError: (error, clientId) => {
+      if (is404(error)) return '404';
+      if (is403(error)) return '403';
+      if (is500(error)) return '500';
+      return 'unknown';// don't return error as is because ti will merge error unioun type into unknown
+    }
+  });
+```
+Type will be 
+```typescript
+  TinyRxStore<Client,'404' | '403' | '500' | 'unknown'>
+```
+Therefore you'll be able to show different error messages for each error type
+
+### Putting UPDATE result into store
+```typescript
+  protected readonly action$ = new BehaviorSubject<
+    {type: 'fetch'} | {type: 'update', payload: UserSettings}
+  >({type: 'fetch'})
+
+  protected readonly store = createTinyRxStore({
+    input: this.action$,
+    loader: (action) => { 
+      switch (action.type) {
+        case 'fetch': return this.apiService.fetchSettings();
+        case 'update': return this.apiService.updateSettings(action.payload);
+      }
+    },
+    processResponse: (response, clientId) => response.data,
+  });
+
+  protected submit() {
+    this.action$.next({ type: 'update', payload: this.from.value })
+  }
+```
+
+### Dynamic combined store
+In case if you need cache entities queried by id
+```typescript
+@Injectable({
+  providedIn: 'root',
+})
+export class ProductsStoreService {
+  private readonly productsApi = inject(ProductsApiService);
+
+  private readonly productByIdStore: {
+    [id: number]: TinyRxStore<Product, string>;
+  } = {};
+
+  public getStoreById(id: number) {
+    return (this.productByIdStore[id] ??= createTinyRxStore({
+      loader: () => this.productsApi.getProduct$(id),
+      processError: (_, id) => `Can't load product ${id}`,
+    }));
+  }
+
+  public getCombinedStoreByIds(ids: number[]) {
+    const stores = ids.map((id) => this.getStoreById(id));
+    return combineTinyRxStores(stores, (products) => products);
+  }
+}
+```
+
 ### Unit tests
 Use createTinyRxStore with mock data in loader
 ```typescript

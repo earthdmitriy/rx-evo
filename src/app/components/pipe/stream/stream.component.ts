@@ -14,9 +14,9 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { BucketApiService } from '../../../services/BucketApi.service';
-import { ClientApiService } from '../../../services/ClientApi.service';
-import { ProductsApiService } from '../../../services/ProductsApi.service';
+import { BucketApiService } from '../../../services/api/BucketApi.service';
+import { ClientApiService } from '../../../services/api/ClientApi.service';
+import { ProductsApiService } from '../../../services/api/ProductsApi.service';
 import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';

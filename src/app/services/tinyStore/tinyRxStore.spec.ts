@@ -15,7 +15,7 @@ import {
   ReplaySubject,
   shareReplay,
 } from 'rxjs';
-import { createTinyRxStore } from './tinyRxStore';
+import { combineTinyRxStores, createTinyRxStore } from './tinyRxStore';
 
 @Injectable()
 class SampleService {
@@ -245,24 +245,6 @@ describe('TinyRxStore', () => {
 
     expect(res).toEqual(2);
   });
-
-  it('map error', async () => {
-    const store = createTinyRxStore({
-      loader: (value): Observable<string> =>
-        of('something').pipe(
-          map((x) => {
-            throw '';
-          }),
-        ),
-      processError: (error, input) => {
-        return 'err' as const;
-      },
-    });
-
-    const res = await firstValueFrom(store.error);
-
-    expect(res).toEqual('err');
-  });
 });
 
 describe('TinyRxStore out of injection context', () => {
@@ -310,5 +292,73 @@ describe('TinyRxStore out of injection context', () => {
 
     expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
     expect(res2).toEqual(0);
+  });
+
+  it('map error', async () => {
+    const store = createTinyRxStore({
+      loader: (value): Observable<string> =>
+        of('something').pipe(
+          map((x) => {
+            throw '';
+          }),
+        ),
+      processError: (error, input) => {
+        return 'err' as const;
+      },
+    });
+
+    const res = await firstValueFrom(store.error);
+
+    expect(res).toEqual('err');
+  });
+
+  it('map error with different types', async () => {
+    const store = createTinyRxStore({
+      loader: (value): Observable<string> =>
+        of('something').pipe(
+          map((x) => {
+            throw '1';
+          }),
+        ),
+      processError: (error, input) => {
+        if (error === '1') return 1;
+        if (error === '2') return 2;
+        return 'unknown';
+      },
+    });
+
+    const res = await firstValueFrom(store.error);
+
+    expect(res).toEqual(1);
+  });
+
+  it('combine error', async () => {
+    const store = createTinyRxStore({
+      loader: (value): Observable<string> =>
+        of('something').pipe(
+          map((x) => {
+            throw '';
+          }),
+        ),
+      processError: (error, input) => {
+        return 'err' as const;
+      },
+    });
+    const anotherStore = createTinyRxStore({
+      loader: () => of(true),
+
+      processError: (error, input) => {
+        return 'anotherErr' as const;
+      },
+    });
+
+    const combinedStore = combineTinyRxStores(
+      [store, anotherStore],
+      (values) => values,
+    );
+
+    const res = await firstValueFrom(combinedStore.error);
+
+    expect(res).toEqual(['err', false]);
   });
 });

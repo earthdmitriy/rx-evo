@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Client } from '../../../services/ClientApi.service';
+import { Client } from '../../../services/api/ClientApi.service';
 
 @Component({
   selector: 'app-client-info',

@@ -97,20 +97,23 @@ export const createTinyRxStore = <
 };
 // magic
 type UnwrapTinyStore<T> = T extends TinyRxStore<infer U> ? U : never;
-type UnwrapTinyStores<T extends unknown[]> = T extends [
-  infer Head,
-  ...infer Tail,
-]
-  ? [UnwrapTinyStore<Head>, ...UnwrapTinyStores<Tail>]
-  : [];
+type UnwrapTinyStores<T extends unknown[]> = T extends []
+  ? [] // stop on empty tuple
+  : T extends readonly [infer Head, ...infer Tail]
+    ? [UnwrapTinyStore<Head>, ...UnwrapTinyStores<Tail>] // process as tuple
+    : T extends TinyRxStore<infer R>[] // process as array
+      ? R[]
+      : [];
+
 type UnwrapTinyStoreError<T> =
   T extends TinyRxStore<any, infer E> ? false | E : never;
-type UnwrapTinyStoresError<T extends unknown[]> = T extends [
-  infer Head,
-  ...infer Tail,
-]
-  ? [UnwrapTinyStoreError<Head>, ...UnwrapTinyStoresError<Tail>]
-  : [];
+type UnwrapTinyStoresError<T extends unknown[]> = T extends []
+  ? [] // stop on empty tuple
+  : T extends [infer Head, ...infer Tail]
+    ? [UnwrapTinyStoreError<Head>, ...UnwrapTinyStoresError<Tail>] // process as tuple
+    : T extends TinyRxStore<any, infer E>[] // process as array
+      ? E[]
+      : [];
 
 export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
   args: [...T],
