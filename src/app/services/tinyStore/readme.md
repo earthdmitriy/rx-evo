@@ -264,7 +264,7 @@ Unwrapping in template
       if (is404(error)) return '404';
       if (is403(error)) return '403';
       if (is500(error)) return '500';
-      return 'unknown';// don't return error as is because ti will merge error unioun type into unknown
+      return 'unknown';// don't return error as is because ti will merge return union type into unknown
     }
   });
 ```
@@ -319,6 +319,42 @@ export class ProductsStoreService {
   public getCombinedStoreByIds(ids: number[]) {
     const stores = ids.map((id) => this.getStoreById(id));
     return combineTinyRxStores(stores, (products) => products);
+  }
+}
+```
+
+### Smart cache
+In case if you need cache filtered lists of entities
+```typescript
+@Injectable({
+  providedIn: 'root',
+})
+export class ProductsStoreService {
+  private readonly productsApi = inject(ProductsApiService);  
+  private readonly loggedIn$= inject(EventsService).loggedIn$;
+
+  private readonly dataByQuery: {
+    [query: string]: TinyRxStore<Product[], string>;
+  } = {};
+
+  constructor() {
+    this.loggedIn$.pipe(
+      filter(loggedIn => !loggedIn), 
+      takeUntilDestroyed()
+    ).subscribe(() =>{
+      // clear, because query can contain private data
+      for (const query in this.dataByQuery) {
+        delete this.dataByQuery.query;
+      }
+    })
+  }
+
+  public getStore(filters: FiltersObject) {
+    const stringifiedQuery = JSON.stringify(filters)
+    return (this.dataByQuery[stringifiedQuery] ??= createTinyRxStore({
+      loader: () => this.productsApi.getProduct$(filters),
+      processError: (_, filters) => `Can't fetch products`,
+    }));
   }
 }
 ```
