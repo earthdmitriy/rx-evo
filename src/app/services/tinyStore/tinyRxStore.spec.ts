@@ -123,6 +123,23 @@ describe('TinyRxStore', () => {
     expect(res2).toEqual(4);
   });
 
+  it('reload rerun loader', async () => {
+    sampleService.input.next(1);
+
+    sampleService.store.data.subscribe(); // keep active subscription
+    const res = await firstValueFrom(sampleService.store.data);
+
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(1);
+    expect(res).toEqual(2);
+
+    sampleService.store.reload();
+
+    const res2 = await firstValueFrom(sampleService.store.data);
+
+    expect(sampleService.makeRequest.mock.calls.length).toEqual(2);
+    expect(res2).toEqual(2);
+  });
+
   it('handle error', async () => {
     sampleService.makeRequest.mockImplementation((v) =>
       of(v).pipe(

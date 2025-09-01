@@ -1,7 +1,11 @@
 <div class="max-w-screen-lg">
   <div [class.loading]="clientStore.loading | async">
     @if (clientStore.error | async; as error) {
-      <app-generic-error [text]="error"></app-generic-error>
+      <app-generic-error
+        [showReload]="true"
+        [text]="error"
+        (reload)="clientStore.reload()"
+      ></app-generic-error>
     } @else {
       <app-client-info
         [displayData]="clientStore.data | async"

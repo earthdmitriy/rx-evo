@@ -1,7 +1,11 @@
 <div class="max-w-screen-lg">
   <div [class.loading]="clientResource.isLoading()">
     @if (clientResource.error()) {
-      <app-generic-error text="Failed to load client"></app-generic-error>
+      <app-generic-error
+        text="Failed to load client"
+        [showReload]="true"
+        (reload)="clientResource.reload()"
+      ></app-generic-error>
     }
     @if (clientResource.value(); as data) {
       <app-client-info [displayData]="data"></app-client-info>

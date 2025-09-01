@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  EventEmitter,
+  input,
+  Output,
+} from '@angular/core';
 
 @Component({
   selector: 'app-generic-error',
@@ -7,4 +13,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 })
 export class GenericErrorComponent {
   public readonly text = input<string>('');
+
+  public readonly showReload = input<boolean>(false);
+
+  @Output() public readonly reload = new EventEmitter<void>();
 }

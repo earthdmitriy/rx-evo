@@ -23,6 +23,8 @@ export type TinyRxStore<Result = unknown, Error = unknown> = {
   error: Observable<false | Error>;
   loading: Observable<boolean>;
   active: Observable<boolean>;
+
+  reload: () => void;
 };
 
 const defaultAttempts = 0 as const;
@@ -38,7 +40,7 @@ export const createTinyRxStore = <
   Result = Response,
   Error = unknown,
 >(options: {
-  input?: Observable<Input | undefined>;
+  input?: Observable<Input>;
   loader: (input: Input) => Observable<Response>;
   processResponse?: (response: Response, input: Input) => Result;
   processError?: (error: unknown, input: Input) => Error;
@@ -71,9 +73,10 @@ export const createTinyRxStore = <
   // force refCount if no injector (and, probably, no injection context)
   const refCount = !destroyRef;
 
-  const source$ = input ? input.pipe(filter(Boolean)) : of(true as Input);
+  const source$ = input ? input : of(true as Input);
+  const reload$ = new BehaviorSubject(true);
 
-  const result$ = combineLatest([source$, active]).pipe(
+  const result$ = combineLatest([source$, reload$, active]).pipe(
     map(([input]) => input),
     mapOperator((input) =>
       loader(input).pipe(
@@ -93,6 +96,8 @@ export const createTinyRxStore = <
     ),
     loading: result$.pipe(map(isLoading)),
     active: active,
+
+    reload: () => reload$.next(true),
   };
 };
 // magic
@@ -148,5 +153,7 @@ export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
       publishWhile(active, { refCount }),
     ),
     active,
+
+    reload: () => args.forEach((store) => store.reload()),
   };
 };

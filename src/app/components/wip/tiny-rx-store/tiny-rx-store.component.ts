@@ -33,7 +33,7 @@ import { ProductsStoreService } from './products-store.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TinyRxStoreComponent {
-  public readonly clientId = input<number>();
+  public readonly clientId = input.required<number>();
   public readonly showBucket = input<boolean>();
 
   private readonly clientsApi = inject(ClientApiService);
