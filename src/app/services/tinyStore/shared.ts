@@ -7,16 +7,16 @@ export type ResponseLoading = {
   state: typeof loadingSymbol;
 };
 
-export type ResponseError = { state: typeof errorSymbol; error: unknown };
-export type ResponseWithStatus<T> = ResponseLoading | ResponseError | T;
+export type ResponseError<E = unknown> = { state: typeof errorSymbol; error: E };
+export type ResponseWithStatus<T,E = unknown> = ResponseLoading | ResponseError<E> | T;
 
 export const isLoading = <T>(
   response: ResponseWithStatus<T>,
 ): response is ResponseLoading =>
   (response as ResponseLoading)?.state === loadingSymbol;
-export const isError = <T>(
-  response: ResponseWithStatus<T>,
-): response is ResponseError =>
+export const isError = <T,E>(
+  response: ResponseWithStatus<T,E>,
+): response is ResponseError<E> =>
   (response as ResponseError)?.state === errorSymbol;
 export const isSuccess = <T>(response: ResponseWithStatus<T>): response is T =>
   !isLoading(response) && !isError(response);

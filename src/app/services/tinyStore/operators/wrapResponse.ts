@@ -19,12 +19,12 @@ const defauleAttempts = 3 as const;
 const defaultTimeoute = 1000 as const;
 
 export const wrapResponse =
-  <T>(
+  <T,E>(
     attempts: number = defauleAttempts,
     timeout: number = defaultTimeoute,
-    processError: (error: unknown) => unknown = (e) => e,
-  ): OperatorFunction<T, ResponseWithStatus<Readonly<T>>> =>
-  (source: Observable<T>): Observable<ResponseWithStatus<Readonly<T>>> =>
+    processError: (error: unknown) => E = x => x as E,
+  ): OperatorFunction<T, ResponseWithStatus<T,E>> =>
+  (source: Observable<T>): Observable<ResponseWithStatus<T,E>> =>
     source.pipe(
       // retry failed requests
       retry({
@@ -35,6 +35,6 @@ export const wrapResponse =
       startWith({ state: loadingSymbol } as ResponseLoading),
       // if retry failed - handle error
       catchError((error) =>
-        of<ResponseError>({ state: errorSymbol, error: processError(error) }),
+        of<ResponseError<E>>({ state: errorSymbol, error: processError(error) }),
       ),
     );

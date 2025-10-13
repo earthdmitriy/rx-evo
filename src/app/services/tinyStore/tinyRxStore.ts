@@ -16,13 +16,24 @@ import {
 } from 'rxjs';
 import { publishWhile } from './operators/publishWhile';
 import { wrapResponse } from './operators/wrapResponse';
-import { isError, isLoading, isSuccess, tryGetDestroyRef } from './shared';
+import {
+  errorSymbol,
+  isError,
+  isLoading,
+  isSuccess,
+  loadingSymbol,
+  ResponseError,
+  ResponseLoading,
+  ResponseWithStatus,
+  tryGetDestroyRef,
+} from './shared';
 
 export type TinyRxStore<Result = unknown, Error = unknown> = {
-  data: Observable<Readonly<Result>>;
+  data: Observable<Result>;
   error: Observable<false | Error>;
   loading: Observable<boolean>;
   active: Observable<boolean>;
+  raw: Observable<ResponseWithStatus<Result, Error>>;
 
   reload: () => void;
 };
@@ -96,6 +107,7 @@ export const createTinyRxStore = <
     ),
     loading: result$.pipe(map(isLoading)),
     active: active,
+    raw: result$,
 
     reload: () => reload$.next(true),
   };
@@ -134,25 +146,30 @@ export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
     ref ? takeUntilDestroyed(destroyRef) : tap(),
     shareReplay({ bufferSize: 1, refCount: true }),
   );
+  const result$ = combineLatest(args.map((s) => s.raw)).pipe(
+    map((events) => {
+      if (events.some((x) => isLoading(x)))
+        return { state: loadingSymbol } as ResponseLoading;
+      if (events.some((x) => isError(x)))
+        return {
+          state: errorSymbol,
+          error: events.map((x) => (isError(x) ? x.error : false)),
+        } as ResponseError<UnwrapTinyStoresError<T>>;
+        return processResponse(events as UnwrapTinyStores<T>)
+    }),
+    destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
+    publishWhile(active, { refCount })
+  );
+
   return {
-    loading: combineLatest(args.map((s) => s.loading)).pipe(
-      map((args) => args.some((r) => r)),
-      ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(active, { refCount }),
+    data: result$.pipe(filter(isSuccess)),
+    error: result$.pipe(
+      filter((e) => !isLoading(e)),
+      map((e) => (isError(e) ? (e.error as UnwrapTinyStoresError<T>) : false)),
     ),
-    error: combineLatest(args.map((s) => s.error)).pipe(
-      map((args) =>
-        args.some((r) => r) ? (args as UnwrapTinyStoresError<T>) : false,
-      ),
-      ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(active, { refCount }),
-    ),
-    data: combineLatest(args.map((s) => s.data)).pipe(
-      map((args) => processResponse(args as UnwrapTinyStores<T>)),
-      ref ? takeUntilDestroyed(destroyRef) : tap(),
-      publishWhile(active, { refCount }),
-    ),
-    active,
+    loading: result$.pipe(map(isLoading)),
+    active: active,
+    raw: result$,
 
     reload: () => args.forEach((store) => store.reload()),
   };
