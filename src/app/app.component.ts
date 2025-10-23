@@ -91,6 +91,10 @@ export class AppComponent {
           title: 'Resource',
           path: '/wip/resource',
         },
+        {
+          title: 'Stateful-observable',
+          path: '/wip/stateful-observable',
+        },
       ],
     },
   ];

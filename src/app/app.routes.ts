@@ -12,6 +12,7 @@ import { TinyStoreComponent } from './components/wip/tiny-store/tiny-store.compo
 import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
 import { ResourceInputWrapperComponent } from './components/wip/resource/resource-input-wrapper.component';
 import { TinyRxStoreInputWrapperComponent } from './components/wip/tiny-rx-store/tiny-rx-store-input-wrapper.component';
+import { StatefulObservableInputWrapperComponent } from './components/wip/stateful-observable/stateful-observable-input-wrapper.component';
 
 export const routes: Routes = [
   {
@@ -67,6 +68,10 @@ export const routes: Routes = [
       {
         path: 'resource',
         component: ResourceInputWrapperComponent,
+      },
+      {
+        path: 'stateful-observable',
+        component: StatefulObservableInputWrapperComponent,
       },
     ],
   },

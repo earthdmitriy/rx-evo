@@ -30,11 +30,12 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignalComponent {
-  public readonly clientId = input<number>();
+  public readonly clientId = input.required<number>();  
+  private readonly clientId$ = toObservable(this.clientId);
+
+
+
   public readonly showBucket = input<boolean>();
-  private readonly clientId$ = toObservable(this.clientId).pipe(
-    filter(Boolean),
-  );
 
   public readonly clientReady = signal(false);
   public readonly bucketReady = signal(false);
