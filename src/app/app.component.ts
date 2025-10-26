@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { ControllerComponent } from './components/content/controller/controller.component';
@@ -14,7 +14,7 @@ type RouteNode = {
 
 @Component({
     selector: 'app-root',
-    imports: [RouterOutlet, CommonModule, RouterModule, ControllerComponent],
+    imports: [RouterOutlet, RouterModule, ControllerComponent],
     templateUrl: './app.component.html',
     styleUrl: './app.component.less'
 })

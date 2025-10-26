@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,7 +18,6 @@ import { GenericErrorComponent } from '../../content/generic-error/generic-error
 @Component({
   selector: 'app-resource',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
     ClientSkeletonComponent,
@@ -38,21 +36,22 @@ export class ResourceComponent {
   private readonly productsApi = inject(ProductsApiService);
 
   public readonly clientResource = rxResource({
-    request: this.clientId,
-    loader: ({ request }) => this.clientsApi.getClient$(request),
+    params: this.clientId,
+    stream: (params) => this.clientsApi.getClient$(params.params),
   });
 
   private readonly productsResource = rxResource({
-    loader: () => this.productsApi.allProducts$(),
+    stream: () => this.productsApi.allProducts$(),
   });
 
   private readonly bucketResource = rxResource({
-    request: this.clientId,
-    loader: ({ request }) => this.bucketApi.getClientBucket$(request),
+    params: this.clientId,
+    stream: (params) => this.bucketApi.getClientBucket$(params.params),
   });
 
   public readonly populatedBucketResource = combineResources(
     [this.bucketResource, this.productsResource],
-    ([bucket, products]) => prepareBucket(bucket, products),
+    ([bucket, products]) =>
+      bucket && products && prepareBucket(bucket, products),
   );
 }

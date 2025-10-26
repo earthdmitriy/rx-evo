@@ -6,11 +6,12 @@ import { TinyRxStoreComponent } from './tiny-rx-store.component';
 @Component({
   selector: 'app-tiny-store-input-wrapper',
   imports: [CommonModule, TinyRxStoreComponent],
-  template: `<app-tiny-rx-store
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-tiny-rx-store
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-tiny-rx-store>`,
+  ></app-tiny-rx-store>
+}`,
 })
 export class TinyRxStoreInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

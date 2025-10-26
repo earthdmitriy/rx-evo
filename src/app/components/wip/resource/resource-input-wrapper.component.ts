@@ -6,11 +6,12 @@ import { ResourceComponent } from './resource.component';
 @Component({
   selector: 'app-resource-input-wrapper',
   imports: [CommonModule, ResourceComponent],
-  template: `<app-resource
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-resource
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-resource>`,
+  ></app-resource>
+}`,
 })
 export class ResourceInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

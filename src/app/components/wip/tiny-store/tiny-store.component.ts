@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,12 +21,11 @@ import { GenericErrorComponent } from '../../content/generic-error/generic-error
 @Component({
   selector: 'app-tiny-store',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
     ClientSkeletonComponent,
-    GenericErrorComponent,
-  ],
+    GenericErrorComponent
+],
   templateUrl: './tiny-store.component.html',
   styleUrls: ['./tiny-store.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,

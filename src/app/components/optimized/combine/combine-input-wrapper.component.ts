@@ -6,11 +6,12 @@ import { CombineComponent } from './combine.component';
 @Component({
   selector: 'app-combine-input-wrapper',
   imports: [CommonModule, CombineComponent],
-  template: `<app-combine
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-combine
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-combine>`,
+  ></app-combine>
+}`,
 })
 export class CombineInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

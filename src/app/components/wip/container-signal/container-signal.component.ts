@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -21,12 +21,11 @@ import { GenericErrorComponent } from '../../content/generic-error/generic-error
 @Component({
   selector: 'app-container-signal',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
     ClientSkeletonComponent,
-    GenericErrorComponent,
-  ],
+    GenericErrorComponent
+],
   templateUrl: './container-signal.component.html',
   styleUrl: './container-signal.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

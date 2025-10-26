@@ -6,11 +6,12 @@ import { StatefulObservableComponent } from './stateful-observable.component';
 @Component({
   selector: 'app-stateful-observable-input-wrapper',
   imports: [CommonModule, StatefulObservableComponent],
-  template: `<app-stateful-observable
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-stateful-observable
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-stateful-observable>`,
+  ></app-stateful-observable>
+}`,
 })
 export class StatefulObservableInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

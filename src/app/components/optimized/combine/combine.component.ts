@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { BucketApiService } from '../../../services/api/BucketApi.service';
@@ -12,11 +12,10 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 @Component({
   selector: 'app-combine',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
-  ],
+    ClientSkeletonComponent
+],
   templateUrl: './combine.component.html',
   styleUrl: './combine.component.less',
 })

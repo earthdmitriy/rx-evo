@@ -6,11 +6,12 @@ import { InputComponent } from './input.component';
 @Component({
   selector: 'app-input-input-wrapper',
   imports: [CommonModule, InputComponent],
-  template: `<app-input
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-input
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-input>`,
+  ></app-input>
+}`,
 })
 export class InputInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

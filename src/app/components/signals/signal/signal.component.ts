@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   ChangeDetectionStrategy,
   Component,
@@ -20,11 +20,10 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 @Component({
   selector: 'app-signal',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
-  ],
+    ClientSkeletonComponent
+],
   templateUrl: './signal.component.html',
   styleUrl: './signal.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

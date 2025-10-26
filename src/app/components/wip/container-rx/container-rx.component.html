@@ -8,12 +8,14 @@
     }
   </div>
 
-  <div *ngIf="showBucket" [class.loading]="combined.loading$">
-    @if (combined.error$ | async) {
-      <app-generic-error text="Failed to load bucket"></app-generic-error>
-    }
-    @if (combinedData$ | async; as data) {
-      <app-client-bucket [bucket]="data"></app-client-bucket>
-    }
-  </div>
+  @if (showBucket) {
+    <div [class.loading]="combined.loading$">
+      @if (combined.error$ | async) {
+        <app-generic-error text="Failed to load bucket"></app-generic-error>
+      }
+      @if (combinedData$ | async; as data) {
+        <app-client-bucket [bucket]="data"></app-client-bucket>
+      }
+    </div>
+  }
 </div>

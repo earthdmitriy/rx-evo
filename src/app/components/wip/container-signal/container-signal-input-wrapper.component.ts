@@ -6,11 +6,12 @@ import { ContainerSignalComponent } from './container-signal.component';
 @Component({
   selector: 'app-signal-input-wrapper',
   imports: [CommonModule, ContainerSignalComponent],
-  template: `<app-container-signal
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-container-signal
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-container-signal>`,
+  ></app-container-signal>
+}`,
 })
 export class ContainerSignalInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

@@ -1,7 +1,7 @@
-import { computed, Resource, ResourceStatus } from '@angular/core';
+import { computed, Resource, ResourceRef, ResourceStatus } from '@angular/core';
 
 // magic
-type UnwrapResource<T> = T extends Resource<infer U> ? U : T;
+type UnwrapResource<T> = T extends ResourceRef<infer U> ? U : T;
 type UnwrapResources<T extends unknown[]> = T extends [
   infer Head,
   ...infer Tail,
@@ -10,18 +10,18 @@ type UnwrapResources<T extends unknown[]> = T extends [
   : [];
 
 const resourceStatusPriorities: { [key in ResourceStatus]: number } = {
-  [ResourceStatus.Idle]: 0,
-  [ResourceStatus.Resolved]: 1,
-  [ResourceStatus.Local]: 2,
-  [ResourceStatus.Error]: 3,
-  [ResourceStatus.Loading]: 4,
-  [ResourceStatus.Reloading]: 5,
+  idle: 0,
+  resolved: 1,
+  local: 2,
+  error: 3,
+  loading: 4,
+  reloading: 5,
 };
 
-export const combineResources = <T extends [...Resource<unknown>[]], Result>(
+export const combineResources = <T extends [...ResourceRef<unknown>[]], Result>(
   args: [...T],
   processResponse: (data: UnwrapResources<T>) => Result,
-): Resource<Result> => {
+): ResourceRef<Result> => {
   const error = computed(() => args.map((s) => s.error()).some((e) => e));
   const value = computed(() => {
     if (error()) return undefined;
@@ -41,12 +41,13 @@ export const combineResources = <T extends [...Resource<unknown>[]], Result>(
           resourceStatusPriorities[acc] > resourceStatusPriorities[curr]
             ? acc
             : curr,
-        ResourceStatus.Idle,
+        'idle',
       ),
   );
 
-  const reload = () => args.reduce((acc, res) => acc && res.reload(), true);
+  const reload = () => args.forEach((res: ResourceRef<unknown>) => res.reload());
 
+  // TODO get rid of unknown conversion
   return {
     isLoading: computed(() => args.map((s) => s.isLoading()).some((r) => r)),
     error,
@@ -54,5 +55,5 @@ export const combineResources = <T extends [...Resource<unknown>[]], Result>(
     hasValue,
     reload,
     status,
-  } as unknown as Resource<Result>;
+  } as unknown as ResourceRef<Result>;
 };

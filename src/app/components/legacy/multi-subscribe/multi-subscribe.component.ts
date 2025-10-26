@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnInit } from '@angular/core';
 import {
   Bucket,
@@ -20,11 +20,10 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 @Component({
   selector: 'app-multi-subscribe',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
-  ],
+    ClientSkeletonComponent
+],
   templateUrl: './multi-subscribe.component.html',
   styleUrl: './multi-subscribe.component.less',
 })

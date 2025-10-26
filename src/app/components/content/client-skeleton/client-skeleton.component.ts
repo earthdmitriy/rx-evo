@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
+
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-client-skeleton',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './client-skeleton.component.html',
   styleUrl: './client-skeleton.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -6,11 +6,12 @@ import { StreamComponent } from './stream.component';
 @Component({
   selector: 'app-stream-input-wrapper',
   imports: [CommonModule, StreamComponent],
-  template: `<app-stream
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-stream
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-stream>`,
+  ></app-stream>
+}`,
 })
 export class StreamInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

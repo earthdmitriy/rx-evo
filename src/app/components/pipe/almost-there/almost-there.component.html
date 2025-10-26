@@ -1,4 +1,6 @@
-<app-client-skeleton *ngIf="!ready"></app-client-skeleton>
+@if (!ready) {
+  <app-client-skeleton></app-client-skeleton>
+}
 
 @if (displayData$ | async; as displayData) {
   <div class="max-w-screen-lg">

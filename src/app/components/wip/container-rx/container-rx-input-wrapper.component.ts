@@ -6,11 +6,12 @@ import { ContainerRxComponent } from './container-rx.component';
 @Component({
   selector: 'app-rx-input-wrapper',
   imports: [CommonModule, ContainerRxComponent],
-  template: `<app-container-rx
-    *ngIf="counter$ | async as counter"
+  template: `@if (counter$ | async; as counter) {
+  <app-container-rx
     [clientId]="counter"
     [showBucket]="(showBucket$ | async) ?? false"
-  ></app-container-rx>`,
+  ></app-container-rx>
+}`,
 })
 export class ContainerRxInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

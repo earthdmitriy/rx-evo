@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import {
   Component,
   Input,
@@ -26,11 +26,10 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
 @Component({
   selector: 'app-chaos',
   imports: [
-    CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
-  ],
+    ClientSkeletonComponent
+],
   templateUrl: './chaos.component.html',
   styleUrl: './chaos.component.less',
 })
