@@ -1,15 +1,10 @@
 import { inject, Injectable } from '@angular/core';
+import { combineStatefulObservables, statefulObservable, StatefulObservable } from '@rx-evo/stateful-observable';
+import { map, shareReplay } from 'rxjs';
 import {
   Product,
   ProductsApiService,
 } from '../../../services/api/ProductsApi.service';
-import {
-  combineTinyRxStores,
-  createTinyRxStore,
-  TinyRxStore,
-} from '../../../services/tinyStore/tinyRxStore';
-import { statefulObservable } from '../../../services/statefulObservable/statefulObservable';
-import { map, shareReplay } from 'rxjs';
 
 /**
  * shared data
@@ -27,18 +22,17 @@ export class ProductsStoreService {
     .pipeError(map(() => "Can't load products"));
 
   private readonly productByIdStore: {
-    [id: number]: TinyRxStore<Product, string>;
+    [id: number]: StatefulObservable<Product>;
   } = {};
 
   public getStoreById(id: number) {
-    return (this.productByIdStore[id] ??= createTinyRxStore({
+    return (this.productByIdStore[id] ??= statefulObservable({
       loader: () => this.productsApi.getProduct$(id),
-      processError: (_, id) => `Can't load product ${id}`,
     }));
   }
 
   public getCombinedStoreByIds(ids: number[]) {
     const stores = ids.map((id) => this.getStoreById(id));
-    return combineTinyRxStores(stores, (products) => products);
+    return combineStatefulObservables(stores, (products) => products);
   }
 }

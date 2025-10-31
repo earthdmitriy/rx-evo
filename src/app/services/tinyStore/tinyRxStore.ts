@@ -14,7 +14,7 @@ import {
   switchMap,
   tap,
 } from 'rxjs';
-import { publishWhile } from './operators/publishWhile';
+import { publishWhile } from '@rx-evo/operators';
 import { wrapResponse } from './operators/wrapResponse';
 import {
   errorSymbol,

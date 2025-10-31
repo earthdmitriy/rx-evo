@@ -20,6 +20,8 @@
     "@angular/platform-browser": "^20.3.7",
     "@angular/router": "^20.3.7",
     "@faker-js/faker": "^8.4.1",
+    "@rx-evo/operators": "^0.0.2",
+    "@rx-evo/stateful-observable": "^0.0.2",
     "ngxtension": "^4.0.0",
     "rxjs": "^7.8.1",
     "tslib": "^2.5.0",

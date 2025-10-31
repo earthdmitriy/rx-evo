@@ -6,21 +6,16 @@ import {
   input,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { combineStatefulObservables, statefulObservable } from '@rx-evo/stateful-observable';
+import { map, shareReplay, switchMap } from 'rxjs';
 import { BucketApiService } from '../../../services/api/BucketApi.service';
 import { ClientApiService } from '../../../services/api/ClientApi.service';
-import {
-  combineTinyRxStores,
-  createTinyRxStore,
-} from '../../../services/tinyStore/tinyRxStore';
 import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 import { ProductsStoreService } from './products-store.service';
-import { statefulObservable } from '../../../services/statefulObservable/statefulObservable';
-import { map, shareReplay, switchMap } from 'rxjs';
-import { combineStatefulObservables } from '../../../services/statefulObservable/statefulObservable-utils';
 
 @Component({
   selector: 'app-stateful-observable',
