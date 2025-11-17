@@ -13,7 +13,6 @@ import { ClientApiService } from '../../../services/api/ClientApi.service';
 import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 import { ProductsStoreService } from './products-store.service';
 
@@ -23,7 +22,6 @@ import { ProductsStoreService } from './products-store.service';
     CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
     GenericErrorComponent,
   ],
   templateUrl: './stateful-observable.component.html',

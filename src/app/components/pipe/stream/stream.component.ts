@@ -20,7 +20,6 @@ import { ProductsApiService } from '../../../services/api/ProductsApi.service';
 import { prepareBucket } from '../../../services/utils';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
 
 @Component({
   selector: 'app-stream',
@@ -28,7 +27,6 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
     CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent,
   ],
   templateUrl: './stream.component.html',
   styleUrl: './stream.component.less',
