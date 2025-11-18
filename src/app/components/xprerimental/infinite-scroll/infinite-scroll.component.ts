@@ -9,7 +9,8 @@ import {
   map,
   scan,
   shareReplay,
-  startWith, switchMap
+  startWith,
+  switchMap,
 } from 'rxjs';
 import { IntersectionobserverDirective } from '../../../directives/intersectionobserver.directive';
 import {
@@ -19,11 +20,12 @@ import {
 import { statefulObservable } from '../../../submodules/stateful-observable/src';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 
-const getEmptyAcc = () => ({ data: [], page: 0, totalPages: 1 } as {
-        data: Client[];
-        page: number;
-        totalPages: number;
-      })
+const getEmptyAcc = () =>
+  ({ data: [], page: 0, totalPages: 1 }) as {
+    data: Client[];
+    page: number;
+    totalPages: number;
+  };
 
 @Component({
   selector: 'app-infinite-scroll',
@@ -54,26 +56,20 @@ export class InfiniteScrollComponent {
   );
 
   public readonly pageSubject$ = this.formValue$.pipe(
-    map(() => new BehaviorSubject<number>(1)),
+    map(() => new BehaviorSubject<number>(1)), // reset page on new search
     shareReplay(1),
   );
 
-  public readonly currentPage$ =this.pageSubject$.pipe(
-        switchMap((x) => x),
-        distinctUntilChanged(),
-      )
+  public readonly currentPage$ = this.pageSubject$.pipe(
+    switchMap((x) => x),
+    distinctUntilChanged(),
+    shareReplay(1),
+  );
 
-  public readonly isFirstLoading$ = this.currentPage$.pipe(map(x => x ===1));
-
-  constructor() {
-    this.pageSubject$.subscribe((x) => console.log('Page:', x));
-  }
+  public readonly isFirstLoading$ = this.currentPage$.pipe(map((x) => x === 1));
 
   public readonly stream = statefulObservable({
-    input: combineLatest([
-      this.formValue$,
-      this.currentPage$,
-    ]),
+    input: combineLatest([this.formValue$, this.currentPage$]),
     loader: ([{ name, email, regsteredAfter, regsteredBefore }, page]) =>
       this.clientApiService.searchClients$({
         name,
@@ -86,19 +82,16 @@ export class InfiniteScrollComponent {
         pageSize: 10,
       }),
   }).pipeValue(
-    scan(
-      (acc, curr) => {
-        if (curr.page === 1) {
-          // reset accumulated data on new search
-          acc.data = curr.data;
-        } else {
-          acc.data.push(...curr.data);
-        }
-        acc.page = curr.page;
-        acc.totalPages = curr.totalPages;
-        return acc;
-      },
-      getEmptyAcc(),
-    ),
+    scan((acc, curr) => {
+      if (curr.page === 1) {
+        // reset accumulated data on new search
+        acc.data = curr.data;
+      } else {
+        acc.data.push(...curr.data);
+      }
+      acc.page = curr.page;
+      acc.totalPages = curr.totalPages;
+      return acc;
+    }, getEmptyAcc()),
   );
 }
