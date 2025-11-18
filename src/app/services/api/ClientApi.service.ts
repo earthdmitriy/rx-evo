@@ -65,4 +65,46 @@ export class ClientApiService {
       mapToError(this.throwError$),
     );
   }
+
+  public searchClients$({
+    email = '',
+    name = '',
+    registeredBefore,
+    registeredAfter,
+    page = 1,
+    pageSize = 10,
+  }: {
+    name?: string;
+    email?: string;
+    registeredBefore?: Date;
+    registeredAfter?: Date;
+    page?: number;
+    pageSize?: number;
+  }): Observable<{ data: Client[]; page: number; totalPages: number }> {
+    const results = Object.values(this.cachedClients).filter((client) =>
+      name
+        ? client.name.toLowerCase().includes(name.toLowerCase())
+        : true && email
+          ? client.email.toLowerCase().includes(email.toLowerCase())
+          : true && registeredBefore
+            ? client.registeredAt < registeredBefore
+            : true && registeredAfter
+              ? client.registeredAt > registeredAfter
+              : true,
+    );
+
+    const totalPages = Math.ceil(results.length / pageSize);
+    if (page > totalPages) {
+      page = totalPages;
+    }
+    if (page < 1) {
+      page = 1;
+    }
+
+    const pagedResults = results.slice((page - 1) * pageSize, page * pageSize);
+    return of({ data: pagedResults, page, totalPages }).pipe(
+      randomDelay(this.skipDelay, this.logKey),
+      mapToError(this.throwError$),
+    );
+  }
 }

@@ -1,0 +1,3 @@
+[submodule "src/app/submodules/stateful-observable"]
+	path = src/app/submodules/stateful-observable
+	url = https://github.com/earthdmitriy/stateful-observable.git

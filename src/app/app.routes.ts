@@ -8,11 +8,12 @@ import { StreamInputWrapperComponent } from './components/pipe/stream/stream-inp
 import { SignalInputWrapperComponent } from './components/signals/signal/signal-input-wrapper.component';
 import { ContainerRxInputWrapperComponent } from './components/wip/container-rx/container-rx-input-wrapper.component';
 import { ContainerSignalInputWrapperComponent } from './components/wip/container-signal/container-signal-input-wrapper.component';
-import { TinyStoreComponent } from './components/wip/tiny-store/tiny-store.component';
-import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
 import { ResourceInputWrapperComponent } from './components/wip/resource/resource-input-wrapper.component';
-import { TinyRxStoreInputWrapperComponent } from './components/wip/tiny-rx-store/tiny-rx-store-input-wrapper.component';
 import { StatefulObservableInputWrapperComponent } from './components/wip/stateful-observable/stateful-observable-input-wrapper.component';
+import { TinyRxStoreInputWrapperComponent } from './components/wip/tiny-rx-store/tiny-rx-store-input-wrapper.component';
+import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
+import { InfiniteScrollComponent } from './components/xprerimental/infinite-scroll/infinite-scroll.component';
+import { PaginationComponent } from './components/xprerimental/pagination/pagination.component';
 
 export const routes: Routes = [
   {
@@ -73,6 +74,13 @@ export const routes: Routes = [
         path: 'stateful-observable',
         component: StatefulObservableInputWrapperComponent,
       },
+    ],
+  },
+  {
+    path: 'x',
+    children: [
+      { path: 'pagination', component: PaginationComponent },
+      { path: 'infinite-scroll', component: InfiniteScrollComponent },
     ],
   },
 ];

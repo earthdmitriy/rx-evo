@@ -6,11 +6,11 @@ import {
   input,
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { combineStatefulObservables, statefulObservable } from '@rx-evo/stateful-observable';
-import { map, shareReplay, switchMap } from 'rxjs';
+import { map, switchMap } from 'rxjs';
 import { BucketApiService } from '../../../services/api/BucketApi.service';
 import { ClientApiService } from '../../../services/api/ClientApi.service';
 import { prepareBucket } from '../../../services/utils';
+import { combineStatefulObservables, statefulObservable } from '../../../submodules/stateful-observable/src';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
@@ -48,7 +48,6 @@ export class StatefulObservableComponent {
     .pipeValue(
       switchMap((clientId) => this.bucketApi.getClientBucket$(clientId)),
     )
-    .pipe(shareReplay(1))
     .pipeError(map(() => "Can't load client"));
 
   public readonly populatedBucketStore = combineStatefulObservables(

@@ -96,5 +96,5 @@ export const createCounter$ = (initial: number = 0) =>
   interval(10000).pipe(
     map((num) => ((initial + num + 1) % clientCount) + 1),
     startWith(1),
-    tap((x) => console.log(`counter ${x}`)),
+    // tap((x) => console.log(`counter ${x}`)),
   );

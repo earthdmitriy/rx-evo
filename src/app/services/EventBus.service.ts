@@ -15,7 +15,6 @@ export class EventBusService {
   public readonly loggedIn$ = new BehaviorSubject(true);
 
   constructor() {
-    console.log('EventBusService');
     this.toggleAutoIncrement$
       .pipe(
         filter(Boolean),

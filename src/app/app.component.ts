@@ -97,6 +97,19 @@ export class AppComponent {
         },
       ],
     },
+    {
+      title: 'Xperimental',
+      child: [
+        {
+          title: 'Pagination',
+          path: '/x/pagination',
+        },
+        {
+          title: 'Infinite Scroll',
+          path: '/x/infinite-scroll',
+        },
+      ],
+    },
   ];
 
   public readonly router = inject(Router);

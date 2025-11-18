@@ -1,10 +1,10 @@
 import { inject, Injectable } from '@angular/core';
-import { combineStatefulObservables, statefulObservable, StatefulObservable } from '@rx-evo/stateful-observable';
 import { map, shareReplay } from 'rxjs';
 import {
   Product,
   ProductsApiService,
 } from '../../../services/api/ProductsApi.service';
+import { combineStatefulObservables, statefulObservable, StatefulObservable } from '../../../submodules/stateful-observable/src';
 
 /**
  * shared data
