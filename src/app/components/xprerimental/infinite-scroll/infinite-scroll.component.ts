@@ -71,7 +71,7 @@ export class InfiniteScrollComponent {
   public readonly stream = statefulObservable({
     input: combineLatest([this.formValue$, this.currentPage$]),
     loader: ([{ name, email, regsteredAfter, regsteredBefore }, page]) =>
-      this.clientApiService.searchClients$({
+      this.clientApiService.searchClientsPaged$({
         name,
         email,
         registeredBefore: regsteredBefore

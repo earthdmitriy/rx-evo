@@ -108,6 +108,10 @@ export class AppComponent {
           title: 'Infinite Scroll',
           path: '/x/infinite-scroll',
         },
+        {
+          title: 'Virtual Scroll',
+          path: '/x/virtual-scroll',
+        },
       ],
     },
   ];

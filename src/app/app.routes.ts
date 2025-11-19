@@ -14,6 +14,7 @@ import { TinyRxStoreInputWrapperComponent } from './components/wip/tiny-rx-store
 import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
 import { InfiniteScrollComponent } from './components/xprerimental/infinite-scroll/infinite-scroll.component';
 import { PaginationComponent } from './components/xprerimental/pagination/pagination.component';
+import { VirtualScrollComponent } from './components/xprerimental/virtual-scroll/virtual-scroll.component';
 
 export const routes: Routes = [
   {
@@ -81,6 +82,7 @@ export const routes: Routes = [
     children: [
       { path: 'pagination', component: PaginationComponent },
       { path: 'infinite-scroll', component: InfiniteScrollComponent },
+      { path: 'virtual-scroll', component: VirtualScrollComponent },
     ],
   },
 ];

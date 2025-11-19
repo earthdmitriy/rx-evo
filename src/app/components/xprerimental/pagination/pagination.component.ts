@@ -47,7 +47,7 @@ export class PaginationComponent {
       { name, email, regsteredAfter, regsteredBefore },
       { page, pageSize },
     ]) =>
-      this.clientApiService.searchClients$({
+      this.clientApiService.searchClientsPaged$({
         name,
         email,
         registeredBefore: regsteredBefore

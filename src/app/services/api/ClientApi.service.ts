@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
-import { firstValueFrom, Observable, of } from 'rxjs';
+import { firstValueFrom, map, Observable, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../../app.config';
 import { clientCount } from '../consts';
 import { EventBusService } from '../EventBus.service';
@@ -14,6 +14,15 @@ export type Client = {
   password: string;
   birthdate: Date;
   registeredAt: Date;
+};
+
+export type ClientSearchParams = {
+  name?: string;
+  email?: string;
+  registeredBefore?: Date;
+  registeredAfter?: Date;
+  page?: number;
+  pageSize?: number;
 };
 
 const createClient = (id: number) => ({
@@ -71,16 +80,7 @@ export class ClientApiService {
     name = '',
     registeredBefore,
     registeredAfter,
-    page = 1,
-    pageSize = 10,
-  }: {
-    name?: string;
-    email?: string;
-    registeredBefore?: Date;
-    registeredAfter?: Date;
-    page?: number;
-    pageSize?: number;
-  }): Observable<{ data: Client[]; page: number; totalPages: number }> {
+  }: ClientSearchParams): Observable<Client[]> {
     const results = Object.values(this.cachedClients).filter((client) =>
       name
         ? client.name.toLowerCase().includes(name.toLowerCase())
@@ -93,18 +93,44 @@ export class ClientApiService {
               : true,
     );
 
-    const totalPages = Math.ceil(results.length / pageSize);
-    if (page > totalPages) {
-      page = totalPages;
-    }
-    if (page < 1) {
-      page = 1;
-    }
-
-    const pagedResults = results.slice((page - 1) * pageSize, page * pageSize);
-    return of({ data: pagedResults, page, totalPages }).pipe(
+    return of(results).pipe(
       randomDelay(this.skipDelay, this.logKey),
       mapToError(this.throwError$),
     );
+  }
+
+  public searchClientsPaged$(
+    params: ClientSearchParams,
+  ): Observable<{
+    data: Client[];
+    page: number;
+    totalPages: number;
+    totalResults: number;
+  }> {
+    const { page = 1, pageSize = 10 } = params;
+
+    return this.searchClients$(params).pipe(
+      map((results) => {
+        const totalPages = Math.ceil(results.length / pageSize);
+
+        const actualPage = page > totalPages ? totalPages : page < 1 ? 1 : page;
+
+        const data = results.slice(
+          (actualPage - 1) * pageSize,
+          actualPage * pageSize,
+        );
+
+        return {
+          data,
+          page: actualPage,
+          totalPages,
+          totalResults: results.length,
+        };
+      }),
+    );
+  }
+
+  public getResultCount$(params: ClientSearchParams) {
+    return this.searchClients$(params).pipe(map((data) => data.length));
   }
 }
