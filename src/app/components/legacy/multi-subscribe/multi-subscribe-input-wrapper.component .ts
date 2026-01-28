@@ -7,11 +7,11 @@ import { MultiSubscribeComponent } from './multi-subscribe.component';
   selector: 'app-multi-subscribe-input-wrapper',
   imports: [CommonModule, MultiSubscribeComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-multi-subscribe
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-multi-subscribe>
-}`,
+    <app-multi-subscribe
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-multi-subscribe>
+  }`,
 })
 export class MultiSubscribeInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

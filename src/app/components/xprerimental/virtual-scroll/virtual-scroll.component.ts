@@ -30,7 +30,7 @@ const getEmptyAcc = () =>
 
 @Component({
   selector: 'app-virtual-scroll',
-  imports: [ScrollingModule, DatePipe, AsyncPipe],
+  imports: [ScrollingModule, DatePipe, AsyncPipe, ],
   host: {
     class: 'w-full h-full block flex-1 flex flex-col',
   },
@@ -55,8 +55,8 @@ export class VirtualScrollComponent {
       Math.floor(start / this.pageSize),
       Math.ceil(end / this.pageSize),
     ]),
-    mergeMap(([start, end]) => of(...range(start, end))),// produce page indexes as separate events
-    startWith(0),// trigger first page load
+    mergeMap(([start, end]) => of(...range(start, end))), // produce page indexes as separate events
+    startWith(0), // trigger first page load
   );
 
   public readonly stream = statefulObservable({
@@ -66,7 +66,7 @@ export class VirtualScrollComponent {
         page,
         pageSize: this.pageSize,
       }),
-    mapOperator: mergeMap,// just merge all responses, order doesn't matter
+    mapOperator: mergeMap, // just merge all responses, order doesn't matter
     cacheKey: (page) => [page],
   }).pipeValue(
     scan((acc, curr) => {

@@ -7,11 +7,11 @@ import { ResourceComponent } from './resource.component';
   selector: 'app-resource-input-wrapper',
   imports: [CommonModule, ResourceComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-resource
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-resource>
-}`,
+    <app-resource
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-resource>
+  }`,
 })
 export class ResourceInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

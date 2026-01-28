@@ -1,88 +1,153 @@
 import { Routes } from '@angular/router';
-import { ChaosInputWrapperComponent } from './components/legacy/chaos/chaos-input-wrapper.component';
-import { MultiSubscribeInputWrapperComponent } from './components/legacy/multi-subscribe/multi-subscribe-input-wrapper.component ';
-import { CombineInputWrapperComponent } from './components/optimized/combine/combine-input-wrapper.component';
-import { InputInputWrapperComponent } from './components/optimized/input/input-input-wrapper.component';
-import { AlmostThereInputWrapperComponent } from './components/pipe/almost-there/almost-there-input-wrapper.component';
-import { StreamInputWrapperComponent } from './components/pipe/stream/stream-input-wrapper.component';
-import { SignalInputWrapperComponent } from './components/signals/signal/signal-input-wrapper.component';
-import { ContainerRxInputWrapperComponent } from './components/wip/container-rx/container-rx-input-wrapper.component';
-import { ContainerSignalInputWrapperComponent } from './components/wip/container-signal/container-signal-input-wrapper.component';
-import { ResourceInputWrapperComponent } from './components/wip/resource/resource-input-wrapper.component';
-import { StatefulObservableInputWrapperComponent } from './components/wip/stateful-observable/stateful-observable-input-wrapper.component';
-import { TinyRxStoreInputWrapperComponent } from './components/wip/tiny-rx-store/tiny-rx-store-input-wrapper.component';
-import { TinyStoreInputWrapperComponent } from './components/wip/tiny-store/tiny-store-input-wrapper.component';
-import { InfiniteScrollComponent } from './components/xprerimental/infinite-scroll/infinite-scroll.component';
-import { PaginationComponent } from './components/xprerimental/pagination/pagination.component';
-import { VirtualScrollComponent } from './components/xprerimental/virtual-scroll/virtual-scroll.component';
 
 export const routes: Routes = [
   {
     path: 'legacy',
     children: [
-      { path: 'chaos', component: ChaosInputWrapperComponent },
+      {
+        path: 'chaos',
+        loadComponent: () =>
+          import(
+            './components/legacy/chaos/chaos-input-wrapper.component'
+          ).then((m) => m.ChaosInputWrapperComponent),
+      },
       {
         path: 'multisubscribe',
-        component: MultiSubscribeInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/legacy/multi-subscribe/multi-subscribe-input-wrapper.component '
+          ).then((m) => m.MultiSubscribeInputWrapperComponent),
       },
     ],
   },
   {
     path: 'optimized',
     children: [
-      { path: 'combine', component: CombineInputWrapperComponent },
+      {
+        path: 'combine',
+        loadComponent: () =>
+          import(
+            './components/optimized/combine/combine-input-wrapper.component'
+          ).then((m) => m.CombineInputWrapperComponent),
+      },
       {
         path: 'input',
-        component: InputInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/optimized/input/input-input-wrapper.component'
+          ).then((m) => m.InputInputWrapperComponent),
       },
     ],
   },
   {
     path: 'pipe',
     children: [
-      { path: 'almost-there', component: AlmostThereInputWrapperComponent },
+      {
+        path: 'almost-there',
+        loadComponent: () =>
+          import(
+            './components/pipe/almost-there/almost-there-input-wrapper.component'
+          ).then((m) => m.AlmostThereInputWrapperComponent),
+      },
       {
         path: 'stream',
-        component: StreamInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/pipe/stream/stream-input-wrapper.component'
+          ).then((m) => m.StreamInputWrapperComponent),
       },
     ],
   },
   {
     path: 'signals',
-    children: [{ path: 'signal', component: SignalInputWrapperComponent }],
+    children: [
+      {
+        path: 'signal',
+        loadComponent: () =>
+          import(
+            './components/signals/signal/signal-input-wrapper.component'
+          ).then((m) => m.SignalInputWrapperComponent),
+      },
+    ],
   },
   {
     path: 'wip',
     children: [
-      { path: 'container-rx', component: ContainerRxInputWrapperComponent },
+      {
+        path: 'container-rx',
+        loadComponent: () =>
+          import(
+            './components/wip/container-rx/container-rx-input-wrapper.component'
+          ).then((m) => m.ContainerRxInputWrapperComponent),
+      },
       {
         path: 'container-signal',
-        component: ContainerSignalInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/wip/container-signal/container-signal-input-wrapper.component'
+          ).then((m) => m.ContainerSignalInputWrapperComponent),
       },
       {
         path: 'tiny-rx-store',
-        component: TinyRxStoreInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/wip/tiny-rx-store/tiny-rx-store-input-wrapper.component'
+          ).then((m) => m.TinyRxStoreInputWrapperComponent),
       },
       {
         path: 'tiny-store',
-        component: TinyStoreInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/wip/tiny-store/tiny-store-input-wrapper.component'
+          ).then((m) => m.TinyStoreInputWrapperComponent),
       },
       {
         path: 'resource',
-        component: ResourceInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/wip/resource/resource-input-wrapper.component'
+          ).then((m) => m.ResourceInputWrapperComponent),
       },
       {
         path: 'stateful-observable',
-        component: StatefulObservableInputWrapperComponent,
+        loadComponent: () =>
+          import(
+            './components/wip/stateful-observable/stateful-observable-input-wrapper.component'
+          ).then((m) => m.StatefulObservableInputWrapperComponent),
       },
     ],
   },
   {
     path: 'x',
     children: [
-      { path: 'pagination', component: PaginationComponent },
-      { path: 'infinite-scroll', component: InfiniteScrollComponent },
-      { path: 'virtual-scroll', component: VirtualScrollComponent },
+      {
+        path: 'pagination',
+        loadComponent: () =>
+          import(
+            './components/xprerimental/pagination/pagination.component'
+          ).then((m) => m.PaginationComponent),
+      },
+      {
+        path: 'infinite-scroll',
+        loadComponent: () =>
+          import(
+            './components/xprerimental/infinite-scroll/infinite-scroll.component'
+          ).then((m) => m.InfiniteScrollComponent),
+      },
+      {
+        path: 'virtual-scroll',
+        loadComponent: () =>
+          import(
+            './components/xprerimental/virtual-scroll/virtual-scroll.component'
+          ).then((m) => m.VirtualScrollComponent),
+      },
+      {
+        path: 'with-collapse',
+        loadComponent: () =>
+          import(
+            './components/xprerimental/with-collapse/with-collapse.component'
+          ).then((m) => m.WithCollapseComponent),
+      },
     ],
   },
 ];

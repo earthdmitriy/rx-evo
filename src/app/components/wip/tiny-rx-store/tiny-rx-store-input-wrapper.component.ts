@@ -7,11 +7,11 @@ import { TinyRxStoreComponent } from './tiny-rx-store.component';
   selector: 'app-tiny-store-input-wrapper',
   imports: [CommonModule, TinyRxStoreComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-tiny-rx-store
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-tiny-rx-store>
-}`,
+    <app-tiny-rx-store
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-tiny-rx-store>
+  }`,
 })
 export class TinyRxStoreInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

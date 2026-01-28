@@ -7,11 +7,11 @@ import { StreamComponent } from './stream.component';
   selector: 'app-stream-input-wrapper',
   imports: [CommonModule, StreamComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-stream
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-stream>
-}`,
+    <app-stream
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-stream>
+  }`,
 })
 export class StreamInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

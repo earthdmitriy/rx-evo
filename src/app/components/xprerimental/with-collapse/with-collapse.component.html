@@ -15,6 +15,9 @@
           <tr>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            ></th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               Name
             </th>
@@ -33,7 +36,7 @@
         @if (stream.error$ | async; as error) {
           <tbody>
             <tr>
-              <td colspan="3">
+              <td colspan="4">
                 <app-generic-error
                   [showReload]="true"
                   (reload)="stream.reload()"
@@ -47,6 +50,36 @@
               @for (client of value.data; track client.clientId) {
                 <tr>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <button
+                      (click)="client.isExpanded.set(!client.isExpanded())"
+                      [attr.aria-expanded]="client.isExpanded()"
+                      class="p-1 rounded transition-colors duration-150"
+                      [class.text-gray-500]="!client.isExpanded()"
+                      [class.text-blue-600]="client.isExpanded()"
+                      [class.bg-gray-100]="!client.isExpanded()"
+                      [class.bg-blue-50]="client.isExpanded()"
+                      title="Toggle details"
+                    >
+                      <!-- chevron icon rotates when expanded -->
+                      <svg
+                        class="w-4 h-4 transition-transform duration-150"
+                        [class.rotate-180]="client.isExpanded()"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {{ client.name }}
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -56,6 +89,24 @@
                     {{ client.registeredAt | date: "medium" }}
                   </td>
                 </tr>
+                @if (client.isExpanded()) {
+                  <tr class="bg-gray-50">
+                    <td colspan="4" class="px-6 py-4">
+                      @if (
+                        clientRequestFactory.get(client.clientId);
+                        as clientDetails$
+                      ) {
+                        <app-stateful-block [stream]="clientDetails$">
+                          @if (clientDetails$ | async; as clientDetails) {
+                            <app-client-info
+                              [displayData]="clientDetails"
+                            ></app-client-info>
+                          }
+                        </app-stateful-block>
+                      }
+                    </td>
+                  </tr>
+                }
               }
 
               @if (!value.data.length) {

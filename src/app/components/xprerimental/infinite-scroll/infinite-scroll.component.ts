@@ -4,12 +4,11 @@ import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   BehaviorSubject,
   combineLatest,
-  debounceTime,
   distinctUntilChanged,
   map,
   scan,
   shareReplay,
-  startWith,
+  Subject,
   switchMap,
 } from 'rxjs';
 import { IntersectionobserverDirective } from '../../../directives/intersectionobserver.directive';
@@ -18,6 +17,10 @@ import {
   ClientApiService,
 } from '../../../services/api/ClientApi.service';
 import { statefulObservable } from '../../../submodules/stateful-observable/src';
+import {
+  ClientsFilterFormComponent,
+  ClientsFilterFormValue,
+} from '../../content/clients-filter-form/clients-filter-form.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 
 const getEmptyAcc = () =>
@@ -33,6 +36,7 @@ const getEmptyAcc = () =>
     CommonModule,
     ReactiveFormsModule,
     GenericErrorComponent,
+    ClientsFilterFormComponent,
     IntersectionobserverDirective,
   ],
   templateUrl: './infinite-scroll.component.html',
@@ -45,15 +49,11 @@ export class InfiniteScrollComponent {
   public readonly filters = this.fb.group({
     name: this.fb.control(''),
     email: this.fb.control(''),
-    regsteredBefore: this.fb.control<string | null>(null),
-    regsteredAfter: this.fb.control<string | null>(null),
+    registeredBefore: this.fb.control<string | null>(null),
+    registeredAfter: this.fb.control<string | null>(null),
   });
 
-  public readonly formValue$ = this.filters.valueChanges.pipe(
-    startWith(this.filters.value),
-    debounceTime(300),
-    shareReplay(1),
-  );
+  public readonly formValue$ = new Subject<ClientsFilterFormValue>();
 
   public readonly pageSubject$ = this.formValue$.pipe(
     map(() => new BehaviorSubject<number>(1)), // reset page on new search
@@ -70,14 +70,16 @@ export class InfiniteScrollComponent {
 
   public readonly stream = statefulObservable({
     input: combineLatest([this.formValue$, this.currentPage$]),
-    loader: ([{ name, email, regsteredAfter, regsteredBefore }, page]) =>
+    loader: ([{ name, email, registeredAfter, registeredBefore }, page]) =>
       this.clientApiService.searchClientsPaged$({
         name,
         email,
-        registeredBefore: regsteredBefore
-          ? new Date(regsteredBefore)
+        registeredBefore: registeredBefore
+          ? new Date(registeredBefore)
           : undefined,
-        registeredAfter: regsteredAfter ? new Date(regsteredAfter) : undefined,
+        registeredAfter: registeredAfter
+          ? new Date(registeredAfter)
+          : undefined,
         page,
         pageSize: 10,
       }),

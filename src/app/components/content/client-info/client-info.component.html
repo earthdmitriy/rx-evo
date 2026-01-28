@@ -1,22 +1,21 @@
 <div class="flex">
   <div class="relative size-48 mx-6 my-6">
     <img
-      class="size-full rounded-base"
+      class="size-full rounded-base object-contain object-center"
       [src]="displayData()?.avatar"
       alt="Avatar"
+      (error)="onImgError($event)"
     />
   </div>
 
   <div class="w-full">
     <div class="relative overflow-x-auto">
-      <table
-        class="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400"
-      >
+      <table class="w-full text-sm text-left rtl:text-right text-gray-500">
         <tbody>
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <tr class="bg-white border-b">
             <th
               scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
             >
               Id
             </th>
@@ -24,10 +23,10 @@
               {{ displayData()?.clientId }}
             </td>
           </tr>
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <tr class="bg-white border-b">
             <th
               scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
             >
               Name
             </th>
@@ -35,10 +34,10 @@
               {{ displayData()?.name }}
             </td>
           </tr>
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <tr class="bg-white border-b">
             <th
               scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
             >
               Birthdate
             </th>
@@ -46,10 +45,10 @@
               {{ displayData()?.birthdate | date }}
             </td>
           </tr>
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <tr class="bg-white border-b">
             <th
               scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
             >
               Email
             </th>
@@ -57,10 +56,10 @@
               {{ displayData()?.email }}
             </td>
           </tr>
-          <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
+          <tr class="bg-white border-b">
             <th
               scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
             >
               Registered At
             </th>

@@ -1,0 +1,10 @@
+@if (stream(); as stream) {
+  <div [class.loading]="stream.pending$ | async">
+    @if (stream.error$ | async) {
+      <app-generic-error [showReload]="true" (reload)="stream.reload()">
+      </app-generic-error>
+    } @else {
+      <ng-content></ng-content>
+    }
+  </div>
+}

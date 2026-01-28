@@ -39,7 +39,7 @@ describe('TinyRxStoreComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const client = await firstValueFrom(component.clientStore.value$);
+    const client = await firstValueFrom(component.client$.value$);
 
     expect(client).toBeTruthy();
     expect(client?.clientId).toBe(1);
@@ -54,7 +54,7 @@ describe('TinyRxStoreComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const loading = await firstValueFrom(component.clientStore.pending$);
+    const loading = await firstValueFrom(component.client$.pending$);
 
     expect(loading).toBe(false);
   });
@@ -65,15 +65,15 @@ describe('TinyRxStoreComponent', () => {
 
     const loadingEvents: boolean[] = [];
 
-    component.clientStore.pending$.subscribe((x) => loadingEvents.push(x));
+    component.client$.pending$.subscribe((x) => loadingEvents.push(x));
 
     fixture.componentRef.setInput('clientId', 1);
 
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const loading = await firstValueFrom(component.clientStore.pending$);
-    const client = await firstValueFrom(component.clientStore.value$);
+    const loading = await firstValueFrom(component.client$.pending$);
+    const client = await firstValueFrom(component.client$.value$);
 
     expect(client).toBeTruthy();
     expect(loading).toBe(false);
@@ -88,7 +88,7 @@ describe('TinyRxStoreComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable(); // required in case of some dalays in async code
 
-    const client = await firstValueFrom(component.clientStore.value$);
+    const client = await firstValueFrom(component.client$.value$);
 
     expect(client).toBeTruthy();
     expect(client?.clientId).toBe(1);
@@ -97,7 +97,7 @@ describe('TinyRxStoreComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable(); // required in case of some dalays in async code
 
-    const newClient = await firstValueFrom(component.clientStore.value$);
+    const newClient = await firstValueFrom(component.client$.value$);
 
     expect(newClient).toBeTruthy();
     expect(newClient?.clientId).toBe(2);

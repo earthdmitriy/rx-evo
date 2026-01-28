@@ -99,9 +99,7 @@ export class ClientApiService {
     );
   }
 
-  public searchClientsPaged$(
-    params: ClientSearchParams,
-  ): Observable<{
+  public searchClientsPaged$(params: ClientSearchParams): Observable<{
     data: Client[];
     page: number;
     totalPages: number;

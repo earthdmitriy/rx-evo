@@ -7,11 +7,11 @@ import { InputComponent } from './input.component';
   selector: 'app-input-input-wrapper',
   imports: [CommonModule, InputComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-input
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-input>
-}`,
+    <app-input
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-input>
+  }`,
 })
 export class InputInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

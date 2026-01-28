@@ -7,11 +7,11 @@ import { AlmostThereComponent } from './almost-there.component';
   selector: 'app-almost-there-input-wrapper',
   imports: [CommonModule, AlmostThereComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-almost-there
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-almost-there>
-}`,
+    <app-almost-there
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-almost-there>
+  }`,
 })
 export class AlmostThereInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

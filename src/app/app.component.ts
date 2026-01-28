@@ -1,4 +1,3 @@
-
 import { Component, inject } from '@angular/core';
 import { Router, RouterModule, RouterOutlet } from '@angular/router';
 import { ControllerComponent } from './components/content/controller/controller.component';
@@ -13,10 +12,10 @@ type RouteNode = {
 };
 
 @Component({
-    selector: 'app-root',
-    imports: [RouterOutlet, RouterModule, ControllerComponent],
-    templateUrl: './app.component.html',
-    styleUrl: './app.component.less'
+  selector: 'app-root',
+  imports: [RouterOutlet, RouterModule, ControllerComponent],
+  templateUrl: './app.component.html',
+  styleUrl: './app.component.less',
 })
 export class AppComponent {
   public readonly routes: RootNode[] = [
@@ -111,6 +110,10 @@ export class AppComponent {
         {
           title: 'Virtual Scroll',
           path: '/x/virtual-scroll',
+        },
+        {
+          title: 'With Collapse',
+          path: '/x/with-collapse',
         },
       ],
     },

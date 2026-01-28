@@ -42,7 +42,7 @@ describe('wrapResponse', () => {
         if (!pass) throw '';
         return of(true);
       }),
-      wrapResponse(0,0, () => 'err'),
+      wrapResponse(0, 0, () => 'err'),
       filter(isError),
     );
     observable.next(false);

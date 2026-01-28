@@ -10,11 +10,14 @@ import { map, switchMap } from 'rxjs';
 import { BucketApiService } from '../../../services/api/BucketApi.service';
 import { ClientApiService } from '../../../services/api/ClientApi.service';
 import { prepareBucket } from '../../../services/utils';
-import { combineStatefulObservables, statefulObservable } from '../../../submodules/stateful-observable/src';
+import {
+  combineStatefulObservables,
+  statefulObservable,
+} from '../../../submodules/stateful-observable/src';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
-import { ProductsStoreService } from './products-store.service';
+import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
+import { allProductsToken } from './products-store.service';
 
 @Component({
   selector: 'app-stateful-observable',
@@ -22,7 +25,7 @@ import { ProductsStoreService } from './products-store.service';
     CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    GenericErrorComponent,
+    StatefulBlockComponent,
   ],
   templateUrl: './stateful-observable.component.html',
   styleUrls: ['./stateful-observable.component.less'],
@@ -34,24 +37,23 @@ export class StatefulObservableComponent {
 
   private readonly clientsApi = inject(ClientApiService);
   private readonly bucketApi = inject(BucketApiService);
-  private readonly productsStore = inject(ProductsStoreService).store;
 
-  public readonly clientStore = statefulObservable({
-    input: toObservable(this.clientId),
-  })
+  private readonly clientId$ = toObservable(this.clientId);
+
+  public readonly client$ = statefulObservable(() => this.clientId$)
     .pipeValue(switchMap((clientId) => this.clientsApi.getClient$(clientId)))
-    .pipeError(map(() => "Can't load client"));
+    .pipeError(map(() => "Can't load client" as const));
 
-  private readonly bucketStore = statefulObservable({
-    input: toObservable(this.clientId),
-  })
+  private readonly allProducts$ = inject(allProductsToken);
+
+  private readonly bucket$ = statefulObservable(this.clientId$)
     .pipeValue(
       switchMap((clientId) => this.bucketApi.getClientBucket$(clientId)),
     )
-    .pipeError(map(() => "Can't load client"));
+    .pipeError(map(() => "Can't load bucket"));
 
-  public readonly populatedBucketStore = combineStatefulObservables(
-    [this.bucketStore, this.productsStore],
+  public readonly populatedBucket$ = combineStatefulObservables(
+    [this.bucket$, this.allProducts$],
     ([bucket, products]) => prepareBucket(bucket, products),
   );
 }

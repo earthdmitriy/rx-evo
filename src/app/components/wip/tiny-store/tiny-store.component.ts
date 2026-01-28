@@ -1,4 +1,3 @@
-
 import {
   ChangeDetectionStrategy,
   Component,
@@ -19,11 +18,7 @@ import { GenericErrorComponent } from '../../content/generic-error/generic-error
 
 @Component({
   selector: 'app-tiny-store',
-  imports: [
-    ClientInfoComponent,
-    ClientBucketComponent,
-    GenericErrorComponent
-],
+  imports: [ClientInfoComponent, ClientBucketComponent, GenericErrorComponent],
   templateUrl: './tiny-store.component.html',
   styleUrls: ['./tiny-store.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,

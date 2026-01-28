@@ -7,11 +7,11 @@ import { SignalComponent } from './signal.component';
   selector: 'app-signal-input-wrapper',
   imports: [CommonModule, SignalComponent],
   template: `@if (counter$ | async; as counter) {
-  <app-signal
-    [clientId]="counter"
-    [showBucket]="(showBucket$ | async) ?? false"
-  ></app-signal>
-}`,
+    <app-signal
+      [clientId]="counter"
+      [showBucket]="(showBucket$ | async) ?? false"
+    ></app-signal>
+  }`,
 })
 export class SignalInputWrapperComponent {
   public readonly counter$ = inject(EventBusService).clientId$;

@@ -23,11 +23,7 @@ import { ClientInfoComponent } from '../../content/client-info/client-info.compo
 
 @Component({
   selector: 'app-stream',
-  imports: [
-    CommonModule,
-    ClientInfoComponent,
-    ClientBucketComponent,
-  ],
+  imports: [CommonModule, ClientInfoComponent, ClientBucketComponent],
   templateUrl: './stream.component.html',
   styleUrl: './stream.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -16,11 +16,7 @@ import { GenericErrorComponent } from '../../content/generic-error/generic-error
 
 @Component({
   selector: 'app-resource',
-  imports: [
-    ClientInfoComponent,
-    ClientBucketComponent,
-    GenericErrorComponent,
-  ],
+  imports: [ClientInfoComponent, ClientBucketComponent, GenericErrorComponent],
   templateUrl: './resource.component.html',
   styleUrls: ['./resource.component.less'],
   changeDetection: ChangeDetectionStrategy.OnPush,

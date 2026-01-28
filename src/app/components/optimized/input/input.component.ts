@@ -1,4 +1,3 @@
-
 import {
   Component,
   Input,
@@ -24,8 +23,8 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   imports: [
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent
-],
+    ClientSkeletonComponent,
+  ],
   templateUrl: './input.component.html',
   styleUrl: './input.component.less',
 })

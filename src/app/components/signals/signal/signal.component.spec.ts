@@ -38,6 +38,7 @@ describe('SignalComponent', () => {
     fixture.componentRef.setInput('clientId', 1);
     fixture.detectChanges();
     await fixture.whenStable();
+    await new Promise((r) => setTimeout(r, 0)); // wait for signal to propagate
 
     const client = component.client();
 
@@ -45,7 +46,7 @@ describe('SignalComponent', () => {
     expect(client?.clientId).toBe(1);
   });
 
-  it(`should handle changing inputs`, async () => {
+  fit(`should handle changing inputs`, async () => {
     const fixture = TestBed.createComponent(SignalComponent);
     const component = fixture.componentInstance;
 

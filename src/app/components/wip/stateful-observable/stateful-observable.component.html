@@ -1,31 +1,15 @@
 <div class="max-w-screen-lg">
-  <div [class.loading]="clientStore.pending$ | async">
-    @if (clientStore.error$ | async; as error) {
-      <app-generic-error
-        [showReload]="true"
-        [text]="error"
-        (reload)="clientStore.reload()"
-      ></app-generic-error>
-    } @else {
-      <app-client-info
-        [displayData]="clientStore.value$ | async"
-      ></app-client-info>
+  <app-stateful-block [stream]="client$">
+    @if (client$ | async; as clientData) {
+      <app-client-info [displayData]="clientData"></app-client-info>
     }
-  </div>
+  </app-stateful-block>
 
   @if (showBucket()) {
-    <div [class.loading]="populatedBucketStore.pending$ | async">
-      @if (populatedBucketStore.error$ | async; as errors) {
-        @for (error of errors; track error) {
-          @if (error) {
-            <app-generic-error [text]="error"></app-generic-error>
-          }
-        }
-      } @else {
-        @if (populatedBucketStore.value$ | async; as data) {
-          <app-client-bucket [bucket]="data"></app-client-bucket>
-        }
+    <app-stateful-block [stream]="populatedBucket$">
+      @if (populatedBucket$ | async; as bucketData) {
+        <app-client-bucket [bucket]="bucketData"></app-client-bucket>
       }
-    </div>
+    </app-stateful-block>
   }
 </div>

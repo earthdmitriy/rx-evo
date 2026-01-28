@@ -45,7 +45,8 @@ export const combineResources = <T extends [...ResourceRef<unknown>[]], Result>(
       ),
   );
 
-  const reload = () => args.forEach((res: ResourceRef<unknown>) => res.reload());
+  const reload = () =>
+    args.forEach((res: ResourceRef<unknown>) => res.reload());
 
   // TODO get rid of unknown conversion
   return {

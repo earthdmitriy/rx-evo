@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
   combineLatest,
@@ -17,27 +17,33 @@ import {
   isError,
   isLoading,
   statefulObservable,
+  statefulObservableFactory,
 } from '../../../submodules/stateful-observable/src';
+import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import {
   ClientsFilterFormComponent,
   ClientsFilterFormValue,
 } from '../../content/clients-filter-form/clients-filter-form.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
+import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
 
 @Component({
-  selector: 'app-pagination',
+  selector: 'app-with-collapse',
   imports: [
+    ClientsFilterFormComponent,
     CommonModule,
     ReactiveFormsModule,
     GenericErrorComponent,
-    ClientsFilterFormComponent,
+    StatefulBlockComponent,
+    ClientInfoComponent,
   ],
-  templateUrl: './pagination.component.html',
-  styleUrls: ['./pagination.component.less'],
+  templateUrl: './with-collapse.component.html',
+  styleUrl: './with-collapse.component.less',
 })
-export class PaginationComponent {
+export class WithCollapseComponent {
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly clientApiService = inject(ClientApiService);
+  private readonly destroyRef = inject(DestroyRef);
 
   public readonly formValue$ = new Subject<ClientsFilterFormValue>();
 
@@ -80,21 +86,36 @@ export class PaginationComponent {
       { name, email, registeredAfter, registeredBefore },
       { page, pageSize },
     ]) => [name, email, registeredAfter, registeredBefore, page, pageSize],
-  }).pipe(
-    trackInReduxDevTools({
-      name: 'PaginationComponent Stream',
-      actionName: (value) => {
-        if (isLoading(value)) {
-          return 'Loading...';
-        }
+  })
+    .pipeValue(
+      map((response) => ({
+        ...response,
+        data: response.data.map((client) => ({
+          ...client,
+          isExpanded: signal(false),
+        })),
+      })),
+    )
+    .pipe(
+      trackInReduxDevTools({
+        name: 'PaginationComponent Stream',
+        actionName: (value) => {
+          if (isLoading(value)) {
+            return 'Loading...';
+          }
 
-        if (isError(value)) {
-          return 'Error';
-        }
-        return 'Value';
-      },
-    }),
-  );
+          if (isError(value)) {
+            return 'Error';
+          }
+          return 'Value';
+        },
+      }),
+    );
+
+  public readonly clientRequestFactory = statefulObservableFactory({
+    loader: (clientId: number) => this.clientApiService.getClient$(clientId),
+    cacheKey: (clientId: number) => [clientId],
+  });
 
   public prevPage(pagination: ObservedValueOf<typeof this.pagination$>) {
     const cur = pagination.controls.page.value || 1;
@@ -104,5 +125,11 @@ export class PaginationComponent {
   public nextPage(pagination: ObservedValueOf<typeof this.pagination$>) {
     const cur = pagination.controls.page.value || 1;
     pagination.patchValue({ page: cur + 1 });
+  }
+
+  constructor() {
+    this.destroyRef.onDestroy(() => {
+      this.clientRequestFactory.reset(true);
+    });
   }
 }

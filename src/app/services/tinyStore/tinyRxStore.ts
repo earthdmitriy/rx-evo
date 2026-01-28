@@ -155,10 +155,10 @@ export const combineTinyRxStores = <T extends [...TinyRxStore[]], Result>(
           state: errorSymbol,
           error: events.map((x) => (isError(x) ? x.error : false)),
         } as ResponseError<UnwrapTinyStoresError<T>>;
-        return processResponse(events as UnwrapTinyStores<T>)
+      return processResponse(events as UnwrapTinyStores<T>);
     }),
     destroyRef ? takeUntilDestroyed(destroyRef) : tap(),
-    publishWhile(active, { refCount })
+    publishWhile(active, { refCount }),
   );
 
   return {

@@ -1,4 +1,3 @@
-
 import {
   ChangeDetectionStrategy,
   Component,
@@ -22,17 +21,15 @@ import { ClientSkeletonComponent } from '../../content/client-skeleton/client-sk
   imports: [
     ClientInfoComponent,
     ClientBucketComponent,
-    ClientSkeletonComponent
-],
+    ClientSkeletonComponent,
+  ],
   templateUrl: './signal.component.html',
   styleUrl: './signal.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SignalComponent {
-  public readonly clientId = input.required<number>();  
+  public readonly clientId = input.required<number>();
   private readonly clientId$ = toObservable(this.clientId);
-
-
 
   public readonly showBucket = input<boolean>();
 

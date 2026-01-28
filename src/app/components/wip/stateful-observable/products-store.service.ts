@@ -1,10 +1,14 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
 import { map, shareReplay } from 'rxjs';
 import {
   Product,
   ProductsApiService,
 } from '../../../services/api/ProductsApi.service';
-import { combineStatefulObservables, statefulObservable, StatefulObservable } from '../../../submodules/stateful-observable/src';
+import {
+  combineStatefulObservables,
+  statefulObservable,
+  StatefulObservable,
+} from '../../../submodules/stateful-observable/src';
 
 /**
  * shared data
@@ -36,3 +40,13 @@ export class ProductsStoreService {
     return combineStatefulObservables(stores, (products) => products);
   }
 }
+
+export const allProductsToken = new InjectionToken('allProducts', {
+  providedIn: 'root',
+  factory: () => {
+    const api = inject(ProductsApiService);
+    return statefulObservable(() => api.allProducts$())
+      .pipeError(map(() => "Can't load products"))
+      .pipe(shareReplay(1));
+  },
+});

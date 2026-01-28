@@ -6,9 +6,7 @@
   <div class="max-w-screen-lg">
     <app-client-info [displayData]="displayData.clientInfo"></app-client-info>
     @if (showBucket) {
-      <app-client-bucket
-        [bucket]="displayData.bucket"
-      ></app-client-bucket>
+      <app-client-bucket [bucket]="displayData.bucket"></app-client-bucket>
     }
   </div>
 }
