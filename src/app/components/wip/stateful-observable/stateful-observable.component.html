@@ -2,6 +2,7 @@
   <app-stateful-block [stream]="client$">
     @if (client$ | async; as clientData) {
       <app-client-info [displayData]="clientData"></app-client-info>
+      <app-client-info [displayData]="client$ | async"></app-client-info>
     }
   </app-stateful-block>
 

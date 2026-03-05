@@ -38,15 +38,15 @@ export class StatefulObservableComponent {
   private readonly clientsApi = inject(ClientApiService);
   private readonly bucketApi = inject(BucketApiService);
 
-  private readonly clientId$ = toObservable(this.clientId);
+  private readonly clientId$ = statefulObservable(toObservable(this.clientId));
 
-  public readonly client$ = statefulObservable(() => this.clientId$)
+  public readonly client$ = this.clientId$
     .pipeValue(switchMap((clientId) => this.clientsApi.getClient$(clientId)))
     .pipeError(map(() => "Can't load client" as const));
 
   private readonly allProducts$ = inject(allProductsToken);
 
-  private readonly bucket$ = statefulObservable(this.clientId$)
+  private readonly bucket$ = this.clientId$
     .pipeValue(
       switchMap((clientId) => this.bucketApi.getClientBucket$(clientId)),
     )

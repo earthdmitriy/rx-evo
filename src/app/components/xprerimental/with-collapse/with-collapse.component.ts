@@ -12,13 +12,13 @@ import {
   switchMap,
 } from 'rxjs';
 import { ClientApiService } from '../../../services/api/ClientApi.service';
-import { trackInReduxDevTools } from '../../../services/dev/trackInReduxDevTools';
 import {
   isError,
   isLoading,
   statefulObservable,
   statefulObservableFactory,
 } from '../../../submodules/stateful-observable/src';
+import { trackInReduxDevTools } from '../../../utils/reduxDevTools/trackInReduxDevTools';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
 import {
   ClientsFilterFormComponent,

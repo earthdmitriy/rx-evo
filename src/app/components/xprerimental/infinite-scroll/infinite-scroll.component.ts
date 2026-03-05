@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import {
   BehaviorSubject,
   combineLatest,
@@ -43,15 +43,7 @@ const getEmptyAcc = () =>
   styleUrl: './infinite-scroll.component.less',
 })
 export class InfiniteScrollComponent {
-  private readonly fb = inject(NonNullableFormBuilder);
   private readonly clientApiService = inject(ClientApiService);
-
-  public readonly filters = this.fb.group({
-    name: this.fb.control(''),
-    email: this.fb.control(''),
-    registeredBefore: this.fb.control<string | null>(null),
-    registeredAfter: this.fb.control<string | null>(null),
-  });
 
   public readonly formValue$ = new Subject<ClientsFilterFormValue>();
 
