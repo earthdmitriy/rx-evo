@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_fb["
                 fb
             "]
@@ -19,11 +20,13 @@ graph LR
     end
     subgraph Consumers
         subgraph Output
+            direction LR
             Consumer_formValue$["
                 formValue$
             "]
         end
         subgraph TemplateRead
+            direction LR
             Consumer_filters["
                 filters
             "]
@@ -37,3 +40,16 @@ graph LR
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

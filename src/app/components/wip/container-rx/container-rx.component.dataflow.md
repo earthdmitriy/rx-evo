@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,27 +19,31 @@ graph LR
             "]
         end
         subgraph Inputs
+            direction LR
             Source_showBucket["
                 showBucket
+            "]
+            Source_clientId["
+                clientId
             "]
         end
     end
     subgraph Processing
-        Processing_clientId$["
+        Processing_clientId$("
             clientId$
-        "]
-        Processing_productsRequest["
+        ")
+        Processing_productsRequest("
             productsRequest
-        "]
-        Processing_clientRequest["
+        ")
+        Processing_clientRequest("
             clientRequest
-        "]
-        Processing_bucketRequest["
+        ")
+        Processing_bucketRequest("
             bucketRequest
-        "]
-        Processing_combined["
+        ")
+        Processing_combined("
             combined
-        "]
+        ")
         Processing_combinedData$["
             combinedData$
         "]
@@ -46,24 +51,25 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
-            Consumer_clientRequest.loading$["
+            direction LR
+            Consumer_clientRequest.loading$("
                 clientRequest.loading$
-            "]
-            Consumer_clientRequest.error$["
+            ")
+            Consumer_clientRequest.error$("
                 clientRequest.error$
-            "]
-            Consumer_clientRequest.data$["
+            ")
+            Consumer_clientRequest.data$("
                 clientRequest.data$
-            "]
+            ")
             Consumer_showBucket["
                 showBucket
             "]
-            Consumer_combined.loading$["
+            Consumer_combined.loading$("
                 combined.loading$
-            "]
-            Consumer_combined.error$["
+            ")
+            Consumer_combined.error$("
                 combined.error$
-            "]
+            ")
             Consumer_combinedData$["
                 combinedData$
             "]
@@ -72,6 +78,7 @@ graph LR
     Sources ~~~ Processing
     Processing ~~~ Consumers
     Source_showBucket --> Processing_showBucket
+    Source_clientId --> Processing_clientId$
     Source_productsApi --> Processing_productsRequest
     Processing_clientId$ --> Processing_clientRequest
     Source_clientsApi --> Processing_clientRequest
@@ -87,6 +94,21 @@ graph LR
     Processing_combined --> Consumer_combined.loading$
     Processing_combined --> Consumer_combined.error$
     Processing_combinedData$ --> Consumer_combinedData$
+    style Source_showBucket fill:#500
+    style Processing_clientId$ fill:#430
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

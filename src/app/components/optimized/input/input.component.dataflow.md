@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,6 +19,7 @@ graph LR
             "]
         end
         subgraph Inputs
+            direction LR
             Source_clientId["
                 clientId
             "]
@@ -27,9 +29,9 @@ graph LR
         end
     end
     subgraph Processing
-        Processing_destroy$["
+        Processing_destroy$("
             destroy$
-        "]
+        ")
         Processing_products["
             products
         "]
@@ -43,9 +45,10 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_ready["
                 ready
-x            2
+                x2
             "]
             Consumer_displayData.clientInfo["
                 displayData.clientInfo
@@ -65,6 +68,25 @@ x            2
     Processing_ready --> Consumer_ready
     Processing_displayData --> Consumer_displayData.clientInfo
     Processing_displayData --> Consumer_displayData.bucket
+    style Source_clientId fill:#500
+    style Source_showBucket fill:#500
+    style Processing_products fill:#500
+    style Processing_ready fill:#500
+    style Processing_displayData fill:#500
+    style Processing_destroy$ fill:#430
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

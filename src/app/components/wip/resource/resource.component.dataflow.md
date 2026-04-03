@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,14 +19,16 @@ graph LR
             "]
         end
         subgraph Inputs
-            Source_clientId["
+            direction LR
+            Source_clientId("
                 clientId
-            "]
-            Source_showBucket["
+            ")
+            Source_showBucket("
                 showBucket
-            "]
+            ")
         end
         subgraph TemplateWrite
+            direction LR
             Source_clientResource.reload["
                 clientResource.reload
             "]
@@ -48,6 +51,7 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_clientResource.isLoading["
                 clientResource.isLoading
             "]
@@ -92,3 +96,16 @@ graph LR
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

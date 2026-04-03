@@ -7,9 +7,10 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Inputs
-            Source_displayData["
+            direction LR
+            Source_displayData("
                 displayData
-            "]
+            ")
         end
     end
     subgraph Processing
@@ -20,9 +21,10 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_displayData["
                 displayData
-x            6
+                x6
             "]
         end
     end
@@ -33,3 +35,16 @@ x            6
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

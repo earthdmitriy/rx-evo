@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,14 +19,16 @@ graph LR
             "]
         end
         subgraph Inputs
-            Source_clientId["
+            direction LR
+            Source_clientId("
                 clientId
-            "]
-            Source_showBucket["
+            ")
+            Source_showBucket("
                 showBucket
-            "]
+            ")
         end
         subgraph TemplateWrite
+            direction LR
             Source_clientStore.reload["
                 clientStore.reload
             "]
@@ -45,11 +48,15 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_clientStore.loading["
                 clientStore.loading
             "]
             Consumer_clientStore.error["
                 clientStore.error
+            "]
+            Consumer_clientStore.data["
+                clientStore.data
             "]
             Consumer_showBucket["
                 showBucket
@@ -59,6 +66,9 @@ graph LR
             "]
             Consumer_populatedBucketStore.error["
                 populatedBucketStore.error
+            "]
+            Consumer_populatedBucketStore.data["
+                populatedBucketStore.data
             "]
         end
     end
@@ -75,8 +85,23 @@ graph LR
     Processing_showBucket --> Consumer_showBucket
     Processing_clientStore --> Consumer_clientStore.loading
     Processing_clientStore --> Consumer_clientStore.error
+    Processing_clientStore --> Consumer_clientStore.data
     Processing_populatedBucketStore --> Consumer_populatedBucketStore.loading
     Processing_populatedBucketStore --> Consumer_populatedBucketStore.error
+    Processing_populatedBucketStore --> Consumer_populatedBucketStore.data
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

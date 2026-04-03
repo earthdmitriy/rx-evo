@@ -7,11 +7,13 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Inputs
-            Source_stream["
+            direction LR
+            Source_stream("
                 stream
-            "]
+            ")
         end
         subgraph TemplateWrite
+            direction LR
             Source_stream.reload["
                 stream.reload
             "]
@@ -22,6 +24,7 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_stream["
                 stream
             "]
@@ -43,3 +46,16 @@ graph LR
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

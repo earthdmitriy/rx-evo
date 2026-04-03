@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,37 +19,39 @@ graph LR
             "]
         end
         subgraph Inputs
-            Source_clientId["
+            direction LR
+            Source_clientId("
                 clientId
-            "]
-            Source_showBucket["
+            ")
+            Source_showBucket("
                 showBucket
-            "]
+            ")
         end
     end
     subgraph Processing
         Processing_clientId$["
             clientId$
         "]
-        Processing_productsRequest["
+        Processing_productsRequest("
             productsRequest
-        "]
+        ")
         Processing_clientRequest["
             clientRequest
         "]
-        Processing_bucketRequest["
+        Processing_bucketRequest("
             bucketRequest
-        "]
+        ")
         Processing_combined["
             combined
         "]
-        Processing_combinedData["
+        Processing_combinedData("
             combinedData
-        "]
+        ")
         Processing_showBucket@{ shape: f-circ, label: "Junction" }
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_clientRequest.loading["
                 clientRequest.loading
             "]
@@ -67,9 +70,9 @@ graph LR
             Consumer_combined.error["
                 combined.error
             "]
-            Consumer_combinedData["
+            Consumer_combinedData("
                 combinedData
-            "]
+            ")
         end
     end
     Sources ~~~ Processing
@@ -94,3 +97,16 @@ graph LR
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

@@ -7,12 +7,13 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
-            Source_counter$["
+            direction LR
+            Source_counter$("
                 counter$
-            "]
-            Source_showBucket$["
+            ")
+            Source_showBucket$("
                 showBucket$
-            "]
+            ")
         end
     end
     subgraph Processing
@@ -21,6 +22,7 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_counter$["
                 counter$
             "]
@@ -38,3 +40,16 @@ graph LR
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

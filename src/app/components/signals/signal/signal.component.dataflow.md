@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
@@ -18,36 +19,37 @@ graph LR
             "]
         end
         subgraph Inputs
-            Source_clientId["
+            direction LR
+            Source_clientId("
                 clientId
-            "]
-            Source_showBucket["
+            ")
+            Source_showBucket("
                 showBucket
-            "]
+            ")
         end
     end
     subgraph Processing
         Processing_clientId$["
             clientId$
         "]
-        Processing_clientReady["
+        Processing_clientReady("
             clientReady
-        "]
-        Processing_bucketReady["
+        ")
+        Processing_bucketReady("
             bucketReady
-        "]
+        ")
         Processing_client$["
             client$
         "]
         Processing_bucket$["
             bucket$
         "]
-        Processing_products$["
+        Processing_products$("
             products$
-        "]
-        Processing_populatedBucket$["
+        ")
+        Processing_populatedBucket$("
             populatedBucket$
-        "]
+        ")
         Processing_client["
             client
         "]
@@ -58,20 +60,21 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
-            Consumer_clientReady["
+            direction LR
+            Consumer_clientReady("
                 clientReady
-x            2
-            "]
+                x2
+            ")
             Consumer_client["
                 client
-x            2
+                x2
             "]
-            Consumer_showBucket["
+            Consumer_showBucket("
                 showBucket
-            "]
-            Consumer_bucketReady["
+            ")
+            Consumer_bucketReady("
                 bucketReady
-            "]
+            ")
             Consumer_populatedBucket["
                 populatedBucket
             "]
@@ -101,6 +104,21 @@ x            2
     Processing_showBucket --> Consumer_bucketReady
     Processing_bucketReady --> Consumer_bucketReady
     Processing_populatedBucket --> Consumer_populatedBucket
+    style Processing_clientReady fill:#430
+    style Processing_bucketReady fill:#430
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

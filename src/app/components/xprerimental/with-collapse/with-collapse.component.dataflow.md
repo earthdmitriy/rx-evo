@@ -7,6 +7,7 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_fb["
                 fb
             "]
@@ -18,6 +19,7 @@ graph LR
             "]
         end
         subgraph TemplateWrite
+            direction LR
             Source_formValue$.next["
                 formValue$.next
             "]
@@ -27,40 +29,41 @@ graph LR
         end
     end
     subgraph Processing
-        Processing_formValue$["
+        Processing_formValue$("
             formValue$
-        "]
-        Processing_pagination$["
+        ")
+        Processing_pagination$("
             pagination$
-        "]
-        Processing_paginationValue$["
+        ")
+        Processing_paginationValue$("
             paginationValue$
-        "]
-        Processing_stream["
+        ")
+        Processing_stream("
             stream
-        "]
-        Processing_clientRequestFactory["
+        ")
+        Processing_clientRequestFactory("
             clientRequestFactory
-        "]
+        ")
     end
     subgraph Consumers
         subgraph TemplateRead
-            Consumer_stream.pending$["
+            direction LR
+            Consumer_stream.pending$("
                 stream.pending$
-            "]
-            Consumer_stream.error$["
+            ")
+            Consumer_stream.error$("
                 stream.error$
-            "]
-            Consumer_pagination$["
-                pagination$
-            "]
-            Consumer_stream.value$["
+            ")
+            Consumer_stream.value$("
                 stream.value$
-x            2
-            "]
-            Consumer_clientRequestFactory.get["
+                x3
+            ")
+            Consumer_clientRequestFactory.get("
                 clientRequestFactory.get
-            "]
+            ")
+            Consumer_pagination$("
+                pagination$
+            ")
         end
     end
     Sources ~~~ Processing
@@ -77,9 +80,23 @@ x            2
     Source_clientApiService --> Processing_clientRequestFactory
     Processing_stream --> Consumer_stream.pending$
     Processing_stream --> Consumer_stream.error$
-    Processing_pagination$ --> Consumer_pagination$
     Processing_stream --> Consumer_stream.value$
     Processing_clientRequestFactory --> Consumer_clientRequestFactory.get
+    Processing_pagination$ --> Consumer_pagination$
+    style Processing_formValue$ fill:#430
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

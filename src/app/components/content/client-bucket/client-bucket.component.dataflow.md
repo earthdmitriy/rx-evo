@@ -7,9 +7,10 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Inputs
-            Source_bucket["
+            direction LR
+            Source_bucket("
                 bucket
-            "]
+            ")
         end
     end
     subgraph Processing
@@ -17,9 +18,10 @@ graph LR
     end
     subgraph Consumers
         subgraph TemplateRead
+            direction LR
             Consumer_bucket["
                 bucket
-x            2
+                x2
             "]
         end
     end
@@ -30,3 +32,16 @@ x            2
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

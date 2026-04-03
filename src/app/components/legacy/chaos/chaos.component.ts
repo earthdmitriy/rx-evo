@@ -4,33 +4,33 @@ import {
   OnChanges,
   OnInit,
   SimpleChanges,
-} from '@angular/core';
+} from "@angular/core";
 import {
   Bucket,
   BucketApiService,
-} from '../../../services/api/BucketApi.service';
+} from "../../../services/api/BucketApi.service";
 import {
   Client,
   ClientApiService,
-} from '../../../services/api/ClientApi.service';
+} from "../../../services/api/ClientApi.service";
 import {
   Product,
   ProductsApiService,
-} from '../../../services/api/ProductsApi.service';
-import { ClientWithBucket, prepareData } from '../../../services/utils';
-import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
-import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { ClientSkeletonComponent } from '../../content/client-skeleton/client-skeleton.component';
+} from "../../../services/api/ProductsApi.service";
+import { ClientWithBucket, prepareData } from "../../../services/utils";
+import { ClientBucketComponent } from "../../content/client-bucket/client-bucket.component";
+import { ClientInfoComponent } from "../../content/client-info/client-info.component";
+import { ClientSkeletonComponent } from "../../content/client-skeleton/client-skeleton.component";
 
 @Component({
-  selector: 'app-chaos',
+  selector: "app-chaos",
   imports: [
     ClientInfoComponent,
     ClientBucketComponent,
     ClientSkeletonComponent,
   ],
-  templateUrl: './chaos.component.html',
-  styleUrl: './chaos.component.less',
+  templateUrl: "./chaos.component.html",
+  styleUrl: "./chaos.component.less",
 })
 export class ChaosComponent implements OnInit, OnChanges {
   @Input() public clientId!: number;
@@ -49,7 +49,7 @@ export class ChaosComponent implements OnInit, OnChanges {
   }
 
   public ngOnChanges(changes: SimpleChanges): void {
-    if (changes['clientId'].currentValue) {
+    if (changes["clientId"].currentValue) {
       this.fetchClient();
       this.fetchBucket();
     }
@@ -78,6 +78,6 @@ export class ChaosComponent implements OnInit, OnChanges {
   constructor(
     private readonly clientsApi: ClientApiService,
     private readonly bucketApi: BucketApiService,
-    private readonly productsApi: ProductsApiService,
+    private readonly productsApi: ProductsApiService
   ) {}
 }

@@ -7,53 +7,56 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientsApi["
                 clientsApi
             "]
             Source_bucketApi["
                 bucketApi
             "]
-            Source_allProducts$["
+            Source_allProducts$("
                 allProducts$
-            "]
+            ")
         end
         subgraph Inputs
-            Source_clientId["
+            direction LR
+            Source_clientId("
                 clientId
-            "]
-            Source_showBucket["
+            ")
+            Source_showBucket("
                 showBucket
-            "]
+            ")
         end
     end
     subgraph Processing
-        Processing_clientId$["
+        Processing_clientId$("
             clientId$
-        "]
-        Processing_client$["
+        ")
+        Processing_client$("
             client$
-        "]
-        Processing_bucket$["
+        ")
+        Processing_bucket$("
             bucket$
-        "]
-        Processing_populatedBucket$["
+        ")
+        Processing_populatedBucket$("
             populatedBucket$
-        "]
+        ")
         Processing_showBucket@{ shape: f-circ, label: "Junction" }
     end
     subgraph Consumers
         subgraph TemplateRead
-            Consumer_client$["
+            direction LR
+            Consumer_client$("
                 client$
-x            3
-            "]
+                x3
+            ")
             Consumer_showBucket["
                 showBucket
             "]
-            Consumer_populatedBucket$["
+            Consumer_populatedBucket$("
                 populatedBucket$
-x            2
-            "]
+                x2
+            ")
         end
     end
     Sources ~~~ Processing
@@ -72,3 +75,16 @@ x            2
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```

@@ -7,11 +7,13 @@ title: Component dataflow
 graph LR
     subgraph Sources
         subgraph Injected
+            direction LR
             Source_clientApiService["
                 clientApiService
             "]
         end
         subgraph TemplateWrite
+            direction LR
             Source_formValue$.next["
                 formValue$.next
             "]
@@ -21,40 +23,42 @@ graph LR
         end
     end
     subgraph Processing
-        Processing_formValue$["
+        Processing_formValue$("
             formValue$
-        "]
-        Processing_pageSubject$["
+        ")
+        Processing_pageSubject$("
             pageSubject$
-        "]
-        Processing_currentPage$["
+        ")
+        Processing_currentPage$("
             currentPage$
-        "]
-        Processing_isFirstLoading$["
+        ")
+        Processing_isFirstLoading$("
             isFirstLoading$
-        "]
-        Processing_stream["
+        ")
+        Processing_stream("
             stream
-        "]
+        ")
     end
     subgraph Consumers
         subgraph TemplateRead
-            Consumer_stream.pending$["
+            direction LR
+            Consumer_stream.pending$("
                 stream.pending$
-x            2
-            "]
-            Consumer_isFirstLoading$["
+                x2
+            ")
+            Consumer_isFirstLoading$("
                 isFirstLoading$
-            "]
-            Consumer_stream.error$["
+            ")
+            Consumer_stream.error$("
                 stream.error$
-            "]
-            Consumer_stream.value$["
+            ")
+            Consumer_stream.value$("
                 stream.value$
-            "]
-            Consumer_pageSubject$["
+                x2
+            ")
+            Consumer_pageSubject$("
                 pageSubject$
-            "]
+            ")
         end
     end
     Sources ~~~ Processing
@@ -75,6 +79,20 @@ x            2
     Processing_stream --> Consumer_stream.error$
     Processing_stream --> Consumer_stream.value$
     Processing_pageSubject$ --> Consumer_pageSubject$
+    style Processing_formValue$ fill:#430
 
 ```
 
+
+## Legend
+```mermaid
+
+graph TB
+  Common["Common"]
+  Reactive("Reactive")
+  Reactive_writable("Reactive writable")
+  Mutable["Mutable"]
+
+  style Mutable fill:#500  
+  style Reactive_writable fill:#430
+```
