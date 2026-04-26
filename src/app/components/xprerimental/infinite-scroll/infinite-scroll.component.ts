@@ -1,6 +1,7 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from "@angular/common";
+import { Component, inject } from "@angular/core";
+import { ReactiveFormsModule } from "@angular/forms";
+import { statefulObservable } from "@rx-evo/stateful-observable";
 import {
   BehaviorSubject,
   combineLatest,
@@ -10,28 +11,27 @@ import {
   shareReplay,
   Subject,
   switchMap,
-} from 'rxjs';
-import { IntersectionobserverDirective } from '../../../directives/intersectionobserver.directive';
+} from "rxjs";
+import { IntersectionobserverDirective } from "../../../directives/intersectionobserver.directive";
 import {
   Client,
   ClientApiService,
-} from '../../../services/api/ClientApi.service';
-import { statefulObservable } from '../../../submodules/stateful-observable/src';
+} from "../../../services/api/ClientApi.service";
 import {
   ClientsFilterFormComponent,
   ClientsFilterFormValue,
-} from '../../content/clients-filter-form/clients-filter-form.component';
-import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
+} from "../../content/clients-filter-form/clients-filter-form.component";
+import { GenericErrorComponent } from "../../content/generic-error/generic-error.component";
 
 const getEmptyAcc = () =>
-  ({ data: [], page: 0, totalPages: 1 }) as {
+  ({ data: [], page: 0, totalPages: 1 } as {
     data: Client[];
     page: number;
     totalPages: number;
-  };
+  });
 
 @Component({
-  selector: 'app-infinite-scroll',
+  selector: "app-infinite-scroll",
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -39,8 +39,8 @@ const getEmptyAcc = () =>
     ClientsFilterFormComponent,
     IntersectionobserverDirective,
   ],
-  templateUrl: './infinite-scroll.component.html',
-  styleUrl: './infinite-scroll.component.less',
+  templateUrl: "./infinite-scroll.component.html",
+  styleUrl: "./infinite-scroll.component.less",
 })
 export class InfiniteScrollComponent {
   private readonly clientApiService = inject(ClientApiService);
@@ -49,13 +49,13 @@ export class InfiniteScrollComponent {
 
   public readonly pageSubject$ = this.formValue$.pipe(
     map(() => new BehaviorSubject<number>(1)), // reset page on new search
-    shareReplay(1),
+    shareReplay(1)
   );
 
   public readonly currentPage$ = this.pageSubject$.pipe(
     switchMap((x) => x),
     distinctUntilChanged(),
-    shareReplay(1),
+    shareReplay(1)
   );
 
   public readonly isFirstLoading$ = this.currentPage$.pipe(map((x) => x === 1));
@@ -86,6 +86,6 @@ export class InfiniteScrollComponent {
       acc.page = curr.page;
       acc.totalPages = curr.totalPages;
       return acc;
-    }, getEmptyAcc()),
+    }, getEmptyAcc())
   );
 }

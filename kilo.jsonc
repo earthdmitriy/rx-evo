@@ -1,0 +1,13 @@
+// kilo.jsonc
+{
+  "instructions": [
+    //".kilo/rules/formatting.md",
+    // ".kilo/rules/experimental.md"  -- temporarily disabled
+    //".kilo/rules/naming_conventions.md",
+  ],
+  "compaction": {
+    "auto": true, // Enable or disable automatic compaction
+    "reserved": 4096, // Number of tokens to reserve (keep free) after compaction
+    "prune": true, // Enable pruning of old tool outputs beyond the recency window
+  },
+}

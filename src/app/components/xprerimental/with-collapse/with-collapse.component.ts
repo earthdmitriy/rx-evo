@@ -1,6 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { Component, DestroyRef, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from "@angular/common";
+import { Component, DestroyRef, inject, signal } from "@angular/core";
+import { NonNullableFormBuilder, ReactiveFormsModule } from "@angular/forms";
+import {
+  isError,
+  isLoading,
+  statefulObservable,
+  statefulObservableFactory,
+} from "@rx-evo/stateful-observable";
 import {
   combineLatest,
   debounceTime,
@@ -10,25 +16,19 @@ import {
   startWith,
   Subject,
   switchMap,
-} from 'rxjs';
-import { ClientApiService } from '../../../services/api/ClientApi.service';
-import {
-  isError,
-  isLoading,
-  statefulObservable,
-  statefulObservableFactory,
-} from '../../../submodules/stateful-observable/src';
-import { trackInReduxDevTools } from '../../../utils/reduxDevTools/trackInReduxDevTools';
-import { ClientInfoComponent } from '../../content/client-info/client-info.component';
+} from "rxjs";
+import { ClientApiService } from "../../../services/api/ClientApi.service";
+import { trackInReduxDevTools } from "../../../utils/reduxDevTools/trackInReduxDevTools";
+import { ClientInfoComponent } from "../../content/client-info/client-info.component";
 import {
   ClientsFilterFormComponent,
   ClientsFilterFormValue,
-} from '../../content/clients-filter-form/clients-filter-form.component';
-import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
-import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
+} from "../../content/clients-filter-form/clients-filter-form.component";
+import { GenericErrorComponent } from "../../content/generic-error/generic-error.component";
+import { StatefulBlockComponent } from "../../content/stateful-block/stateful-block.component";
 
 @Component({
-  selector: 'app-with-collapse',
+  selector: "app-with-collapse",
   imports: [
     ClientsFilterFormComponent,
     CommonModule,
@@ -37,8 +37,8 @@ import { StatefulBlockComponent } from '../../content/stateful-block/stateful-bl
     StatefulBlockComponent,
     ClientInfoComponent,
   ],
-  templateUrl: './with-collapse.component.html',
-  styleUrl: './with-collapse.component.less',
+  templateUrl: "./with-collapse.component.html",
+  styleUrl: "./with-collapse.component.less",
 })
 export class WithCollapseComponent {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -52,19 +52,19 @@ export class WithCollapseComponent {
       this.fb.group({
         page: this.fb.control(1),
         pageSize: this.fb.control(10),
-      }),
+      })
     ),
-    shareReplay(1),
+    shareReplay(1)
   );
 
   public readonly paginationValue$ = this.pagination$.pipe(
-    switchMap((x) => x.valueChanges.pipe(startWith(x.value))),
+    switchMap((x) => x.valueChanges.pipe(startWith(x.value)))
   );
 
   // expose stream value observable for template usage
   public readonly stream = statefulObservable({
     input: combineLatest([this.formValue$, this.paginationValue$]).pipe(
-      debounceTime(0),
+      debounceTime(0)
     ),
     loader: ([
       { name, email, registeredAfter, registeredBefore },
@@ -94,22 +94,22 @@ export class WithCollapseComponent {
           ...client,
           isExpanded: signal(false),
         })),
-      })),
+      }))
     )
     .pipe(
       trackInReduxDevTools({
-        name: 'PaginationComponent Stream',
+        name: "PaginationComponent Stream",
         actionName: (value) => {
           if (isLoading(value)) {
-            return 'Loading...';
+            return "Loading...";
           }
 
           if (isError(value)) {
-            return 'Error';
+            return "Error";
           }
-          return 'Value';
+          return "Value";
         },
-      }),
+      })
     );
 
   public readonly clientRequestFactory = statefulObservableFactory({

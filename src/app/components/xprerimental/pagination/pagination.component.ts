@@ -1,6 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from "@angular/common";
+import { Component, inject } from "@angular/core";
+import { NonNullableFormBuilder, ReactiveFormsModule } from "@angular/forms";
+import {
+  isError,
+  isLoading,
+  statefulObservable,
+} from "@rx-evo/stateful-observable";
 import {
   combineLatest,
   debounceTime,
@@ -10,30 +15,25 @@ import {
   startWith,
   Subject,
   switchMap,
-} from 'rxjs';
-import { ClientApiService } from '../../../services/api/ClientApi.service';
-import {
-  isError,
-  isLoading,
-  statefulObservable,
-} from '../../../submodules/stateful-observable/src';
-import { trackInReduxDevTools } from '../../../utils/reduxDevTools/trackInReduxDevTools';
+} from "rxjs";
+import { ClientApiService } from "../../../services/api/ClientApi.service";
+import { trackInReduxDevTools } from "../../../utils/reduxDevTools/trackInReduxDevTools";
 import {
   ClientsFilterFormComponent,
   ClientsFilterFormValue,
-} from '../../content/clients-filter-form/clients-filter-form.component';
-import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
+} from "../../content/clients-filter-form/clients-filter-form.component";
+import { GenericErrorComponent } from "../../content/generic-error/generic-error.component";
 
 @Component({
-  selector: 'app-pagination',
+  selector: "app-pagination",
   imports: [
     CommonModule,
     ReactiveFormsModule,
     GenericErrorComponent,
     ClientsFilterFormComponent,
   ],
-  templateUrl: './pagination.component.html',
-  styleUrls: ['./pagination.component.less'],
+  templateUrl: "./pagination.component.html",
+  styleUrls: ["./pagination.component.less"],
 })
 export class PaginationComponent {
   private readonly fb = inject(NonNullableFormBuilder);
@@ -46,19 +46,19 @@ export class PaginationComponent {
       this.fb.group({
         page: this.fb.control(1),
         pageSize: this.fb.control(10),
-      }),
+      })
     ),
-    shareReplay(1),
+    shareReplay(1)
   );
 
   public readonly paginationValue$ = this.pagination$.pipe(
-    switchMap((x) => x.valueChanges.pipe(startWith(x.value))),
+    switchMap((x) => x.valueChanges.pipe(startWith(x.value)))
   );
 
   // expose stream value observable for template usage
   public readonly stream = statefulObservable({
     input: combineLatest([this.formValue$, this.paginationValue$]).pipe(
-      debounceTime(0),
+      debounceTime(0)
     ),
     loader: ([
       { name, email, registeredAfter, registeredBefore },
@@ -82,18 +82,18 @@ export class PaginationComponent {
     ]) => [name, email, registeredAfter, registeredBefore, page, pageSize],
   }).pipe(
     trackInReduxDevTools({
-      name: 'PaginationComponent Stream',
+      name: "PaginationComponent Stream",
       actionName: (value) => {
         if (isLoading(value)) {
-          return 'Loading...';
+          return "Loading...";
         }
 
         if (isError(value)) {
-          return 'Error';
+          return "Error";
         }
-        return 'Value';
+        return "Value";
       },
-    }),
+    })
   );
 
   public prevPage(pagination: ObservedValueOf<typeof this.pagination$>) {

@@ -1,9 +1,10 @@
 import {
   CdkVirtualScrollViewport,
   ScrollingModule,
-} from '@angular/cdk/scrolling'; // Import ScrollingModule
-import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject, ViewChild } from '@angular/core';
+} from "@angular/cdk/scrolling"; // Import ScrollingModule
+import { AsyncPipe, DatePipe } from "@angular/common";
+import { Component, inject, ViewChild } from "@angular/core";
+import { statefulObservable } from "@rx-evo/stateful-observable";
 import {
   map,
   mergeMap,
@@ -12,36 +13,35 @@ import {
   scan,
   startWith,
   switchMap,
-} from 'rxjs';
+} from "rxjs";
 import {
   Client,
   ClientApiService,
-} from '../../../services/api/ClientApi.service';
-import { statefulObservable } from '../../../submodules/stateful-observable/src';
+} from "../../../services/api/ClientApi.service";
 
 const range = (start: number, end: number) =>
   Array.from({ length: end - start + 1 }, (_, i) => start + i);
 const getEmptyAcc = () =>
-  ({ data: [], page: 0, totalPages: 0 }) as {
+  ({ data: [], page: 0, totalPages: 0 } as {
     data: (Client | undefined)[];
     page: number;
     totalPages: number;
-  };
+  });
 
 @Component({
-  selector: 'app-virtual-scroll',
-  imports: [ScrollingModule, DatePipe, AsyncPipe, ],
+  selector: "app-virtual-scroll",
+  imports: [ScrollingModule, DatePipe, AsyncPipe],
   host: {
-    class: 'w-full h-full block flex-1 flex flex-col',
+    class: "w-full h-full block flex-1 flex flex-col",
   },
-  templateUrl: './virtual-scroll.component.html',
-  styleUrl: './virtual-scroll.component.less',
+  templateUrl: "./virtual-scroll.component.html",
+  styleUrl: "./virtual-scroll.component.less",
 })
 export class VirtualScrollComponent {
   private readonly clientApiService = inject(ClientApiService);
 
   protected readonly viewport$ = new ReplaySubject<CdkVirtualScrollViewport>(1);
-  @ViewChild('viewport', { static: true })
+  @ViewChild("viewport", { static: true })
   protected set viewportRef(value: CdkVirtualScrollViewport) {
     this.viewport$.next(value);
   }
@@ -56,7 +56,7 @@ export class VirtualScrollComponent {
       Math.ceil(end / this.pageSize),
     ]),
     mergeMap(([start, end]) => of(...range(start, end))), // produce page indexes as separate events
-    startWith(0), // trigger first page load
+    startWith(0) // trigger first page load
   );
 
   public readonly stream = statefulObservable({
@@ -82,13 +82,13 @@ export class VirtualScrollComponent {
       acc.data.splice(
         (curr.page - 1) * this.pageSize,
         this.pageSize,
-        ...curr.data,
+        ...curr.data
       );
 
       acc.page = curr.page;
       acc.totalPages = curr.totalPages;
       return acc;
     }, getEmptyAcc()),
-    map((x) => x.data),
+    map((x) => x.data)
   );
 }
