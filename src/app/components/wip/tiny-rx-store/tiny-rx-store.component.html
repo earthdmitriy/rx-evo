@@ -1,5 +1,8 @@
-<div class="max-w-screen-lg">
-  <div [class.loading]="clientStore.loading | async">
+<div class="flex flex-col gap-4">
+  <div
+    class="flex flex-col gap-4"
+    [class.loading]="clientStore.loading | async"
+  >
     @if (clientStore.error | async; as error) {
       <app-generic-error
         [showReload]="true"
@@ -7,18 +10,25 @@
         (reload)="clientStore.reload()"
       ></app-generic-error>
     } @else {
-      <app-client-info
-        [displayData]="clientStore.data | async"
-      ></app-client-info>
+      @if (clientStore.data | async; as data) {
+        <app-client-info [displayData]="data"></app-client-info>
+      }
     }
   </div>
 
   @if (showBucket()) {
-    <div [class.loading]="populatedBucketStore.loading | async">
+    <div
+      class="flex flex-col gap-4"
+      [class.loading]="populatedBucketStore.loading | async"
+    >
       @if (populatedBucketStore.error | async; as errors) {
         @for (error of errors; track error) {
           @if (error) {
-            <app-generic-error [text]="error"></app-generic-error>
+            <app-generic-error
+              [showReload]="true"
+              [text]="error"
+              (reload)="populatedBucketStore.reload()"
+            ></app-generic-error>
           }
         }
       } @else {

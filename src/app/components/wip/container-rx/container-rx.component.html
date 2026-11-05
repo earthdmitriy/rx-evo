@@ -1,5 +1,8 @@
-<div class="max-w-screen-lg">
-  <div [class.loading]="clientRequest.loading$ | async">
+<div class="flex flex-col gap-4">
+  <div
+    class="flex flex-col gap-4"
+    [class.loading]="clientRequest.loading$ | async"
+  >
     @if (clientRequest.error$ | async) {
       <app-generic-error text="Failed to load client"></app-generic-error>
     }
@@ -9,7 +12,10 @@
   </div>
 
   @if (showBucket) {
-    <div [class.loading]="combined.loading$">
+    <div
+      class="flex flex-col gap-4"
+      [class.loading]="combined.loading$ | async"
+    >
       @if (combined.error$ | async) {
         <app-generic-error text="Failed to load bucket"></app-generic-error>
       }

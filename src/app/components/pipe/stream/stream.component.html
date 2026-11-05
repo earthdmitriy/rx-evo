@@ -1,4 +1,4 @@
-<div class="max-w-screen-lg">
+<div class="flex flex-col gap-4">
   <div [class.loading]="clientLoading$ | async">
     @if (client$ | async; as data) {
       <app-client-info [displayData]="data"></app-client-info>

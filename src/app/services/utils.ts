@@ -1,10 +1,10 @@
 import {
+  defer,
   delay,
   interval,
   map,
   Observable,
   of,
-  pipe,
   startWith,
   switchMap,
   tap,
@@ -16,31 +16,28 @@ import { Client } from './api/ClientApi.service';
 import { Product } from './api/ProductsApi.service';
 import { clientCount, randomDelayMs } from './consts';
 
-export const randomDelay = <T>(
-  skipDelay: boolean,
-  logKey = '',
-  arg: unknown = '',
-) =>
-  skipDelay
-    ? pipe(
+/**
+ * Simulated network latency. The delay is picked per subscription, so the
+ * "API speed" switch applies to every new request, including deferred ones.
+ */
+export const randomDelay =
+  (
+    skipDelay: boolean,
+    logKey = '',
+    arg: unknown = '',
+    maxDelayMs: () => number = () => randomDelayMs,
+  ) =>
+  <T>(source: Observable<T>): Observable<T> =>
+    defer(() =>
+      source.pipe(
         tap(() => console.log(`request ${logKey} start arg ${arg}`)),
-        delay<T>(10),
+        delay<T>(skipDelay ? 10 : Math.random() * maxDelayMs()),
         tap({
           next: () => console.log(`request ${logKey} end`),
           unsubscribe: () => console.log(`request ${logKey} unsubsribe`),
         }),
-      )
-    : pipe(
-        tap({
-          next: () => console.log(`request ${logKey} start arg ${arg}`),
-          unsubscribe: () => console.log(`request ${logKey} unsubsribe`),
-        }),
-        delay<T>(Math.random() * randomDelayMs),
-        tap({
-          next: () => console.log(`request ${logKey} end`),
-          unsubscribe: () => console.log(`request ${logKey} unsubsribe`),
-        }),
-      );
+      ),
+    );
 
 export const mapToError =
   <T>(error: Observable<boolean>) =>

@@ -1,0 +1,117 @@
+<div class="mx-auto w-full max-w-5xl">
+  <!-- hero -->
+  <section class="pt-2 pb-10">
+    <span class="badge badge-accent mb-4">Angular · RxJS · Signals</span>
+    <h1 class="max-w-3xl text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
+      One screen, rewritten again and again — from chaos to a deterministic data flow.
+    </h1>
+    <p class="mt-4 max-w-2xl text-lg text-slate-600">
+      rx-evo is a playground of reactive patterns in practice. Every sample loads the same data
+      through a slow, flaky fake API, so you can compare how each approach handles input changes,
+      loading, errors and shared requests.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      @if (first) {
+        <a [routerLink]="first.url" class="btn btn-primary">Start with {{ first.title }} →</a>
+      }
+      <a [href]="repoBlob('docs/fp_article.md')" target="_blank" rel="noopener" class="btn btn-secondary"
+        >Read the article ↗</a
+      >
+      <a [href]="repoUrl" target="_blank" rel="noopener" class="btn btn-ghost">GitHub ↗</a>
+    </div>
+  </section>
+
+  <!-- how to read -->
+  <section class="mb-10 grid gap-4 md:grid-cols-3">
+    <div class="card card-body">
+      <h2 class="card-title mb-1">Ordered worst → best</h2>
+      <p class="text-sm text-slate-600">
+        Groups in the sidebar follow the folders in <span class="code-chip">src/app/components</span>.
+        Each step fixes something the previous one got wrong.
+      </p>
+    </div>
+    <div class="card card-body">
+      <h2 class="card-title mb-1">Same screen every time</h2>
+      <p class="text-sm text-slate-600">
+        Client card samples load a client, their bucket and the product catalog. List samples search,
+        page and scroll clients. Only the reactive plumbing changes.
+      </p>
+    </div>
+    <div class="card card-body">
+      <h2 class="card-title mb-1">Break it on purpose</h2>
+      <p class="text-sm text-slate-600">
+        Demo controls switch the client, auto-increment it and make each API throw. Every request has
+        a random delay of up to 5&nbsp;seconds.
+      </p>
+    </div>
+  </section>
+
+  <!-- pipeline -->
+  <section class="card mb-10 p-6">
+    <h2 class="section-title mb-4">Every flow is the same pipeline</h2>
+    <ol class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      @for (stage of pipeline; track stage.name; let last = $last; let i = $index) {
+        <li class="relative rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <span class="text-xs font-semibold text-indigo-600 tabular-nums">0{{ i + 1 }}</span>
+          <span class="block font-medium text-slate-900">{{ stage.name }}</span>
+          <span class="mt-1 block text-xs text-slate-500">{{ stage.text }}</span>
+          @if (!last) {
+            <span
+              class="absolute top-1/2 -right-3 z-10 hidden -translate-y-1/2 text-slate-300 lg:block"
+              aria-hidden="true"
+              >▶</span
+            >
+          }
+        </li>
+      }
+    </ol>
+    <p class="mt-4 text-sm text-slate-600">
+      The target keeps the async mapping inside one primitive that carries value, pending and error
+      together, and keeps everything after it pure. Details:
+      <a
+        class="font-medium text-indigo-600 hover:text-indigo-500"
+        [href]="repoBlob('docs/reactive_patterns/README.md')"
+        target="_blank"
+        rel="noopener"
+        >reactive patterns catalog ↗</a
+      >.
+    </p>
+  </section>
+
+  <!-- verdict legend -->
+  <section class="mb-6 flex flex-wrap items-center gap-2">
+    <span class="section-title mr-2">Verdicts</span>
+    @for (v of verdictList; track v.key) {
+      <span class="badge" [class]="v.badge" [title]="v.hint">{{ v.label }}</span>
+    }
+  </section>
+
+  <!-- catalog -->
+  <section class="space-y-8 pb-12">
+    @for (g of groups; track g.url) {
+      <div>
+        <div class="mb-3 flex items-baseline gap-3">
+          <span class="step-dot">{{ g.step }}</span>
+          <h2 class="text-lg font-semibold text-slate-900">{{ g.title }}</h2>
+        </div>
+        <p class="mb-4 max-w-3xl text-sm text-slate-600">{{ g.blurb }}</p>
+        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          @for (s of g.samples; track s.url) {
+            <a [routerLink]="s.url" class="card group flex flex-col p-4 transition hover:border-indigo-300 hover:shadow-md">
+              <div class="mb-2 flex items-center justify-between gap-2">
+                <span class="font-medium text-slate-900 group-hover:text-indigo-600">{{ s.title }}</span>
+                <span class="badge" [class]="verdicts[s.verdict].badge">{{ verdicts[s.verdict].label }}</span>
+              </div>
+              <p class="flex-1 text-sm text-slate-600">{{ s.summary }}</p>
+              <div class="mt-3 flex flex-wrap gap-1">
+                @for (tag of s.tags.slice(0, 3); track tag) {
+                  <span class="code-chip text-[11px]">{{ tag }}</span>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+  </section>
+</div>

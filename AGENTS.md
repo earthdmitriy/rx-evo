@@ -1,89 +1,69 @@
 # Project Agents
 
-## Patterns
+## What this project is
 
-### Component input handling
+rx-evo is an Angular 21 playground that shows the **same screens rewritten
+with progressively better reactive patterns** (live demo:
+https://earthdmitriy.github.io/rx-evo/). It is a teaching artefact: some
+samples are intentionally bad.
 
-```typescript
-// ✅ common imports
-import {
-  inject,input,output,viewChild,viewChildren
-} from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+- `src/app/components/<group>/<sample>/` — samples. Group folders sort
+  alphabetically **worst → best**: `legacy` → `optimized` → `pipe` →
+  `signals` → `wip` → `xprerimental` (not a typo: the name sorts after `wip`; do not rename).
+  `content/` holds shared view components (client info, bucket, error,
+  stateful block, demo controller), not samples.
+- Client-card samples come in pairs: `<name>-input-wrapper.component.ts`
+  (feeds `clientId`/`showBucket` from `EventBusService`) + `<name>.component.*`
+  (the actual sample). List samples (`xprerimental/*`) are routed directly.
+- `services/api/*` — fake APIs (faker data, random delay ≤ 5 s, error
+  toggles via `EventBusService`). `services/tinyStore`, `services/resource`,
+  `services/rx-utils.ts` — home-grown primitives used by `wip/*`.
+- `submodules/stateful-observable` — git submodule of the target library
+  (also consumed from npm as `@rx-evo/stateful-observable`). Run
+  `git submodule update --init` after cloning.
+- `layout/` — app shell pieces (home page, notes panel, markdown, dataflow
+  diagrams). `samples/sample-meta.ts` — sample metadata types and helpers.
+- `docs/` — article, reactive pattern catalog, style guide, description
+  template.
 
-class SomeComponent {
-    // ❌ Mutable input
-    @Input() clientId!: number
+## Ground rules
 
-    // ❌ Lifecicle hooks prohibited
-    ngOnInit(): void {
-    // ... 
-    }
+- **Never "fix" a sample's code** unless asked. Bad samples are bad on
+  purpose; their README explains what is wrong. A refactor belongs in a
+  better-ranked sample, not in place.
+- **Sample metadata is not in sample code.** Short facts live in route data
+  (`app.routes.ts`, `sampleRoute(...)` with `SampleMeta`); long form in the
+  sample folder's `README.md` following
+  [`docs/sample-description.md`](docs/sample-description.md). The sidebar,
+  index page and pager are generated from the routes.
+- **Before writing or reviewing a README**, read "Decisions (not defects)"
+  and "Assessment criteria" in `docs/sample-description.md`. Never list a
+  recorded decision as **Bad**, and assess the dataflow, not the template.
+- **UI follows [`docs/style-guide.md`](docs/style-guide.md):** shared
+  component classes from `src/styles.css`, `slate`/`indigo` + semantic
+  `emerald`/`rose`/`amber`/`sky` only. Restyling never changes bindings.
+- `*.component.dataflow.md` files are generated diagrams — don't hand-edit.
+- Adding a sample: folder in the right group → route via `sampleRoute` →
+  `README.md` from the template → (optional) dataflow file.
 
-    // ❌ Lifecicle hooks prohibited
-    ngOnChanges(changes: SimpleChanges): void {
-        if (changes['clientId'].currentValue !== undefined) {
-            this.clientId$.next(changes['clientId'].currentValue);
-        }
-    }
+## Commands
 
-    // ✅ Reactive
-    public readonly clientId = input<number>();
-    // ✅ Reactive
-    public readonly clientId = input.required<number>();
+- `npm start` — dev server on http://localhost:4200
+- `npm run build` — production build (`dist/rx-evo`)
+- `npm test` — Jest
+- `npm run deploy` — GitHub Pages
 
-    // ✅ To observble for interop
-    public readonly clientId$ = toObservable(this.clientId);
+## Coding patterns
 
-    // ❌ Missing readonly
-    public clientId = input<number>();
+Coding patterns live in `.opencode/patterns/`. Each file covers one cohesive
+group; add new files there rather than appending to this index. They describe
+the **target** style (new code, `wip/stateful-observable`, `xprerimental/*`),
+not what legacy samples look like.
 
-    // ❌ Effect as property prohibited
-    private effectName = effect();
-    // ❌ Subscription as property prohibited
-    private subscription = this.clientId$.pipe(takeUntilDestroyed()).subscribe(/* ... */);
-
-    constructor() {
-        // ✅ side effects in constructor
-        effect(/* ... */);
-        this.clientId$.pipe(takeUntilDestroyed()).subscribe(/* ... */);
-    }
-
-    constructor(
-        // ❌ injection in constructor prohibited
-        private readonly clientsApi: ClientApiService,
-    ) {}
-    // ✅ propery injection
-    private readonly clientsApi = inject(ClientApiService);
-
-    // ❌ writable signals prohibited
-    client = signal<Client | undefined>(undefined);
-    // ❌ writable subjects prohibited
-    client = new BehaviorSubject<Client | undefined>(undefined);
-}
-```
+- `.opencode/patterns/angular-components.md` — reactive inputs, side effects
+  in constructor, `inject()` over constructor DI, no writable component state.
 
 # MCP servers
 ## ts-scan — instant TypeScript intelligence for AI coding agents
-
-Stop grepping `node_modules`, stop reading entire files, and stop running full
-builds just to check your work. **ts-scan** is an MCP server that gives you
-exactly the TypeScript information you need — in seconds.
-
-### Tools
-
-| Tool | What you get | When to use it |
-|---|---|---|
-| `check_type_errors` | Type errors for a single file (line, column, message) | After **every edit** — validate your changes instantly, no build needed |
-| `list_imports` | Every imported symbol with its signature and JSDoc | Before **refactoring** a file — know exactly what types and APIs you're dealing with |
-| `list_exports` | Every exported symbol with its signature and JSDoc | Before **using an unfamiliar module** — see its public surface without reading the source |
-| `resolve_symbol` | The correct import path for a named export | When you **know the function name** but not where it's exported from (local or `node_modules`) |
-
-### Starting the server
-
-```bash
-# stdio (default)
-npx ts-scan --mcp
-
-# HTTP (for browser-based agents)
-npx ts-scan --mcp --port 3000
+**ALWAYS** use MCP `ts-scan` at first when exploring typescript code.
+`read`, `glob`, `grep` commands are available only if you provide them the `force=true` argument

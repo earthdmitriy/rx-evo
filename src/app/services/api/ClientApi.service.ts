@@ -2,8 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, map, Observable, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../../app.config';
-import { clientCount } from '../consts';
+import { clientCount, fastDelayMs, randomDelayMs } from '../consts';
 import { EventBusService } from '../EventBus.service';
+import { RequestMonitorService } from '../RequestMonitor.service';
 import { mapToError, randomDelay } from '../utils';
 
 export type Client = {
@@ -41,6 +42,10 @@ const createClient = (id: number) => ({
 export class ClientApiService {
   private readonly logKey = 'client';
   private readonly skipDelay = inject(SKIPDELAY_TOKEN);
+  private readonly slowApi$ = inject(EventBusService).slowApi$;
+  private readonly maxDelay = () =>
+    this.slowApi$.value ? randomDelayMs : fastDelayMs;
+  private readonly monitor = inject(RequestMonitorService);
   private readonly throwError$ = inject(EventBusService).throwClientApiError$;
 
   private readonly cachedClients: { [id: number]: Client } = new Array(
@@ -57,8 +62,9 @@ export class ClientApiService {
     const cached =
       this.cachedClients[id] ?? (this.cachedClients[id] = createClient(id));
     return of(cached).pipe(
-      randomDelay(this.skipDelay, this.logKey, id),
+      randomDelay(this.skipDelay, this.logKey, id, this.maxDelay),
       mapToError(this.throwError$),
+      this.monitor.track('client'),
     );
   }
 
@@ -70,8 +76,9 @@ export class ClientApiService {
     return of(
       Object.keys(this.cachedClients).map((id) => this.cachedClients[+id]),
     ).pipe(
-      randomDelay(this.skipDelay, this.logKey),
+      randomDelay(this.skipDelay, this.logKey, undefined, this.maxDelay),
       mapToError(this.throwError$),
+      this.monitor.track('client'),
     );
   }
 
@@ -94,8 +101,9 @@ export class ClientApiService {
     );
 
     return of(results).pipe(
-      randomDelay(this.skipDelay, this.logKey),
+      randomDelay(this.skipDelay, this.logKey, undefined, this.maxDelay),
       mapToError(this.throwError$),
+      this.monitor.track('client'),
     );
   }
 

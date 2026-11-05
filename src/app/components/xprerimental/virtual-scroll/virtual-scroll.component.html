@@ -1,87 +1,71 @@
-<cdk-virtual-scroll-viewport
-  #viewport
-  [itemSize]="itemHeight"
-  class="flex-1 flex flex-col w-full"
->
-  <!-- table header (kept outside the virtual viewport so it stays fixed) -->
-  <table
-    class="bg-white shadow rounded min-w-full divide-y divide-gray-200 table-fixed w-full overflow-hidden"
+<div class="card flex h-[50dvh] min-h-[16rem] flex-col overflow-hidden">
+  <div class="card-header">
+    <h3 class="card-title">Clients</h3>
+  </div>
+  @if (stream.error$ | async) {
+    <div class="border-b border-slate-200 p-3">
+      <app-generic-error
+        text="Some pages failed to load."
+        [showReload]="true"
+        (reload)="retry$.next()"
+      ></app-generic-error>
+    </div>
+  }
+  <cdk-virtual-scroll-viewport
+    #viewport
+    [itemSize]="itemHeight"
+    class="min-h-0 w-full flex-1 [&_.cdk-virtual-scroll-content-wrapper]:w-full"
+    [class.loading]="!(rows$ | async)"
   >
-    <thead class="bg-gray-50">
-      <tr>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        >
-          Name
-        </th>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        >
-          Email
-        </th>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        >
-          Registered
-        </th>
-      </tr>
-    </thead>
-
-    <tbody>
-      <tr *cdkVirtualFor="let client of stream.value$">
-        @if (client) {
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-            {{ client.name }}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            {{ client.email }}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-            {{ client.registeredAt | date: "medium" }}
-          </td>
-        } @else {
-          <td
-            class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
-            colspan="3"
-          >
-            Loading ...
-          </td>
-        }
-      </tr>
-      @if (!(stream.value$ | async)) {
-        <tr class="loading">
-          <td colspan="3" class="h-30"></td>
+    <table
+      class="table table-hover w-full table-fixed border-separate border-spacing-0"
+    >
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Registered</th>
         </tr>
-      }
-    </tbody>
-    <tfoot class="bg-gray-50">
-      <tr>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        ></th>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        ></th>
-        <th
-          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-        ></th>
-      </tr>
-    </tfoot>
-  </table>
-</cdk-virtual-scroll-viewport>
-<div class="bg-white shadow rounded min-w-full table-fixed w-full mt-2 p-2">
-  <div class="flex items-center justify-between gap-4">
-    <div
-      class="text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-1"
-    >
+      </thead>
+      <tbody>
+        <tr *cdkVirtualFor="let client of rows$" class="h-[52px]">
+          @if (client) {
+            <td
+              class="h-[52px] truncate border-b border-slate-100 py-0 font-medium text-slate-900"
+            >
+              {{ client.name }}
+            </td>
+            <td class="h-[52px] truncate border-b border-slate-100 py-0">
+              {{ client.email }}
+            </td>
+            <td class="h-[52px] truncate border-b border-slate-100 py-0">
+              {{ client.registeredAt | date: "medium" }}
+            </td>
+          } @else {
+            <td class="h-[52px] border-b border-slate-100 py-0">
+              <div class="skeleton h-4 w-2/3"></div>
+            </td>
+            <td class="h-[52px] border-b border-slate-100 py-0">
+              <div class="skeleton h-4 w-3/4"></div>
+            </td>
+            <td class="h-[52px] border-b border-slate-100 py-0">
+              <div class="skeleton h-4 w-1/2"></div>
+            </td>
+          }
+        </tr>
+      </tbody>
+    </table>
+  </cdk-virtual-scroll-viewport>
+  <div
+    class="flex items-center justify-between gap-4 border-t border-slate-200 px-4 py-2.5 text-xs text-slate-500"
+  >
+    <div>
       @if (viewport.getRenderedRange(); as range) {
-        From {{ range.start }} to {{ range.end }}
+        Rendered rows {{ range.start }} to {{ range.end }}
       }
     </div>
-    <div
-      class="text-xs font-medium text-gray-500 uppercase tracking-wider px-4 py-1"
-    >
+    <span class="badge badge-neutral">
       Total: {{ viewport.getDataLength() }}
-    </div>
+    </span>
   </div>
 </div>

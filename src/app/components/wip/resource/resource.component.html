@@ -1,5 +1,5 @@
-<div class="max-w-screen-lg">
-  <div [class.loading]="clientResource.isLoading()">
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4" [class.loading]="clientResource.isLoading()">
     @if (clientResource.error()) {
       <app-generic-error
         text="Failed to load client"
@@ -7,28 +7,26 @@
         (reload)="clientResource.reload()"
       ></app-generic-error>
     }
-    @if (clientResource.value(); as data) {
-      <app-client-info [displayData]="data"></app-client-info>
+    @if (clientResource.hasValue()) {
+      <app-client-info [displayData]="clientResource.value()"></app-client-info>
     }
   </div>
 
   @if (showBucket()) {
-    <div [class.loading]="populatedBucketResource.isLoading()">
+    <div
+      class="flex flex-col gap-4"
+      [class.loading]="populatedBucketResource.isLoading()"
+    >
       @if (populatedBucketResource.error()) {
-        <app-generic-error text="Failed to load bucket"></app-generic-error>
+        <app-generic-error
+          text="Failed to load bucket"
+          [showReload]="true"
+          (reload)="populatedBucketResource.reload()"
+        ></app-generic-error>
       }
-      @if (populatedBucketResource.value(); as data) {
-        <app-client-bucket [bucket]="data"></app-client-bucket>
+      @if (populatedBucketResource.hasValue()) {
+        <app-client-bucket [bucket]="populatedBucketResource.value()"></app-client-bucket>
       }
     </div>
   }
 </div>
-<div>
-  <button
-    class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-  >
-    Click me!
-  </button>
-</div>
-
-<div class="">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</div>

@@ -1,52 +1,40 @@
-<div>
-  <h2 class="px-6 py-4 text-lg text-gray-800">Bucket</h2>
-  <div class="relative overflow-x-auto">
-    <table class="w-full text-sm text-left rtl:text-right text-gray-500">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+<section class="card">
+  <header class="card-header">
+    <h2 class="card-title">Bucket</h2>
+    <span class="badge badge-neutral"
+      >{{ bucket()?.goods?.length ?? 0 }} items</span
+    >
+  </header>
+  <div class="overflow-x-auto">
+    <table class="table table-hover">
+      <thead>
         <tr>
-          <th scope="col" class="px-6 py-3">Product name</th>
-          <th scope="col" class="px-6 py-3">Material</th>
-          <th scope="col" class="px-6 py-3">Price</th>
-          <th scope="col" class="px-6 py-3">Amount</th>
-          <th scope="col" class="px-6 py-3">Total price</th>
+          <th scope="col">Product name</th>
+          <th scope="col">Material</th>
+          <th scope="col" class="num">Price</th>
+          <th scope="col" class="num">Amount</th>
+          <th scope="col" class="num">Total price</th>
         </tr>
       </thead>
       <tbody>
         @for (product of bucket()?.goods; track product) {
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              {{ product.product.name }}
-            </th>
-            <td class="px-6 py-4">
-              {{ product.product.material }}
-            </td>
-            <td class="px-6 py-4">
-              {{ product.product.price | currency }}
-            </td>
-            <td class="px-6 py-4">
-              {{ product.amount }}
-            </td>
-            <td class="px-6 py-4">
+          <tr>
+            <th scope="row">{{ product.product.name }}</th>
+            <td>{{ product.product.material }}</td>
+            <td class="num">{{ product.product.price | currency }}</td>
+            <td class="num">{{ product.amount }}</td>
+            <td class="num">
               {{ +product.product.price * product.amount | currency }}
             </td>
           </tr>
         }
-        <tr class="bg-white border-b">
-          <th
-            scope="row"
-            class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            colspan="4"
-          >
-            Total
-          </th>
-          <td class="px-6 py-4">
-            {{ bucket()?.total | currency }}
-          </td>
-        </tr>
       </tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="4">Total</th>
+          <td class="num">{{ bucket()?.total | currency }}</td>
+        </tr>
+      </tfoot>
     </table>
   </div>
-</div>
+</section>

@@ -105,4 +105,12 @@ export class PaginationComponent {
     const cur = pagination.controls.page.value || 1;
     pagination.patchValue({ page: cur + 1 });
   }
+
+  /** A new page size starts from page 1 (one patch → one request). */
+  public setPageSize(
+    pagination: ObservedValueOf<typeof this.pagination$>,
+    pageSize: number,
+  ) {
+    pagination.patchValue({ page: 1, pageSize });
+  }
 }

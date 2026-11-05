@@ -1,39 +1,43 @@
-<form [formGroup]="filters" class="space-y-4 mb-6 bg-white p-4 rounded shadow">
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<form [formGroup]="filters" class="card card-body">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <div>
-      <label class="block text-sm font-medium text-gray-700">Name</label>
+      <label class="label" for="filter-name">Name</label>
       <input
+        id="filter-name"
         type="text"
         formControlName="name"
-        class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        class="input"
       />
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700">Email</label>
+      <label class="label" for="filter-email">Email</label>
       <input
+        id="filter-email"
         type="email"
         formControlName="email"
-        class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        class="input"
       />
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700"
+      <label class="label" for="filter-registered-after"
         >Registered After</label
       >
       <input
+        id="filter-registered-after"
         type="date"
         formControlName="registeredAfter"
-        class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm"
+        class="input"
       />
     </div>
     <div>
-      <label class="block text-sm font-medium text-gray-700"
+      <label class="label" for="filter-registered-before"
         >Registered Before</label
       >
       <input
+        id="filter-registered-before"
         type="date"
         formControlName="registeredBefore"
-        class="mt-1 block w-full rounded border-gray-300 shadow-sm sm:text-sm"
+        class="input"
       />
     </div>
   </div>

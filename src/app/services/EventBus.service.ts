@@ -13,6 +13,8 @@ export class EventBusService {
   public readonly throwBucketApiError$ = new BehaviorSubject(false);
   public readonly throwProductApiError$ = new BehaviorSubject(false);
   public readonly loggedIn$ = new BehaviorSubject(true);
+  /** true → requests take up to 5 s, false → up to 0.3 s. */
+  public readonly slowApi$ = new BehaviorSubject(true);
 
   constructor() {
     this.toggleAutoIncrement$

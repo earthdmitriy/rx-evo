@@ -1,74 +1,42 @@
-<div class="flex">
-  <div class="relative size-48 mx-6 my-6">
+<section class="card">
+  <header class="card-header">
+    <h2 class="card-title">Client</h2>
+    <span class="badge badge-neutral">#{{ displayData()?.clientId }}</span>
+  </header>
+  <div class="card-body flex flex-col gap-5 sm:flex-row">
     <img
-      class="size-full rounded-base object-contain object-center"
+      class="size-28 shrink-0 rounded-xl bg-slate-100 object-cover object-center"
       [src]="displayData()?.avatar"
       alt="Avatar"
       (error)="onImgError($event)"
     />
+    <dl class="grid min-w-0 flex-1 grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+      <div>
+        <dt class="text-xs text-slate-500">Id</dt>
+        <dd class="text-sm text-slate-900">{{ displayData()?.clientId }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-slate-500">Name</dt>
+        <dd class="text-sm text-slate-900">{{ displayData()?.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-slate-500">Birthdate</dt>
+        <dd class="text-sm text-slate-900">
+          {{ displayData()?.birthdate | date }}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs text-slate-500">Email</dt>
+        <dd class="truncate text-sm text-slate-900">
+          {{ displayData()?.email }}
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs text-slate-500">Registered At</dt>
+        <dd class="text-sm text-slate-900">
+          {{ displayData()?.registeredAt | date }}
+        </dd>
+      </div>
+    </dl>
   </div>
-
-  <div class="w-full">
-    <div class="relative overflow-x-auto">
-      <table class="w-full text-sm text-left rtl:text-right text-gray-500">
-        <tbody>
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              Id
-            </th>
-            <td class="px-6 py-4">
-              {{ displayData()?.clientId }}
-            </td>
-          </tr>
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              Name
-            </th>
-            <td class="px-6 py-4">
-              {{ displayData()?.name }}
-            </td>
-          </tr>
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              Birthdate
-            </th>
-            <td class="px-6 py-4">
-              {{ displayData()?.birthdate | date }}
-            </td>
-          </tr>
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              Email
-            </th>
-            <td class="px-6 py-4">
-              {{ displayData()?.email }}
-            </td>
-          </tr>
-          <tr class="bg-white border-b">
-            <th
-              scope="row"
-              class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap"
-            >
-              Registered At
-            </th>
-            <td class="px-6 py-4">
-              {{ displayData()?.registeredAt | date }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
+</section>

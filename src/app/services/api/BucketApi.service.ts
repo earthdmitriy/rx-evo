@@ -2,8 +2,15 @@ import { inject, Injectable } from '@angular/core';
 import { faker } from '@faker-js/faker';
 import { firstValueFrom, of } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../../app.config';
-import { clientCount, maxBucketSize, productCount } from '../consts';
+import {
+  clientCount,
+  maxBucketSize,
+  productCount,
+  fastDelayMs,
+  randomDelayMs,
+} from '../consts';
 import { EventBusService } from '../EventBus.service';
+import { RequestMonitorService } from '../RequestMonitor.service';
 import { mapToError, randomDelay } from '../utils';
 
 export type Bucket = {
@@ -30,6 +37,10 @@ const createBucket = (clientId: number) => ({
 export class BucketApiService {
   private readonly logKey = 'bucket';
   private readonly skipDelay = inject(SKIPDELAY_TOKEN);
+  private readonly slowApi$ = inject(EventBusService).slowApi$;
+  private readonly maxDelay = () =>
+    this.slowApi$.value ? randomDelayMs : fastDelayMs;
+  private readonly monitor = inject(RequestMonitorService);
   private readonly throwError$ = inject(EventBusService).throwBucketApiError$;
 
   private readonly cachedBuckets: { [id: number]: Bucket } = new Array(
@@ -47,8 +58,9 @@ export class BucketApiService {
       (this.cachedBuckets[clientId] = createBucket(clientId));
 
     return of(cached).pipe(
-      randomDelay(this.skipDelay, this.logKey, clientId),
+      randomDelay(this.skipDelay, this.logKey, clientId, this.maxDelay),
       mapToError(this.throwError$),
+      this.monitor.track('bucket'),
     );
   }
 
@@ -60,8 +72,9 @@ export class BucketApiService {
     return of(
       Object.keys(this.cachedBuckets).map((id) => this.cachedBuckets[+id]),
     ).pipe(
-      randomDelay(this.skipDelay, this.logKey),
+      randomDelay(this.skipDelay, this.logKey, undefined, this.maxDelay),
       mapToError(this.throwError$),
+      this.monitor.track('bucket'),
     );
   }
 }

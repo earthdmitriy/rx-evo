@@ -19,6 +19,10 @@ graph LR
             "]
             Source_stream.reload["
                 stream.reload
+                x2
+            "]
+            Source_pageRequest$.next["
+                pageRequest$.next
             "]
         end
     end
@@ -26,38 +30,37 @@ graph LR
         Processing_formValue$("
             formValue$
         ")
-        Processing_pageSubject$("
-            pageSubject$
+        Processing_pageRequest$("
+            pageRequest$
         ")
-        Processing_currentPage$("
-            currentPage$
+        Processing_query$("
+            query$
         ")
-        Processing_isFirstLoading$("
-            isFirstLoading$
+        Processing_page$("
+            page$
         ")
-        Processing_stream("
+        Processing_stream["
             stream
-        ")
+        "]
     end
     subgraph Consumers
         subgraph TemplateRead
             direction LR
             Consumer_stream.pending$("
                 stream.pending$
-                x2
+                x3
             ")
-            Consumer_isFirstLoading$("
-                isFirstLoading$
+            Consumer_page$("
+                page$
+                x3
             ")
             Consumer_stream.error$("
                 stream.error$
+                x2
             ")
             Consumer_stream.value$("
                 stream.value$
-                x2
-            ")
-            Consumer_pageSubject$("
-                pageSubject$
+                x3
             ")
         end
     end
@@ -65,21 +68,22 @@ graph LR
     Processing ~~~ Consumers
     Source_formValue$.next --> Processing_formValue$
     Source_stream.reload --> Processing_stream
-    Processing_formValue$ --> Processing_pageSubject$
-    Processing_pageSubject$ --> Processing_currentPage$
-    Processing_currentPage$ --> Consumer_pageSubject$
-    Processing_currentPage$ --> Processing_isFirstLoading$
-    Processing_formValue$ --> Processing_stream
-    Processing_currentPage$ --> Processing_stream
+    Source_pageRequest$.next --> Processing_pageRequest$
+    Processing_formValue$ --> Processing_query$
+    Processing_pageRequest$ --> Processing_query$
+    Processing_query$ --> Processing_page$
+    Processing_query$ --> Processing_stream
     Source_clientApiService --> Processing_stream
     Processing_stream --> Consumer_stream.pending$
-    Processing_isFirstLoading$ --> Consumer_stream.pending$
-    Processing_stream --> Consumer_isFirstLoading$
-    Processing_isFirstLoading$ --> Consumer_isFirstLoading$
+    Processing_page$ --> Consumer_stream.pending$
+    Processing_stream --> Consumer_page$
+    Processing_page$ --> Consumer_page$
     Processing_stream --> Consumer_stream.error$
+    Processing_page$ --> Consumer_stream.error$
     Processing_stream --> Consumer_stream.value$
-    Processing_pageSubject$ --> Consumer_pageSubject$
+    Processing_page$ --> Consumer_stream.value$
     style Processing_formValue$ fill:#430
+    style Processing_pageRequest$ fill:#430
 
 ```
 

@@ -3,7 +3,7 @@
 }
 
 @if (ready) {
-  <div class="max-w-screen-lg">
+  <div class="flex flex-col gap-4">
     <app-client-info [displayData]="displayData.clientInfo"></app-client-info>
     @if (showBucket) {
       <app-client-bucket [bucket]="displayData.bucket"></app-client-bucket>

@@ -1,5 +1,5 @@
-<div class="max-w-screen-lg">
-  <div [class.loading]="clientRequest.loading()">
+<div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-4" [class.loading]="clientRequest.loading()">
     @if (clientRequest.error()) {
       <app-generic-error text="Failed to load client"></app-generic-error>
     }
@@ -9,7 +9,7 @@
   </div>
 
   @if (showBucket()) {
-    <div [class.loading]="combined.loading()">
+    <div class="flex flex-col gap-4" [class.loading]="combined.loading()">
       @if (combined.error()) {
         <app-generic-error text="Failed to load bucket"></app-generic-error>
       }

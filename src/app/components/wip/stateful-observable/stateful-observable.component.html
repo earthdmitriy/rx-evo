@@ -1,4 +1,4 @@
-<div class="max-w-screen-lg">
+<div class="flex flex-col gap-4">
   <app-stateful-block [stream]="client$">
     @if (client$ | async; as clientData) {
       <app-client-info [displayData]="clientData"></app-client-info>

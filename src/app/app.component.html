@@ -1,41 +1,267 @@
-<aside
-  class="fixed top-0 left-0 z-40 w-64 h-screen transition-transform -translate-x-full sm:translate-x-0"
-  aria-label="Sidebar"
+<input id="nav-toggle" type="checkbox" class="peer sr-only" #navToggle />
+
+<!-- mobile top bar -->
+<header
+  class="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-slate-200 bg-white/90 px-4 backdrop-blur lg:hidden"
 >
-  <div
-    class="h-full px-3 py-4 overflow-y-auto bg-gray-50 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-blue-100 [&::-webkit-scrollbar-thumb]:bg-blue-500"
+  <a
+    routerLink="/"
+    class="flex items-center gap-2 font-semibold text-slate-900"
   >
-    <app-controller></app-controller>
-    <ul class="space-y-2 font-medium">
-      @for (route of routes; track route) {
-        <li>
-          <div>
-            <a
-              href="#"
-              class="flex items-center p-2 text-gray-900 rounded-lg group"
-            >
-              <span class="ms-3">{{ route.title }}</span>
-            </a>
-          </div>
-          @if (route.child?.length) {
-            <ul>
-              @for (child of route.child; track child) {
-                <li>
-                  <a
-                    [routerLink]="[child.path]"
-                    class="cursor-pointer pl-10 flex items-center p-2 text-gray-900 rounded-lg hover:bg-gray-100 group"
-                  >
-                    <span class="ms-3">{{ child.title }}</span>
-                  </a>
-                </li>
-              }
-            </ul>
+    <span class="logo-mark">rx</span> rx-evo
+  </a>
+  <label
+    for="nav-toggle"
+    class="btn btn-ghost btn-icon"
+    aria-label="Toggle navigation"
+  >
+    <svg
+      class="size-5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" d="M4 7h16M4 12h16M4 17h16" />
+    </svg>
+  </label>
+</header>
+
+<!-- sidebar -->
+<aside
+  class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col border-r border-slate-200 bg-white transition-transform peer-checked:translate-x-0 lg:translate-x-0"
+  aria-label="Samples"
+>
+  <a
+    routerLink="/"
+    class="flex items-center gap-3 px-5 pt-5 pb-4"
+    (click)="navToggle.checked = false"
+  >
+    <span class="logo-mark size-9 text-base">rx</span>
+    <span>
+      <span class="block font-semibold text-slate-900">rx-evo</span>
+      <span class="block text-xs text-slate-500"
+        >Reactive patterns, worst → best</span
+      >
+    </span>
+  </a>
+
+  <nav class="nav-scroll flex-1 overflow-y-auto px-3 pb-6">
+    <a
+      routerLink="/"
+      routerLinkActive="nav-link-active"
+      [routerLinkActiveOptions]="{ exact: true }"
+      class="nav-link mb-3"
+      (click)="navToggle.checked = false"
+      >Overview</a
+    >
+    @for (g of groups; track g.url) {
+      <div class="mb-4">
+        <div class="flex items-center gap-2 px-3 pb-1">
+          <span class="step-dot">{{ g.step }}</span>
+          <span class="section-title">{{ g.title }}</span>
+        </div>
+        <ul class="ml-[1.3rem] border-l border-slate-200 pl-2">
+          @for (s of g.samples; track s.url) {
+            <li>
+              <a
+                [routerLink]="s.url"
+                routerLinkActive="nav-link-active"
+                class="nav-link"
+                (click)="navToggle.checked = false"
+              >
+                <span class="truncate">{{ s.title }}</span>
+                <span
+                  class="verdict-dot"
+                  [attr.data-verdict]="s.verdict"
+                  [title]="verdicts[s.verdict].label"
+                ></span>
+              </a>
+            </li>
           }
-        </li>
-      }
-    </ul>
+        </ul>
+      </div>
+    }
+  </nav>
+
+  <div class="border-t border-slate-200 px-5 py-3 text-xs text-slate-500">
+    <a
+      [href]="repoUrl"
+      target="_blank"
+      rel="noopener"
+      class="hover:text-slate-900"
+      >Source on GitHub ↗</a
+    >
   </div>
 </aside>
-<div class="p-4 sm:ml-64 bg-gray-50 min-h-screen flex flex-col">
-  <router-outlet />
-</div>
+
+<!-- backdrop for mobile nav -->
+<label
+  for="nav-toggle"
+  class="fixed inset-0 z-30 hidden bg-slate-900/30 peer-checked:block lg:peer-checked:hidden"
+  aria-hidden="true"
+></label>
+
+<main class="min-h-screen lg:pl-72">
+  <div
+    class="mx-auto flex min-h-[calc(100vh-3.5rem)] max-w-[1400px] flex-col px-4 py-6 sm:px-6 lg:min-h-screen lg:px-8 lg:py-8"
+  >
+    @if (sample(); as s) {
+      <!-- sample header -->
+      <header class="mb-6">
+        <div
+          class="mb-2 flex flex-wrap items-center gap-2 text-xs text-slate-500"
+        >
+          <span>{{ group()?.title }}</span>
+          <span aria-hidden="true">·</span>
+          <span>Sample {{ entry()?.current?.step }} of {{ total }}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
+            {{ s.title }}
+          </h1>
+          <span
+            class="badge"
+            [class]="verdicts[s.verdict].badge"
+            [title]="verdicts[s.verdict].hint"
+            >{{ verdicts[s.verdict].label }}</span
+          >
+        </div>
+        <p class="mt-2 max-w-3xl text-slate-600">{{ s.summary }}</p>
+        <div class="mt-3 flex flex-wrap items-center gap-1.5">
+          @for (tag of s.tags; track tag) {
+            <span class="code-chip">{{ tag }}</span>
+          }
+          <a
+            class="ml-auto text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            [href]="repoTree('src/app/components/' + s.folder)"
+            target="_blank"
+            rel="noopener"
+            >View source ↗</a
+          >
+        </div>
+      </header>
+
+      <app-controller class="mb-4" [scenario]="s.scenario" />
+    }
+
+    <div
+      [class]="
+        sample()
+          ? 'grid flex-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]'
+          : 'flex flex-1 flex-col'
+      "
+    >
+      <div
+        [class]="
+          sample()
+            ? 'demo-frame card flex min-h-[24rem] min-w-0 flex-col self-stretch'
+            : 'flex flex-1 flex-col'
+        "
+      >
+        @if (sample()) {
+          <div class="card-header">
+            <span class="section-title">Live demo</span>
+            <span class="hidden text-xs text-slate-400 sm:inline"
+              >simulated API · random delay up to 5s</span
+            >
+          </div>
+        }
+        <div
+          [class]="
+            sample()
+              ? 'flex flex-1 flex-col rounded-b-xl bg-slate-50 p-4 sm:p-5'
+              : 'flex flex-1 flex-col'
+          "
+        >
+          <router-outlet />
+        </div>
+      </div>
+
+      @if (sample(); as s) {
+        <aside
+          class="min-w-0 xl:sticky xl:top-8"
+          aria-label="About this sample"
+        >
+          <app-sample-notes [sample]="s" />
+          @if (s.docs?.length) {
+            <div class="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+              <h2 class="mb-2 text-sm font-semibold text-slate-900">
+                Related docs
+              </h2>
+              <ul class="space-y-1 text-sm">
+                @for (doc of s.docs; track doc.path) {
+                  <li>
+                    <a
+                      [href]="repoBlob(doc.path)"
+                      target="_blank"
+                      rel="noopener"
+                      class="text-indigo-600 hover:text-indigo-500"
+                      >{{ doc.label }} ↗</a
+                    >
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </aside>
+      }
+    </div>
+
+    @if (sample(); as s) {
+      @if (s.dataflow) {
+        <details class="group card mt-6 overflow-hidden">
+          <summary
+            #dataflowTrigger
+            class="flex cursor-pointer list-none items-center justify-between px-5 py-3 hover:bg-slate-50"
+          >
+            <span class="card-title">Component dataflow</span>
+            <span class="text-xs text-slate-500 group-open:hidden"
+              >Show diagram</span
+            >
+            <span class="hidden text-xs text-slate-500 group-open:inline"
+              >Hide</span
+            >
+          </summary>
+          <div class="border-t border-slate-200 bg-slate-900 p-5">
+            @defer (on interaction(dataflowTrigger)) {
+              <app-dataflow-view [source]="s.dataflow" />
+            } @placeholder {
+              <div></div>
+            }
+          </div>
+        </details>
+      }
+
+      <nav class="mt-6 grid gap-3 sm:grid-cols-2" aria-label="Sample pager">
+        @if (entry()?.prev; as prev) {
+          <a
+            [routerLink]="prev.url"
+            class="card group p-4 hover:border-indigo-300"
+          >
+            <span class="text-xs text-slate-500">← Previous</span>
+            <span
+              class="block font-medium text-slate-900 group-hover:text-indigo-600"
+              >{{ prev.title }}</span
+            >
+          </a>
+        } @else {
+          <span></span>
+        }
+        @if (entry()?.next; as next) {
+          <a
+            [routerLink]="next.url"
+            class="card group p-4 text-right hover:border-indigo-300"
+          >
+            <span class="text-xs text-slate-500">Next →</span>
+            <span
+              class="block font-medium text-slate-900 group-hover:text-indigo-600"
+              >{{ next.title }}</span
+            >
+          </a>
+        }
+      </nav>
+    }
+  </div>
+</main>

@@ -1,75 +1,152 @@
-<div class="px-3">
-  <label class="inline-flex items-center mb-5 cursor-pointer">
-    <input
-      [formControl]="incrementCtrl"
-      type="checkbox"
-      value=""
-      class="sr-only peer"
-    />
-    <div
-      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-blue-600"
-    ></div>
-    <span class="ms-3 text-sm font-medium text-gray-900">Autoincrement</span>
-  </label>
-  <label class="inline-flex items-center mb-5 cursor-pointer">
-    <input
-      [formControl]="showBucketCtrl"
-      type="checkbox"
-      value=""
-      class="sr-only peer"
-    />
-    <div
-      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-blue-600"
-    ></div>
-    <span class="ms-3 text-sm font-medium text-gray-900">Show bucket</span>
-  </label>
-  <label class="inline-flex items-center mb-5 cursor-pointer">
-    <input
-      [formControl]="throwClientCtrl"
-      type="checkbox"
-      class="sr-only peer"
-    />
-    <div
-      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-blue-600"
-    ></div>
-    <span class="ms-3 text-sm font-medium text-gray-900"
-      >Throw client error</span
-    >
-  </label>
-  <label class="inline-flex items-center mb-5 cursor-pointer">
-    <input
-      [formControl]="throwProductsCtrl"
-      type="checkbox"
-      class="sr-only peer"
-    />
-    <div
-      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-blue-600"
-    ></div>
-    <span class="ms-3 text-sm font-medium text-gray-900"
-      >Throw products error</span
-    >
-  </label>
-  <label class="inline-flex items-center mb-5 cursor-pointer">
-    <input
-      [formControl]="throwBucketCtrl"
-      type="checkbox"
-      class="sr-only peer"
-    />
-    <div
-      class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:w-5 after:h-5 after:transition-all peer-checked:bg-blue-600"
-    ></div>
-    <span class="ms-3 text-sm font-medium text-gray-900"
-      >Throw bucket error</span
-    >
-  </label>
-  <div class="mb-5">
-    <button
-      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-      (click)="next()"
-    >
-      Next
-    </button>
+<div class="card">
+  <!-- inputs + speed -->
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 py-3">
+    @if (scenario() === "client-card") {
+      <div class="flex items-center gap-3">
+        <span class="section-title">Client</span>
+        <span class="badge badge-neutral font-mono tabular-nums"
+          >#{{ eventBus.clientId$ | async }}</span
+        >
+        <button type="button" class="btn btn-secondary btn-sm" (click)="next()">
+          Next client
+        </button>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-2">
+        <label class="switch">
+          <input
+            [formControl]="incrementCtrl"
+            type="checkbox"
+            class="peer sr-only"
+          />
+          <span class="switch-track"></span>
+          Autoincrement
+        </label>
+        <label class="switch">
+          <input
+            [formControl]="showBucketCtrl"
+            type="checkbox"
+            class="peer sr-only"
+          />
+          <span class="switch-track"></span>
+          Show bucket
+        </label>
+      </div>
+    }
+
+    <div class="flex items-center gap-3 sm:ml-auto">
+      <span class="section-title">API speed</span>
+      <div
+        class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium"
+        role="group"
+        aria-label="API speed"
+      >
+        <button
+          type="button"
+          class="rounded-md px-2.5 py-1 transition-colors"
+          [class]="
+            slowApiCtrl.value
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800'
+          "
+          [attr.aria-pressed]="slowApiCtrl.value"
+          (click)="setSpeed(true)"
+        >
+          Slow · ≤5s
+        </button>
+        <button
+          type="button"
+          class="rounded-md px-2.5 py-1 transition-colors"
+          [class]="
+            !slowApiCtrl.value
+              ? 'bg-white text-slate-900 shadow-xs'
+              : 'text-slate-500 hover:text-slate-800'
+          "
+          [attr.aria-pressed]="!slowApiCtrl.value"
+          (click)="setSpeed(false)"
+        >
+          Fast · ≤0.3s
+        </button>
+      </div>
+    </div>
   </div>
 
-  <p>counter: {{ eventBus.clientId$ | async }}</p>
+  <!-- per-API requests -->
+  <div class="border-t border-slate-200 px-5 py-3">
+    <div class="mb-2 flex items-center justify-between">
+      <span class="section-title">Requests</span>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        (click)="resetCounters()"
+      >
+        Reset counters
+      </button>
+    </div>
+    <div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+      @for (api of apis(); track api.key) {
+        <div
+          class="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2"
+        >
+          <span
+            class="req-dot"
+            [attr.data-state]="api.stats.inFlight ? 'pending' : api.stats.last"
+            aria-hidden="true"
+          ></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-slate-900">{{
+                api.label
+              }}</span>
+              @if (api.stats.inFlight) {
+                <span class="badge badge-accent"
+                  >loading ×{{ api.stats.inFlight }}</span
+                >
+              } @else {
+                @switch (api.stats.last) {
+                  @case ("ok") {
+                    <span class="badge badge-good">ok</span>
+                  }
+                  @case ("error") {
+                    <span class="badge badge-bad">error</span>
+                  }
+                  @case ("cancelled") {
+                    <span class="badge badge-neutral">cancelled</span>
+                  }
+                  @default {
+                    <span class="badge badge-neutral">idle</span>
+                  }
+                }
+              }
+            </div>
+            <div
+              class="mt-0.5 text-xs text-slate-500 tabular-nums"
+              [title]="'requests / failed / cancelled'"
+            >
+              {{ api.stats.total }} req
+              @if (api.stats.errors) {
+                ·
+                <span class="text-rose-600">{{ api.stats.errors }} failed</span>
+              }
+              @if (api.stats.cancelled) {
+                · {{ api.stats.cancelled }} cancelled
+              }
+            </div>
+          </div>
+          <label
+            class="switch switch-danger text-xs"
+            [title]="'Make the ' + api.label + ' API throw'"
+          >
+            <input
+              [formControl]="api.throwCtrl"
+              type="checkbox"
+              class="peer sr-only"
+            />
+            <span class="switch-track"></span>
+            Throw
+          </label>
+        </div>
+      }
+    </div>
+  </div>
 </div>

@@ -1,12 +1,12 @@
-@if (!ready) {
-  <app-client-skeleton></app-client-skeleton>
-}
+<div class="flex flex-col gap-4">
+  @if (!ready) {
+    <app-client-skeleton></app-client-skeleton>
+  }
 
-@if (displayData$ | async; as displayData) {
-  <div class="max-w-screen-lg">
+  @if (displayData$ | async; as displayData) {
     <app-client-info [displayData]="displayData.clientInfo"></app-client-info>
     @if (showBucket) {
       <app-client-bucket [bucket]="displayData.bucket"></app-client-bucket>
     }
-  </div>
-}
+  }
+</div>

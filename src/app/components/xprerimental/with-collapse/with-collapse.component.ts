@@ -98,7 +98,7 @@ export class WithCollapseComponent {
     )
     .pipe(
       trackInReduxDevTools({
-        name: 'PaginationComponent Stream',
+        name: 'WithCollapseComponent Stream',
         actionName: (value) => {
           if (isLoading(value)) {
             return 'Loading...';
@@ -115,6 +115,7 @@ export class WithCollapseComponent {
   public readonly clientRequestFactory = statefulObservableFactory({
     loader: (clientId: number) => this.clientApiService.getClient$(clientId),
     cacheKey: (clientId: number) => [clientId],
+    refCount: false,
   });
 
   public prevPage(pagination: ObservedValueOf<typeof this.pagination$>) {
@@ -125,6 +126,14 @@ export class WithCollapseComponent {
   public nextPage(pagination: ObservedValueOf<typeof this.pagination$>) {
     const cur = pagination.controls.page.value || 1;
     pagination.patchValue({ page: cur + 1 });
+  }
+
+  /** A new page size starts from page 1 (one patch → one request). */
+  public setPageSize(
+    pagination: ObservedValueOf<typeof this.pagination$>,
+    pageSize: number,
+  ) {
+    pagination.patchValue({ page: 1, pageSize });
   }
 
   constructor() {

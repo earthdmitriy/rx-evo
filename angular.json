@@ -35,7 +35,17 @@
               "src/styles.less",
               "src/styles.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "loader": {
+              ".md": "text"
+            },
+            "allowedCommonJsDependencies": [
+              "cytoscape-fcose",
+              "cytoscape-cose-bilkent",
+              "@braintree/sanitize-url",
+              "dayjs",
+              "fastdom"
+            ]
           },
           "configurations": {
             "production": {

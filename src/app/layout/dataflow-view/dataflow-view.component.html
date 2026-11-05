@@ -1,0 +1,11 @@
+@if (markdown.isLoading()) {
+  <div class="skeleton h-48 bg-slate-800"></div>
+}
+<div
+  #target
+  class="space-y-6 overflow-x-auto [&_.dataflow-figure_svg]:mx-auto [&_.dataflow-figure_svg]:h-auto [&_.dataflow-figure_svg]:max-w-none"
+></div>
+<p class="mt-4 text-xs text-slate-400">
+  Red nodes are mutable, amber are writable reactive state, rounded nodes are
+  reactive. Generated diagram of the sample component.
+</p>

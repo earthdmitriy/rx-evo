@@ -12,6 +12,12 @@ graph LR
                 clientApiService
             "]
         end
+        subgraph TemplateWrite
+            direction LR
+            Source_retry$.next["
+                retry$.next
+            "]
+        end
     end
     subgraph Processing
         Processing_viewport$("
@@ -23,12 +29,24 @@ graph LR
         Processing_itemHeight["
             itemHeight
         "]
+        Processing_pages("
+            pages
+        ")
         Processing_visiblePages$("
             visiblePages$
         ")
-        Processing_stream("
-            stream
+        Processing_visibleCombined$("
+            visibleCombined$
         ")
+        Processing_stream["
+            stream
+        "]
+        Processing_retry$("
+            retry$
+        ")
+        Processing_rows$["
+            rows$
+        "]
         Processing_viewportRef["
             viewportRef
         "]
@@ -36,24 +54,33 @@ graph LR
     subgraph Consumers
         subgraph TemplateRead
             direction LR
+            Consumer_stream.error$["
+                stream.error$
+            "]
             Consumer_itemHeight["
                 itemHeight
             "]
-            Consumer_stream.value$("
-                stream.value$
-            ")
+            Consumer_rows$["
+                rows$
+            "]
         end
     end
     Sources ~~~ Processing
     Processing ~~~ Consumers
+    Source_retry$.next --> Processing_retry$
+    Source_clientApiService --> Processing_pages
+    Processing_pageSize --> Processing_pages
     Processing_viewport$ --> Processing_visiblePages$
     Processing_pageSize --> Processing_visiblePages$
-    Processing_visiblePages$ --> Processing_stream
-    Source_clientApiService --> Processing_stream
-    Processing_pageSize --> Processing_stream
+    Processing_visiblePages$ --> Processing_visibleCombined$
+    Processing_pages --> Processing_visibleCombined$
+    Processing_stream --> Processing_rows$
+    Processing_pageSize --> Processing_rows$
+    Processing_stream --> Consumer_stream.error$
     Processing_itemHeight --> Consumer_itemHeight
-    Processing_stream --> Consumer_stream.value$
+    Processing_rows$ --> Consumer_rows$
     style Processing_viewport$ fill:#430
+    style Processing_retry$ fill:#430
 
 ```
 

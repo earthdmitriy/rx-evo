@@ -1,0 +1,79 @@
+<div class="flex flex-1 flex-col gap-4">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Session</h3>
+      @if (loggedIn$ | async) {
+        <span class="badge badge-good">Logged in</span>
+      } @else {
+        <span class="badge badge-neutral">Logged out</span>
+      }
+    </div>
+
+    @if (loggedIn$ | async) {
+      <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+        <div class="min-w-0 text-sm text-slate-600">
+          @if (profile.value$ | async; as user) {
+            Signed in as
+            <span class="font-medium text-slate-900">{{ user.email }}</span>
+          } @else {
+            Signing in…
+          }
+        </div>
+        <button
+          type="button"
+          class="btn btn-secondary btn-sm"
+          (click)="loggedIn$.next(false)"
+        >
+          Log out
+        </button>
+      </div>
+    } @else {
+      @if (credentials$ | async; as credentials) {
+        <form
+          class="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+          (submit)="$event.preventDefault(); loggedIn$.next(true)"
+        >
+          <label class="flex flex-col gap-1 text-xs text-slate-600">
+            Email
+            <input
+              class="input"
+              type="email"
+              name="email"
+              autocomplete="off"
+              [value]="credentials.email"
+            />
+          </label>
+          <label class="flex flex-col gap-1 text-xs text-slate-600">
+            Password
+            <input
+              class="input"
+              type="password"
+              name="password"
+              autocomplete="off"
+              [value]="credentials.password"
+            />
+          </label>
+          <button type="submit" class="btn btn-primary">Log in</button>
+        </form>
+      }
+    }
+  </div>
+
+  <app-stateful-block
+    [stream]="profile"
+    inactiveText="Log in to see your profile."
+  >
+    @if (profile.value$ | async; as user) {
+      <app-client-info [displayData]="user"></app-client-info>
+    }
+  </app-stateful-block>
+
+  <app-stateful-block
+    [stream]="profileBucket"
+    inactiveText="Log in to see your bucket."
+  >
+    @if (profileBucket.value$ | async; as bucket) {
+      <app-client-bucket [bucket]="bucket"></app-client-bucket>
+    }
+  </app-stateful-block>
+</div>

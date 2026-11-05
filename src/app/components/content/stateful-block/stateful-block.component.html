@@ -1,10 +1,19 @@
 @if (stream(); as stream) {
-  <div [class.loading]="stream.pending$ | async">
-    @if (stream.error$ | async) {
-      <app-generic-error [showReload]="true" (reload)="stream.reload()">
-      </app-generic-error>
+  @if (view$ | async; as view) {
+    @if (view.inactive) {
+      <div class="empty-state">{{ inactiveText() }}</div>
     } @else {
-      <ng-content></ng-content>
+      <div [class.loading]="stream.pending$ | async">
+        @if (stream.error$ | async; as error) {
+          <app-generic-error
+            [text]="errorText(error)"
+            [showReload]="true"
+            (reload)="stream.reload({ onlyFailed: true })"
+          ></app-generic-error>
+        } @else if (view.hasValue) {
+          <ng-content></ng-content>
+        }
+      </div>
     }
-  </div>
+  }
 }

@@ -26,6 +26,8 @@
     "@rx-evo/operators": "^0.0.2",
     "@rx-evo/stateful-observable": "^0.0.2",
     "@tailwindcss/postcss": "^4.1.17",
+    "marked": "^15.0.12",
+    "mermaid": "^11.17.2",
     "ngxtension": "^4.0.0",
     "rxjs": "^7.8.1",
     "tslib": "^2.5.0",

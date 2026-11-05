@@ -1,0 +1,23 @@
+@if (readme.isLoading()) {
+  <div class="space-y-3" aria-busy="true">
+    <div class="skeleton h-24"></div>
+    <div class="skeleton h-32"></div>
+    <div class="skeleton h-28"></div>
+  </div>
+} @else if (readme.error()) {
+  <div class="alert-error">Could not load the description.</div>
+} @else {
+  <div class="space-y-3">
+    @for (section of sections(); track section.heading) {
+      <section class="rounded-xl border p-4" [class]="section.card">
+        <h2 class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <span class="w-4 text-center" [class]="section.iconClass" aria-hidden="true">{{ section.icon }}</span>
+          {{ section.heading }}
+        </h2>
+        <app-markdown-view [html]="section.html" />
+      </section>
+    } @empty {
+      <p class="text-sm text-slate-500">No description yet.</p>
+    }
+  </div>
+}

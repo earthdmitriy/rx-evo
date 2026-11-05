@@ -2,12 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import {
-  BehaviorSubject,
-  combineLatest,
   distinctUntilChanged,
   map,
   scan,
   shareReplay,
+  startWith,
   Subject,
   switchMap,
 } from 'rxjs';
@@ -23,12 +22,13 @@ import {
 } from '../../content/clients-filter-form/clients-filter-form.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 
-const getEmptyAcc = () =>
-  ({ data: [], page: 0, totalPages: 1 }) as {
-    data: Client[];
-    page: number;
-    totalPages: number;
-  };
+type Accumulated = {
+  readonly data: readonly Client[];
+  readonly page: number;
+  readonly totalPages: number;
+};
+
+const EMPTY: Accumulated = { data: [], page: 0, totalPages: 1 };
 
 @Component({
   selector: 'app-infinite-scroll',
@@ -46,23 +46,44 @@ export class InfiniteScrollComponent {
   private readonly clientApiService = inject(ClientApiService);
 
   public readonly formValue$ = new Subject<ClientsFilterFormValue>();
+  /** Page requests from the sentinel ("load page N"). */
+  public readonly pageRequest$ = new Subject<number>();
 
-  public readonly pageSubject$ = this.formValue$.pipe(
-    map(() => new BehaviorSubject<number>(1)), // reset page on new search
-    shareReplay(1),
+  /**
+   * One emission per change: new filters restart from page 1, a page request
+   * is accepted only if it is the next page for the current filters.
+   */
+  private readonly query$ = this.formValue$.pipe(
+    switchMap((filters) =>
+      this.pageRequest$.pipe(
+        scan(
+          (page, requested) => (requested === page + 1 ? requested : page),
+          1,
+        ),
+        startWith(1),
+        distinctUntilChanged(),
+        map((page) => ({ filters, page })),
+      ),
+    ),
+    shareReplay({ bufferSize: 1, refCount: true }),
   );
 
-  public readonly currentPage$ = this.pageSubject$.pipe(
-    switchMap((x) => x),
-    distinctUntilChanged(),
-    shareReplay(1),
-  );
-
-  public readonly isFirstLoading$ = this.currentPage$.pipe(map((x) => x === 1));
+  /** The requested page: tells a first-page load from a "load more". */
+  public readonly page$ = this.query$.pipe(map(({ page }) => page));
 
   public readonly stream = statefulObservable({
-    input: combineLatest([this.formValue$, this.currentPage$]),
-    loader: ([{ name, email, registeredAfter, registeredBefore }, page]) =>
+    input: this.query$,
+    cacheKey: ({ filters, page }) => [
+      filters.name,
+      filters.email,
+      filters.registeredAfter,
+      filters.registeredBefore,
+      page,
+    ],
+    loader: ({
+      filters: { name, email, registeredAfter, registeredBefore },
+      page,
+    }) =>
       this.clientApiService.searchClientsPaged$({
         name,
         email,
@@ -76,16 +97,14 @@ export class InfiniteScrollComponent {
         pageSize: 10,
       }),
   }).pipeValue(
-    scan((acc, curr) => {
-      if (curr.page === 1) {
-        // reset accumulated data on new search
-        acc.data = curr.data;
-      } else {
-        acc.data.push(...curr.data);
-      }
-      acc.page = curr.page;
-      acc.totalPages = curr.totalPages;
-      return acc;
-    }, getEmptyAcc()),
+    // errors bypass pipeValue, so accumulated pages survive a failed page
+    scan(
+      (acc: Accumulated, curr): Accumulated => ({
+        data: curr.page === 1 ? curr.data : [...acc.data, ...curr.data],
+        page: curr.page,
+        totalPages: curr.totalPages,
+      }),
+      EMPTY,
+    ),
   );
 }
