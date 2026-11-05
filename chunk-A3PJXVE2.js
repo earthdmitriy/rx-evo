@@ -1,0 +1,1 @@
+import{f as c}from"./chunk-4XH6B7GW.js";import{c as p}from"./chunk-2IMH7X23.js";import{R as r,ba as o,da as e,q as t}from"./chunk-2LMMELSJ.js";var m=new o("allProducts",{providedIn:"root",factory:()=>{let s=e(p);return c(()=>s.allProducts$()).pipeError(t(()=>"Can't load products")).pipe(r(1))}});export{m as a};
