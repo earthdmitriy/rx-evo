@@ -14,8 +14,8 @@ describe('IntersectionobserverDirective', () => {
       constructor(cb: any) {
         this.callback = cb;
       }
-      observe = jest.fn();
-      disconnect = jest.fn();
+      observe = vi.fn();
+      disconnect = vi.fn();
     }
 
     (globalThis as any).IntersectionObserver = MockIntersectionObserver;
@@ -34,7 +34,7 @@ describe('IntersectionobserverDirective', () => {
   afterEach(() => {
     // restore global
     (globalThis as any).IntersectionObserver = originalIntersectionObserver;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should create an instance', () => {

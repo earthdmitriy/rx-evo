@@ -1,0 +1,135 @@
+@if (!signedIn()) {
+  <app-console-sign-in [state]="login()" (signIn)="s.login($event.email, $event.password)" />
+} @else {
+  <app-console-frame [customerSelected]="selected() !== null">
+    <app-stateful-block consoleBell data-section="notifications" [loading]="loading(notifications().state)" (retry)="s.retryNotifications()">
+      <app-console-notifications
+        [notifications]="asPart(notifications())"
+        [markRead]="markRead()"
+        (markAllRead)="s.markAllRead()"
+        (retryParts)="s.retryNotifications()"
+        (openChange)="s.notificationsOpen$.next($event)"
+      />
+    </app-stateful-block>
+    <app-stateful-block consoleAgent data-section="agent" [loading]="loading(agent().state)" (retry)="s.retryProfile()">
+      <app-console-agent [agent]="asPart(agent())" (logout)="s.logout()" (retryProfile)="s.retryProfile()" />
+    </app-stateful-block>
+
+    <app-stateful-block consoleList data-section="customers" [loading]="loading(customers().state)" [error]="error(customers().state)" (retry)="s.retryCustomers()">
+      <app-console-customer-list
+        [page]="data(customers())"
+        [query]="query()"
+        [selectedId]="selected()"
+        (queryChange)="s.changeQuery($event)"
+        (select)="s.selectCustomer($event)"
+        (retryParts)="s.retryCustomers()"
+      />
+    </app-stateful-block>
+
+    @if (selected(); as customerId) {
+      <ng-container consoleMain>
+      <app-stateful-block data-section="customer-header" [loading]="loading(header().state)" (retry)="s.retryCustomerSource('customer')">
+        <app-console-customer-header
+          [customer]="asPart(header())"
+          [kpis]="kpis()"
+          (clear)="s.selectCustomer(null)"
+          (retryProfile)="s.retryCustomerSource('customer')"
+          (retryParts)="s.retryCustomerSource('customer')"
+        />
+      </app-stateful-block>
+
+      <app-console-customer-tabs [active]="tab()" [counters]="counters()" (activeChange)="s.tab$.next($event)" (retryParts)="s.retryCustomerSource('customer')">
+        @switch (tab()) {
+          @case ('orders') {
+            <app-stateful-block data-section="tab-orders" [loading]="loading(orders().state)" [error]="error(orders().state)" (retry)="s.retryCustomerSource('orders')">
+              <app-console-orders-tab [orders]="data(orders())" [customerId]="customerId" (openOrder)="s.openOrder($event)" />
+            </app-stateful-block>
+          }
+          @case ('cart') {
+            <app-stateful-block data-section="tab-cart" [loading]="loading(cart().state)" [error]="error(cart().state)" (retry)="s.retryCart()">
+              <app-console-cart-tab [lines]="data(cart())" [customerId]="customerId" (retryParts)="s.retryCart()" />
+            </app-stateful-block>
+          }
+          @case ('tickets') {
+            <app-stateful-block data-section="tab-tickets" [loading]="loading(tickets().state)" [error]="error(tickets().state)" (retry)="s.retryCustomerSource('tickets')">
+              <app-console-tickets-tab
+                [tickets]="data(tickets())"
+                [customerId]="customerId"
+                (openTicket)="s.openTicket($event)"
+                (openOrder)="s.openOrder($event)"
+              />
+            </app-stateful-block>
+          }
+          @case ('notes') {
+            <app-stateful-block data-section="tab-notes" [loading]="loading(notes().state)" [error]="error(notes().state)" (retry)="s.retryCustomerSource('notes')">
+              <app-console-notes-tab
+                [notes]="data(notes())"
+                [customerId]="customerId"
+                [addState]="note()"
+                (add)="s.addNote(customerId, $event)"
+                (retryParts)="s.retryCustomerSource('notes')"
+              />
+            </app-stateful-block>
+          }
+        }
+      </app-console-customer-tabs>
+      </ng-container>
+    }
+
+    @if (selected(); as customerId) {
+      <ng-container consoleRail>
+      <app-stateful-block data-section="shipments" [loading]="loading(shipments().state)" [error]="error(shipments().state)" (retry)="s.retryCustomerSource('orders')">
+        <app-console-shipments
+          [rows]="shipmentRows()"
+          [customerId]="customerId"
+          (openOrder)="s.openOrder($event)"
+          (retryRow)="s.retryShipment($event)"
+        />
+      </app-stateful-block>
+      <app-stateful-block data-section="activity" [loading]="loading(activity().state)" [error]="error(activity().state)" (retry)="s.retryCustomerSource('activity')">
+        <app-console-activity [entries]="data(activity())" [customerId]="customerId" (retryParts)="s.retryCustomerSource('activity')" />
+      </app-stateful-block>
+      </ng-container>
+    }
+
+    @if (selected(); as customerId) {
+      <ng-container consolePanel>
+      @if (orderPanelVm(); as p) {
+        <app-stateful-block class="fixed top-0 right-0 z-50 w-full max-w-md" data-section="order-panel" [loading]="loading(p.order.state)" [error]="p.blockError" (retry)="p.order.state.kind === 'error' ? s.retryOrder() : s.retryHits()">
+          <app-console-order-panel
+            [orderId]="p.id"
+            [order]="data(p.order)"
+            [ticket]="p.ticket"
+            [editing]="p.editing"
+            [hits]="p.hits"
+            [saveState]="save().orderId === p.id ? save() : { pending: false, error: null }"
+            [resendState]="resend()"
+            (close)="s.closePanel()"
+            (editChange)="s.editing$.next($event)"
+            (save)="s.saveOrder(p.id, customerId, $event)"
+            (resend)="s.resendConfirmation(p.id)"
+            (openTicket)="s.openTicket($event)"
+            (retryTicket)="s.retryLinkedTicket(p.id)"
+            (retryParts)="s.retryOrder(); s.retryHits()"
+            (search)="s.searchProducts($event)"
+            (retryHits)="s.retryHits()"
+          />
+        </app-stateful-block>
+      }
+      @if (ticketPanel(); as t) {
+        <app-stateful-block class="fixed top-0 right-0 z-50 w-full max-w-md" data-section="ticket-panel" [loading]="loading(t.state)" [error]="error(t.state)" (retry)="s.retryTicket(t.id)">
+          <app-console-ticket-panel
+            [ticketId]="t.id"
+            [ticket]="data(t)"
+            [replyState]="reply().ticketId === t.id ? reply() : { pending: false, error: null }"
+            (reply)="s.replyTicket(t.id, $event)"
+            (openOrder)="s.openOrder($event)"
+            (close)="s.closePanel()"
+            (retryParts)="s.retryTicket(t.id)"
+          />
+        </app-stateful-block>
+      }
+      </ng-container>
+    }
+  </app-console-frame>
+}

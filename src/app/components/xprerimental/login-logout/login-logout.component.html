@@ -59,21 +59,21 @@
     }
   </div>
 
-  <app-stateful-block
+  <app-stateful-observable-block
     [stream]="profile"
     inactiveText="Log in to see your profile."
   >
     @if (profile.value$ | async; as user) {
       <app-client-info [displayData]="user"></app-client-info>
     }
-  </app-stateful-block>
+  </app-stateful-observable-block>
 
-  <app-stateful-block
+  <app-stateful-observable-block
     [stream]="profileBucket"
     inactiveText="Log in to see your bucket."
   >
     @if (profileBucket.value$ | async; as bucket) {
       <app-client-bucket [bucket]="bucket"></app-client-bucket>
     }
-  </app-stateful-block>
+  </app-stateful-observable-block>
 </div>

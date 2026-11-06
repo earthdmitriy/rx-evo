@@ -21,10 +21,10 @@ import { combineTinyRxStores, createTinyRxStore } from './tinyRxStore';
 class SampleService {
   input = new ReplaySubject<number>(1);
   available = new BehaviorSubject(true);
-  process = jest.fn((value) => {
+  process = vi.fn((value) => {
     return value * 2;
   });
-  makeRequest = jest.fn((value) =>
+  makeRequest = vi.fn((value) =>
     defer(() =>
       of(value).pipe(
         delay(1),

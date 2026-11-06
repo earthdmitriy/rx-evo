@@ -35,6 +35,8 @@ const SECTION_STYLE: Record<
 })
 export class SampleNotesComponent {
   public readonly sample = input.required<SampleMeta>();
+  /** Below a wide demo: sections in columns instead of one stack. */
+  public readonly wide = input(false);
 
   protected readonly readme = resource({
     params: () => this.sample(),

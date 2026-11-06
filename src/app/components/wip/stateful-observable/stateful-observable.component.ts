@@ -16,7 +16,7 @@ import {
 } from '../../../submodules/stateful-observable/src';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
+import { StatefulObservableBlockComponent } from '../../content/stateful-observable-block/stateful-observable-block.component';
 import { allProductsToken } from './products-store.service';
 
 @Component({
@@ -25,7 +25,7 @@ import { allProductsToken } from './products-store.service';
     CommonModule,
     ClientInfoComponent,
     ClientBucketComponent,
-    StatefulBlockComponent,
+    StatefulObservableBlockComponent,
   ],
   templateUrl: './stateful-observable.component.html',
   styleUrls: ['./stateful-observable.component.less'],

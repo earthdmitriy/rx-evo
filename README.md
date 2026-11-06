@@ -56,7 +56,7 @@ If you cloned without submodules, run `git submodule update --init`.
 | --- | --- |
 | `npm start` | dev server |
 | `npm run build` | production build to `dist/rx-evo` |
-| `npm test` | Jest unit tests |
+| `npm test` | Vitest unit tests (`ng test`, run once) |
 | `npm run deploy` | publish to GitHub Pages |
 
 ## Project layout

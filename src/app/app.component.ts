@@ -17,6 +17,7 @@ import {
 import { filter, map } from 'rxjs';
 import { routes } from './app.routes';
 import { ControllerComponent } from './components/content/controller/controller.component';
+import { ConsoleControlsComponent } from './components/contesters/shared/console-controls.component';
 import { DataflowViewComponent } from './layout/dataflow-view/dataflow-view.component';
 import { RequestMonitorService } from './services/RequestMonitor.service';
 import { SampleNotesComponent } from './layout/sample-notes/sample-notes.component';
@@ -36,6 +37,7 @@ import {
     RouterLink,
     RouterLinkActive,
     ControllerComponent,
+    ConsoleControlsComponent,
     SampleNotesComponent,
     DataflowViewComponent,
   ],
@@ -54,6 +56,7 @@ export class AppComponent {
   protected readonly verdicts = VERDICTS;
   protected readonly repoTree = repoTree;
   protected readonly repoBlob = repoBlob;
+  protected readonly stageNames: Record<number, string> = { 1: 'Baseline', 2: 'Robust', 3: 'Efficient' };
 
   private readonly active = toSignal(
     this.router.events.pipe(
@@ -65,6 +68,17 @@ export class AppComponent {
 
   protected readonly sample = computed(() => this.active().sample);
   protected readonly group = computed(() => this.active().group);
+
+  /** Contest stages of the same approach (`contesters/<approach>/stage-<n>`), for the stage switch. */
+  protected readonly stages = computed(() => {
+    const folder = this.sample()?.folder ?? '';
+    const match = /^(contesters\/[^/]+)\/stage-\d+$/.exec(folder);
+    if (!match) return [];
+    return this.flat
+      .filter((e) => e.folder.startsWith(`${match[1]}/stage-`))
+      .map((e) => ({ url: e.url, stage: Number(e.folder.split('stage-')[1]), active: e.folder === folder }))
+      .sort((x, y) => x.stage - y.stage);
+  });
 
   protected readonly entry = computed(() => {
     const sample = this.sample();

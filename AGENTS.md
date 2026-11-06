@@ -50,7 +50,7 @@ samples are intentionally bad.
 
 - `npm start` — dev server on http://localhost:4200
 - `npm run build` — production build (`dist/rx-evo`)
-- `npm test` — Jest
+- `npm test` — Vitest via `ng test` (`@angular/build:unit-test`, jsdom; setup in `src/setupVitest.ts`)
 - `npm run deploy` — GitHub Pages
 
 ## Coding patterns

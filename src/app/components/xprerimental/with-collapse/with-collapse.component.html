@@ -99,13 +99,13 @@
                         clientRequestFactory.get(client.clientId);
                         as clientDetails$
                       ) {
-                        <app-stateful-block [stream]="clientDetails$">
+                        <app-stateful-observable-block [stream]="clientDetails$">
                           @if (clientDetails$ | async; as clientDetails) {
                             <app-client-info
                               [displayData]="clientDetails"
                             ></app-client-info>
                           }
-                        </app-stateful-block>
+                        </app-stateful-observable-block>
                       }
                     </td>
                   </tr>

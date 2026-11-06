@@ -87,25 +87,17 @@
           "builder": "@angular/build:extract-i18n"
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ],
+            "runner": "vitest",
             "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "less",
-            "assets": [
-              {
-                "glob": "**/*",
-                "input": "public"
-              }
+            "include": [
+              "src/**/*.spec.ts"
             ],
-            "styles": [
-              "src/styles.less",
-              "src/styles.css"
+            "setupFiles": [
+              "src/setupVitest.ts"
             ],
-            "scripts": []
+            "buildTarget": "rx-components:build:development"
           }
         },
         "deploy": {

@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* test code has selector strings Tailwind would read as classes */
+@source not "../e2e";
 
 /*
  * rx-evo design tokens and shared component classes.

@@ -15,7 +15,7 @@
   <div class="flex flex-1 flex-wrap items-center justify-between gap-3">
     <div>
       <span class="font-semibold">Oops!</span>
-      {{ text() || "Something went wrong while loading." }}
+      {{ message() || "Something went wrong while loading." }}
     </div>
     @if (showReload()) {
       <button

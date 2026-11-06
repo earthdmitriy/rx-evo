@@ -19,7 +19,7 @@ export type SampleVerdict =
   | 'experimental';
 
 /** Which demo screen the sample renders (decides which controls are shown). */
-export type SampleScenario = 'client-card' | 'list' | 'auth';
+export type SampleScenario = 'client-card' | 'list' | 'auth' | 'dashboard';
 
 export type DocLink = {
   label: string;
@@ -43,6 +43,8 @@ export type SampleMeta = {
   dataflow?: () => Promise<string>;
   /** Related scenario docs. */
   docs?: DocLink[];
+  /** `wide`: the demo takes the full width and the notes move below it (default `side`). */
+  layout?: 'side' | 'wide';
 };
 
 export type SampleGroupMeta = {

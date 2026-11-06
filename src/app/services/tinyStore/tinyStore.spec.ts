@@ -7,7 +7,7 @@ import { combineTinyStores, createTinyStore } from './tinyStore';
 @Injectable()
 class SampleService {
   input = signal<number | undefined>(undefined);
-  makeRequest = jest.fn((value) => of(value * 2).pipe(delay(1)));
+  makeRequest = vi.fn((value) => of(value * 2).pipe(delay(1)));
   store = createTinyStore({
     input: this.input,
     loader: (value) => this.makeRequest(value),
@@ -117,7 +117,7 @@ describe('TinyStore', () => {
 @Injectable()
 class SampleCombineService {
   inputA = signal<number | undefined>(undefined);
-  makeRequestA = jest.fn((value) => of(value * 2).pipe(delay(1)));
+  makeRequestA = vi.fn((value) => of(value * 2).pipe(delay(1)));
   storeA = createTinyStore({
     input: this.inputA,
     loader: (value) => this.makeRequestA(value),
@@ -125,7 +125,7 @@ class SampleCombineService {
   });
 
   inputB = signal<number | undefined>(undefined);
-  makeRequestB = jest.fn((value) => of(value * 2).pipe(delay(1)));
+  makeRequestB = vi.fn((value) => of(value * 2).pipe(delay(1)));
   storeB = createTinyStore({
     input: this.inputB,
     loader: (value) => this.makeRequestB(value),

@@ -594,5 +594,79 @@ export const routes: Routes = [
     ],
   ),
 
+  groupRoute(
+    'contesters',
+    {
+      title: 'Contesters',
+      blurb:
+        'One busy internal app, a shop support console, rebuilt on different data layers.',
+    },
+    [
+      sampleRoute(
+        'reference',
+        () =>
+          import('./components/contesters/reference/reference-console.component').then(
+            (m) => m.ReferenceConsoleComponent,
+          ),
+        {
+          title: 'Reference (test oracle)',
+          summary:
+            'Not a contest entry: plain RxJS over a keyed-query cache, meeting every stage, with defect switches to validate the e2e suite.',
+          verdict: 'experimental',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['RxJS', 'keyed cache', 'defect switches'],
+          folder: 'contesters/reference',
+          readme: () =>
+            import('./components/contesters/reference/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'layout-draft',
+        () =>
+          import('./components/contesters/layout-draft/layout-draft.component').then(
+            (m) => m.LayoutDraftComponent,
+          ),
+        {
+          title: 'Layout draft',
+          summary:
+            'Temporary: the support console layout with static data, for review before any data layer.',
+          verdict: 'experimental',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['layout'],
+          folder: 'contesters/layout-draft',
+          readme: () =>
+            import('./components/contesters/layout-draft/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'sign-in-draft',
+        () =>
+          import('./components/contesters/layout-draft/sign-in-draft.component').then(
+            (m) => m.SignInDraftComponent,
+          ),
+        {
+          title: 'Sign-in draft',
+          summary:
+            'Temporary: the console while logged out, for layout review.',
+          verdict: 'experimental',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['layout'],
+          folder: 'contesters/layout-draft',
+          readme: () =>
+            import('./components/contesters/layout-draft/SIGN-IN.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+    ],
+  ),
+
   { path: '**', redirectTo: '' },
 ];

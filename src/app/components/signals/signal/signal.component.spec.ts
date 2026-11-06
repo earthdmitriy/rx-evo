@@ -46,7 +46,7 @@ describe('SignalComponent', () => {
     expect(client?.clientId).toBe(1);
   });
 
-  fit(`should handle changing inputs`, async () => {
+  it.only(`should handle changing inputs`, async () => {
     const fixture = TestBed.createComponent(SignalComponent);
     const component = fixture.componentInstance;
 

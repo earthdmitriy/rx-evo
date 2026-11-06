@@ -1,0 +1,539 @@
+<div class="@container relative">
+  @if (!loggedIn()) {
+    <app-sign-in-draft (signIn)="loggedIn.set(true)" />
+  } @else {
+    <div class="flex flex-col gap-4">
+      <!-- top bar -->
+      <header class="card">
+       <div class="flex items-center gap-3 px-4 py-2.5">
+        <span class="logo-mark">SD</span>
+        <div class="hidden leading-tight @2xl:block">
+          <div class="text-sm font-semibold text-slate-900">ShopDesk</div>
+          <div class="text-xs text-slate-500">Support console</div>
+        </div>
+
+        <div class="relative mx-auto w-full max-w-md">
+          <svg class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path stroke-linecap="round" d="m20 20-3.5-3.5" />
+          </svg>
+          <input class="input pl-9" type="search" placeholder="Search orders, customers, tickets…" aria-label="Global search" />
+        </div>
+
+        <div class="relative">
+          <button
+            type="button"
+            class="btn btn-ghost btn-icon relative"
+            aria-label="Notifications"
+            [attr.aria-expanded]="notificationsOpen()"
+            (click)="notificationsOpen.set(!notificationsOpen())"
+          >
+            <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+            </svg>
+            <span class="absolute -top-0.5 -right-0.5 inline-flex size-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-semibold text-white">2</span>
+          </button>
+          @if (notificationsOpen()) {
+            <div class="card absolute right-0 z-20 mt-2 w-80 overflow-hidden shadow-md">
+              <div class="card-header">
+                <span class="card-title">Notifications</span>
+                <button type="button" class="btn btn-ghost btn-sm">Mark all read</button>
+              </div>
+              <ul>
+                @for (n of m.NOTIFICATIONS; track n.text) {
+                  <li class="flex gap-3 border-t border-slate-100 px-4 py-3 first:border-t-0">
+                    <span class="mt-2 size-1.5 shrink-0 rounded-full" [class]="n.unread ? 'bg-indigo-500' : 'bg-transparent'"></span>
+                    <div class="min-w-0">
+                      <div class="text-sm text-slate-800">{{ n.text }}</div>
+                      <div class="text-xs text-slate-500">{{ n.when }}</div>
+                    </div>
+                  </li>
+                }
+              </ul>
+            </div>
+          }
+        </div>
+
+        <div class="flex items-center gap-2.5 border-l border-slate-200 pl-3">
+          <span class="inline-flex size-8 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">{{ m.AGENT.initials }}</span>
+          <div class="hidden leading-tight @4xl:block">
+            <div class="text-sm font-medium whitespace-nowrap text-slate-900">{{ m.AGENT.name }}</div>
+            <div class="text-xs text-slate-500">{{ m.AGENT.role }}</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm whitespace-nowrap" (click)="loggedIn.set(false)">Log out</button>
+        </div>
+       </div>
+
+        <!-- back-office sections: stubs; the agent only works in Customers -->
+        <nav class="flex gap-1 overflow-x-auto overflow-y-hidden border-t border-slate-200 px-3" aria-label="Console sections">
+          @for (item of nav; track item.label) {
+            @if (!item.owner) {
+              <a
+                class="border-b-2 border-indigo-600 px-3 py-2.5 text-sm font-medium whitespace-nowrap text-indigo-700"
+                aria-current="page"
+                >{{ item.label }}</a
+              >
+            } @else {
+              <a
+                class="flex cursor-not-allowed items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap text-slate-400"
+                role="link"
+                aria-disabled="true"
+                [title]="'Owned by ' + item.owner + ' — ask your team lead for access'"
+              >
+                {{ item.label }}
+                <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" />
+                </svg>
+              </a>
+            }
+          }
+        </nav>
+      </header>
+
+      <div
+        class="grid items-start gap-4 @3xl:grid-cols-[16rem_minmax(0,1fr)] @6xl:grid-cols-[16rem_minmax(0,1fr)_17rem]"
+      >
+        <!-- customers -->
+        <section class="card overflow-hidden @3xl:row-span-2 @6xl:row-span-1">
+          <div class="space-y-2 border-b border-slate-200 p-3">
+            <input class="input" type="search" placeholder="Find customer" aria-label="Find customer" />
+            <div class="flex gap-1.5">
+              <button type="button" class="badge badge-accent">All</button>
+              <button type="button" class="badge badge-neutral">VIP</button>
+              <button type="button" class="badge badge-neutral">Open tickets</button>
+            </div>
+            <div class="flex items-center gap-2">
+              <label class="text-xs text-slate-500 whitespace-nowrap" for="ld-sort">Sort by</label>
+              <select
+                id="ld-sort"
+                class="input py-1 text-xs"
+                [value]="sortBy()"
+                (change)="sortBy.set($any($event.target).value)"
+              >
+                @for (o of sortOptions; track o.id) {
+                  <option [value]="o.id">{{ o.label }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="btn btn-ghost btn-icon shrink-0"
+                [attr.aria-label]="sortDesc() ? 'Descending, switch to ascending' : 'Ascending, switch to descending'"
+                [title]="sortDesc() ? 'Descending' : 'Ascending'"
+                (click)="sortDesc.set(!sortDesc())"
+              >
+                <svg class="size-4 transition-transform" [class.rotate-180]="!sortDesc()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m-6-6 6 6 6-6" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <ul>
+            @for (c of customers(); track c.id) {
+              <li>
+                <button
+                  type="button"
+                  class="flex w-full items-center gap-3 border-l-2 px-3 py-2.5 text-left transition-colors"
+                  [class]="c.id === selectedId() ? 'border-indigo-600 bg-indigo-50/70' : 'border-transparent hover:bg-slate-50'"
+                  (click)="selectedId.set(c.id); open(null)"
+                >
+                  <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">{{ c.initials }}</span>
+                  <span class="min-w-0 flex-1">
+                    <span class="flex items-center gap-1.5">
+                      <span class="truncate text-sm font-medium text-slate-900">{{ c.name }}</span>
+                      @if (c.tier === "VIP") {
+                        <span class="badge badge-accent shrink-0 px-1.5 py-0 text-[10px]">VIP</span>
+                      }
+                    </span>
+                    <span class="block truncate text-xs text-slate-500">
+                      @switch (sortBy()) {
+                        @case ("lastOrder") { Last order {{ c.lastOrderLabel }} }
+                        @case ("spend") { ${{ c.spend.toLocaleString("en-US") }} spent }
+                        @default { {{ c.email }} }
+                      }
+                    </span>
+                  </span>
+                  @if (c.openTickets) {
+                    <span class="badge badge-bad" [title]="c.openTickets + ' open tickets'">{{ c.openTickets }}</span>
+                  }
+                </button>
+              </li>
+            }
+          </ul>
+          <div class="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500">
+            <button type="button" class="btn btn-ghost btn-sm" disabled>Prev</button>
+            <span class="tabular-nums">1–8 of 2,431</span>
+            <button type="button" class="btn btn-ghost btn-sm">Next</button>
+          </div>
+        </section>
+
+        @if (customer(); as c) {
+          <!-- customer -->
+          <div class="flex min-w-0 flex-col gap-4">
+            <section class="card">
+              <div class="flex flex-wrap items-start gap-4 p-5">
+                <span class="inline-flex size-12 items-center justify-center rounded-full bg-indigo-100 text-base font-semibold text-indigo-700">{{ c.initials }}</span>
+                <div class="min-w-0 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h2 class="text-lg font-semibold text-slate-900">{{ c.name }}</h2>
+                    <span class="badge" [class]="tierBadge[c.tier]">{{ c.tier }}</span>
+                    <span class="code-chip">#{{ c.id }}</span>
+                  </div>
+                  <div class="mt-0.5 text-sm text-slate-500">
+                    {{ c.email }} · {{ m.CUSTOMER_DETAILS.city }} · customer since {{ m.CUSTOMER_DETAILS.since }}
+                  </div>
+                </div>
+                <div class="flex gap-2">
+                  <button type="button" class="btn btn-ghost btn-icon" aria-label="Close customer" (click)="selectedId.set(null)">✕</button>
+                </div>
+              </div>
+              <dl class="grid grid-cols-2 border-t border-slate-200 @2xl:grid-cols-4">
+                @for (k of m.CUSTOMER_DETAILS.kpis; track k.label) {
+                  <div class="px-5 py-3">
+                    <dt class="section-title">{{ k.label }}</dt>
+                    <dd class="mt-1 text-xl font-semibold text-slate-900 tabular-nums">{{ k.value }}</dd>
+                  </div>
+                }
+              </dl>
+            </section>
+
+            <section class="card overflow-hidden">
+              <nav class="flex gap-1 overflow-x-auto overflow-y-hidden px-3 shadow-[inset_0_-1px_0_var(--color-slate-200)]" aria-label="Customer sections">
+                @for (t of tabs; track t.id) {
+                  <button
+                    type="button"
+                    class="flex items-center gap-1.5 border-b-2 px-3 py-3 text-sm font-medium whitespace-nowrap transition-colors"
+                    [class]="tab() === t.id ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                    [attr.aria-current]="tab() === t.id"
+                    (click)="tab.set(t.id)"
+                  >
+                    {{ t.label }}
+                    @if (t.count !== undefined) {
+                      <span class="badge badge-neutral">{{ t.count }}</span>
+                    }
+                  </button>
+                }
+              </nav>
+
+              @switch (tab()) {
+                @case ("orders") {
+                  <div class="overflow-x-auto">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr><th>Order</th><th>Date</th><th>Status</th><th class="num">Items</th><th class="num">Total</th></tr>
+                      </thead>
+                      <tbody>
+                        @for (o of m.ORDERS; track o.id) {
+                          <tr class="cursor-pointer" (click)="open(o.id)">
+                            <th class="font-mono text-xs">{{ o.id }}</th>
+                            <td class="whitespace-nowrap">{{ o.date }}</td>
+                            <td><span class="badge" [class]="orderBadge[o.status]">{{ o.status }}</span></td>
+                            <td class="num">{{ o.items }}</td>
+                            <td class="num font-medium text-slate-900">{{ o.total }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+                @case ("cart") {
+                  <div class="overflow-x-auto">
+                    <table class="table">
+                      <thead>
+                        <tr><th>Product</th><th class="num">Qty</th><th class="num">Price</th><th class="num">Total</th></tr>
+                      </thead>
+                      <tbody>
+                        @for (l of m.CART.lines; track l.sku) {
+                          <tr>
+                            <th>{{ l.product }} <span class="ml-1 font-mono text-xs font-normal text-slate-400">{{ l.sku }}</span></th>
+                            <td class="num">{{ l.qty }}</td>
+                            <td class="num">{{ l.price }}</td>
+                            <td class="num">{{ l.total }}</td>
+                          </tr>
+                        }
+                      </tbody>
+                      <tfoot>
+                        <tr><th colspan="3">Cart total</th><td class="num">{{ m.CART.total }}</td></tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                }
+                @case ("tickets") {
+                  <ul>
+                    @for (t of m.TICKETS; track t.id) {
+                      <li
+                        class="flex cursor-pointer items-center gap-3 border-t border-slate-100 px-5 py-3 first:border-t-0 hover:bg-slate-50/70"
+                        (click)="open(null); openTicket.set(t.id)"
+                      >
+                        <span class="font-mono text-xs text-slate-500">{{ t.id }}</span>
+                        <span class="min-w-0 flex-1 truncate text-sm text-slate-900">{{ t.subject }}</span>
+                        @if (t.orderId; as orderId) {
+                          <button type="button" class="font-mono text-xs text-indigo-600 hover:text-indigo-500" (click)="$event.stopPropagation(); open(orderId)">{{ orderId }}</button>
+                        }
+                        <span class="badge" [class]="ticketBadge[t.status]">{{ t.status }}</span>
+                        <span class="w-20 text-right text-xs text-slate-500">{{ t.updated }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+                @case ("notes") {
+                  <div class="space-y-4 p-5">
+                    <form class="flex flex-col gap-2" (submit)="$event.preventDefault()">
+                      <textarea class="input min-h-20" placeholder="Add an internal note…" aria-label="New note"></textarea>
+                      <button type="submit" class="btn btn-primary btn-sm self-end">Save note</button>
+                    </form>
+                    @for (n of m.NOTES; track n.when) {
+                      <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="mb-1 text-xs text-slate-500"><span class="font-medium text-slate-700">{{ n.author }}</span> · {{ n.when }}</div>
+                        <p class="text-sm text-slate-700">{{ n.text }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </section>
+          </div>
+
+          <!-- side rail -->
+          <div class="grid min-w-0 gap-4 @3xl:col-start-2 @3xl:grid-cols-2 @6xl:col-start-3 @6xl:row-start-1 @6xl:grid-cols-1">
+            <section class="card">
+              <header class="card-header"><h3 class="card-title">Shipments in transit</h3></header>
+              <ul>
+                @for (s of m.SHIPMENTS; track s.orderId) {
+                  <li class="border-t border-slate-100 px-4 py-3 first:border-t-0">
+                    <div class="flex items-center gap-2">
+                      <button type="button" class="font-mono text-xs font-medium text-indigo-600 hover:text-indigo-500" (click)="open(s.orderId)">{{ s.orderId }}</button>
+                      <span class="badge" [class]="shipmentBadge[s.state]">{{ s.state }}</span>
+                      <span class="ml-auto text-xs whitespace-nowrap text-slate-500">ETA {{ s.eta }}</span>
+                    </div>
+                    <div class="mt-1 truncate text-xs text-slate-500">{{ s.carrier }} · {{ s.lastScan }}</div>
+                  </li>
+                } @empty {
+                  <li class="empty-state py-6">Nothing on the way.</li>
+                }
+              </ul>
+            </section>
+            <section class="card">
+              <header class="card-header"><h3 class="card-title">Recent activity</h3></header>
+              <ol class="space-y-3 p-4">
+                @for (a of m.ACTIVITY; track a.when) {
+                  <li class="flex gap-3">
+                    <span class="mt-2 size-1.5 shrink-0 rounded-full bg-slate-300"></span>
+                    <div>
+                      <div class="text-sm text-slate-700">{{ a.text }}</div>
+                      <div class="text-xs text-slate-500">{{ a.when }}</div>
+                    </div>
+                  </li>
+                }
+              </ol>
+            </section>
+          </div>
+        } @else {
+          <section class="card @6xl:col-span-2">
+            <div class="empty-state py-24">
+              Select a customer to see their orders, cart and tickets.
+            </div>
+          </section>
+        }
+      </div>
+    </div>
+
+    <!-- ticket panel -->
+    @if (ticketOpen(); as t) {
+      <div class="absolute inset-0 z-30 rounded-xl bg-slate-900/20" (click)="openTicket.set(null)" aria-hidden="true"></div>
+      <aside class="card absolute top-0 right-0 bottom-0 z-40 flex w-full max-w-md flex-col shadow-md" aria-label="Ticket">
+        <header class="card-header items-start">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h3 class="card-title font-mono">{{ t.id }}</h3>
+              <span class="badge" [class]="ticketBadge[t.status]">{{ t.status }}</span>
+              @if (t.orderId; as orderId) {
+                <button type="button" class="font-mono text-xs text-indigo-600 hover:text-indigo-500" (click)="open(orderId)">{{ orderId }} →</button>
+              }
+            </div>
+            <div class="mt-1 text-sm text-slate-700">{{ t.subject }}</div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-icon shrink-0" aria-label="Close ticket" (click)="openTicket.set(null)">✕</button>
+        </header>
+
+        <ol class="flex-1 space-y-3 overflow-y-auto p-5">
+          @for (msg of m.TICKET_MESSAGES[t.id]; track $index) {
+            <li class="flex" [class.justify-end]="msg.from === 'agent'">
+              <div
+                class="max-w-[85%] rounded-xl px-3 py-2"
+                [class]="msg.from === 'agent' ? 'bg-indigo-50 text-slate-800' : 'border border-slate-200 bg-white text-slate-800'"
+              >
+                <div class="mb-0.5 text-xs text-slate-500">{{ msg.author }} · {{ msg.when }}</div>
+                <p class="text-sm">{{ msg.text }}</p>
+              </div>
+            </li>
+          }
+        </ol>
+
+        @if (t.status !== "Solved") {
+          <form class="border-t border-slate-200 p-4" (submit)="$event.preventDefault()">
+            <label class="sr-only" for="ld-reply">Reply</label>
+            <textarea id="ld-reply" class="input mb-2 min-h-20" placeholder="Reply to the customer…"></textarea>
+            <div class="flex items-center justify-end gap-2">
+              <label class="text-xs text-slate-500" for="ld-reply-status">Then set</label>
+              <select id="ld-reply-status" class="input w-auto py-1 text-xs">
+                <option>Waiting on customer</option>
+                <option>Solved</option>
+                <option>Open</option>
+              </select>
+              <button type="submit" class="btn btn-primary btn-sm">Send reply</button>
+            </div>
+          </form>
+        } @else {
+          <p class="border-t border-slate-200 px-5 py-3 text-sm text-slate-500">
+            Solved. The customer can reopen it by replying.
+          </p>
+        }
+      </aside>
+    }
+
+    <!-- order panel -->
+    @if (order(); as o) {
+      <div class="absolute inset-0 z-30 rounded-xl bg-slate-900/20" (click)="open(null)" aria-hidden="true"></div>
+      <aside class="card absolute top-0 right-0 bottom-0 z-40 flex w-full max-w-md flex-col shadow-md" aria-label="Order details">
+        <header class="card-header">
+          <div>
+            <h3 class="card-title font-mono">{{ o.id }}</h3>
+            <div class="text-xs text-slate-500">{{ o.date }} · {{ lines().length }} items</div>
+          </div>
+          <button type="button" class="btn btn-ghost btn-icon" aria-label="Close order" (click)="open(null)">✕</button>
+        </header>
+        <div class="flex-1 space-y-5 overflow-y-auto p-5">
+          @if (ticket(); as t) {
+            <button
+              type="button"
+              class="block w-full rounded-lg border border-sky-200 bg-sky-50/60 p-3 text-left hover:border-sky-300"
+              (click)="open(null); openTicket.set(t.id)"
+            >
+              <div class="mb-1 flex items-center gap-2 text-xs">
+                <span class="font-mono text-slate-500">{{ t.id }}</span>
+                <span class="badge" [class]="ticketBadge[t.status]">{{ t.status }}</span>
+                <span class="ml-auto text-slate-500">{{ t.updated }}</span>
+              </div>
+              <p class="text-sm text-slate-800">“{{ t.subject }}”</p>
+            </button>
+          }
+
+          <div class="flex flex-wrap gap-2">
+            <span class="badge" [class]="orderBadge[o.status]">{{ o.status }}</span>
+            <span class="badge badge-neutral">Paid · Visa ••42</span>
+            <span class="badge badge-neutral">Express shipping</span>
+          </div>
+
+          <table class="table">
+            <thead><tr><th>Item</th><th class="num">Qty</th><th class="num">Price</th></tr></thead>
+            <tbody>
+              @for (l of lines(); track l.sku) {
+                <tr>
+                  <th>
+                    {{ l.product }}
+                    <span class="block font-mono text-xs font-normal text-slate-400">{{ l.sku }}</span>
+                  </th>
+                  <td class="num">
+                    @if (editing()) {
+                      <span class="inline-flex items-center gap-1">
+                        <button type="button" class="btn btn-ghost btn-icon size-6" [attr.aria-label]="'Decrease ' + l.product" (click)="setQty(l.sku, l.qty - 1)">−</button>
+                        <span class="w-5 text-center">{{ l.qty }}</span>
+                        <button type="button" class="btn btn-ghost btn-icon size-6" [attr.aria-label]="'Increase ' + l.product" (click)="setQty(l.sku, l.qty + 1)">+</button>
+                      </span>
+                    } @else {
+                      {{ l.qty }}
+                    }
+                  </td>
+                  <td class="num">
+                    {{ l.price | currency: "USD" }}
+                    @if (editing()) {
+                      <button type="button" class="block w-full text-right text-xs text-rose-600 hover:text-rose-500" [attr.aria-label]="'Remove ' + l.product" (click)="setQty(l.sku, 0)">Remove</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+            <tfoot><tr><th colspan="2">Total</th><td class="num">{{ total() | currency: "USD" }}</td></tr></tfoot>
+          </table>
+
+          @if (editing()) {
+            <div class="relative">
+              <label class="label" for="ld-catalog">Add from catalog</label>
+              <input
+                id="ld-catalog"
+                class="input"
+                type="search"
+                placeholder="Search products…"
+                [value]="catalogQuery()"
+                (input)="catalogQuery.set($any($event.target).value)"
+              />
+              @if (catalogHits().length) {
+                <ul class="card absolute right-0 left-0 z-10 mt-1 overflow-hidden shadow-md">
+                  @for (p of catalogHits(); track p.sku) {
+                    <li class="flex items-center gap-3 border-t border-slate-100 px-3 py-2 first:border-t-0">
+                      <div class="min-w-0 flex-1">
+                        <div class="truncate text-sm text-slate-900">{{ p.product }}</div>
+                        <div class="text-xs text-slate-500">
+                          {{ p.price | currency: "USD" }} ·
+                          @if (p.stock) {
+                            {{ p.stock }} in stock
+                          } @else {
+                            <span class="text-rose-600">out of stock</span>
+                          }
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-secondary btn-sm" [disabled]="!p.stock" (click)="add(p)">Add</button>
+                    </li>
+                  }
+                </ul>
+              }
+            </div>
+          } @else if (!editable()) {
+            <p class="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+              This order has left the warehouse, so its items can't be changed. Create a return instead.
+            </p>
+          }
+
+          <div>
+            <div class="section-title mb-1">Ship to</div>
+            <p class="text-sm text-slate-700">Maya Lindqvist, Kungsgatan 12, 411 19 Gothenburg, Sweden</p>
+          </div>
+        </div>
+
+        <footer class="border-t border-slate-200 px-5 py-3">
+          @if (editing()) {
+            <div class="mb-3 flex items-baseline justify-between text-sm">
+              <span class="text-slate-500">
+                {{ originalTotal | currency: "USD" }} →
+                <span class="font-semibold text-slate-900">{{ total() | currency: "USD" }}</span>
+              </span>
+              @if (total() > originalTotal) {
+                <span class="text-slate-700">charge {{ total() - originalTotal | currency: "USD" }}</span>
+              } @else if (total() < originalTotal) {
+                <span class="text-slate-700">refund {{ originalTotal - total() | currency: "USD" }}</span>
+              }
+            </div>
+            <div class="flex justify-end gap-2">
+              <button type="button" class="btn btn-ghost btn-sm" (click)="open(o.id)">Discard</button>
+              <button type="button" class="btn btn-primary btn-sm">
+                @if (ticket(); as t) {
+                  Save and reply on {{ t.id }}
+                } @else {
+                  Save changes
+                }
+              </button>
+            </div>
+          } @else {
+            <div class="flex justify-end gap-2">
+              <button type="button" class="btn btn-secondary btn-sm">Resend confirmation</button>
+              @if (editable()) {
+                <button type="button" class="btn btn-primary btn-sm" (click)="editing.set(true)">Edit items</button>
+              } @else {
+                <button type="button" class="btn btn-primary btn-sm">Create return</button>
+              }
+            </div>
+          }
+        </footer>
+      </aside>
+    }
+  }
+</div>
