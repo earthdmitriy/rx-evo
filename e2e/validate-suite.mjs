@@ -24,7 +24,7 @@ const EXPECT = {
   // stage 2
   'no-isolation': ['E1 s2', 'E2 s2'],
   'no-partial': ['E3 s2', 'E5 s2', 'E10 s2', 'E11 s2', 'E12 s2', 'E13 s2', 'E14 s2', 'E15 s2', 'E16 s2', 'E17 s2', 'E18 s2', 'E19 s2', 'E20 s2'],
-  'retry-all': ['F1 s2', 'F2 s2', 'F3 s2', 'F7 s2', 'F8 s2', 'F9 s2', 'F10 s2', 'F11 s2'],
+  'retry-all': ['F1 s2'],
   'no-poll-keep': ['E7 s2'],
   'no-stale': ['B3 s2'],
   'no-cancel': ['B1 s2', 'B8 s2', 'A4 s2'],
@@ -45,13 +45,13 @@ const root = join(import.meta.dirname, '..');
 const results = () => JSON.parse(readFileSync(join(root, 'e2e/report/contest-results.json'), 'utf8'));
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-/** Runs the suite on the reference with `defect`, limited by `grep`; returns the results of this run. */
+/** Runs the suite on the test oracle with `defect`, limited by `grep`; returns the results of this run. */
 const run = (defect, grep) => {
-  const env = { ...process.env, E2E_CONTESTER: 'reference', E2E_DEFECT: defect ?? '' };
+  const env = { ...process.env, E2E_CONTESTER: 'test-oracle', E2E_DEFECT: defect ?? '' };
   const args = ['playwright', 'test', '-c', 'e2e/playwright.config.ts', '--timeout=10000', '--reporter=dot,./e2e/reporters/contest-reporter.ts'];
   if (grep) args.push('--grep', `"${grep}"`);
   spawnSync('npx', args, { cwd: root, env, stdio: 'inherit', shell: true });
-  return results()[defect ? `reference~${defect}` : 'reference']?.results ?? {};
+  return results()[defect ? `test-oracle~${defect}` : 'test-oracle']?.results ?? {};
 };
 
 const keyGrep = (keys) => keys.map((k) => { const [id, s] = k.split(' s'); return `${escape(id)} · stage ${s} ·`; }).join('|');

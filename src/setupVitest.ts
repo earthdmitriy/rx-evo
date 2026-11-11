@@ -23,15 +23,29 @@ if (ProxyZoneSpec) {
 
   // The wrapped callback keeps the original arity (Vitest rejects the `done` style, so it is 0).
   const wrapTestFn = (original: AnyFn): AnyFn => {
-    const wrapped: AnyFn = function (this: unknown, name: unknown, fn?: AnyFn, ...rest: any[]) {
-      return original.call(this, name, typeof fn === 'function' ? inProxyZone(fn) : fn, ...rest);
+    const wrapped: AnyFn = function (
+      this: unknown,
+      name: unknown,
+      fn?: AnyFn,
+      ...rest: any[]
+    ) {
+      return original.call(
+        this,
+        name,
+        typeof fn === 'function' ? inProxyZone(fn) : fn,
+        ...rest,
+      );
     };
     return Object.assign(wrapped, original);
   };
 
   const wrapHook = (original: AnyFn): AnyFn =>
     function (this: unknown, fn?: AnyFn, ...rest: any[]) {
-      return original.call(this, typeof fn === 'function' ? inProxyZone(fn) : fn, ...rest);
+      return original.call(
+        this,
+        typeof fn === 'function' ? inProxyZone(fn) : fn,
+        ...rest,
+      );
     };
 
   // On Node, zone.js numbers fake timers 1, 2, 3... and real timers (e.g. Angular's change
@@ -60,7 +74,11 @@ if (ProxyZoneSpec) {
     if (typeof original !== 'function') continue;
     const wrapped = wrapTestFn(original);
     for (const variant of ['only', 'skip', 'todo', 'concurrent', 'fails']) {
-      if (typeof original[variant] === 'function' && variant !== 'skip' && variant !== 'todo') {
+      if (
+        typeof original[variant] === 'function' &&
+        variant !== 'skip' &&
+        variant !== 'todo'
+      ) {
         wrapped[variant] = wrapTestFn(original[variant].bind(original));
       }
     }

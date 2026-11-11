@@ -121,7 +121,7 @@ public readonly saveStream = statefulObservable({
 
 The article listing in [§6.6](../fp_article.md) is the same two pipelines
 without `statefulObservable`; wrap both async edges as above. Template:
-`<app-stateful-block [stream]="editFormStream">` so there is no empty group
+`<app-view-block [stream]="editFormStream">` so there is no empty group
 to patch. Save loading/error come from `saveStream`, not a subscribe.
 
 ## In this project

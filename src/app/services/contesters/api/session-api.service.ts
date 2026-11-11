@@ -12,14 +12,20 @@ export class SessionApi {
 
   /** Starts a session. Any non-empty email and password work; the email picks the agent. 401 otherwise. */
   public login(email: string, password: string): Observable<Agent> {
-    return this.http.write('login', { email }, 'public', () => this.backend.login(email, password));
+    return this.http.write('login', { email }, 'public', () =>
+      this.backend.login(email, password),
+    );
   }
 
   public logout(): Observable<void> {
-    return this.http.write('logout', undefined, 'public', () => this.backend.logout());
+    return this.http.write('logout', undefined, 'public', () =>
+      this.backend.logout(),
+    );
   }
 
   public profile(): Observable<Agent> {
-    return this.http.read('profile', undefined, 'user', () => this.backend.profile());
+    return this.http.read('profile', undefined, 'user', () =>
+      this.backend.profile(),
+    );
   }
 }

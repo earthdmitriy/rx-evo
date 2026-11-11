@@ -1,5 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { discardPeriodicTasks, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import {
+  discardPeriodicTasks,
+  fakeAsync,
+  TestBed,
+  tick,
+} from '@angular/core/testing';
 import { Observable, Subscription } from 'rxjs';
 import { SKIPDELAY_TOKEN } from '../../../app.config';
 import {
@@ -39,7 +44,9 @@ const status = (error: unknown) => (error as HttpErrorResponse).status;
 
 describe('contesters fake backend', () => {
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [{ provide: SKIPDELAY_TOKEN, useValue: true }] });
+    TestBed.configureTestingModule({
+      providers: [{ provide: SKIPDELAY_TOKEN, useValue: true }],
+    });
   });
 
   /** Services are created inside each fakeAsync test, so the push timer is fake. */
@@ -59,7 +66,8 @@ describe('contesters fake backend', () => {
   });
   type Apis = ReturnType<typeof apis>;
 
-  const signIn = (api: Apis) => run(api.session.login('dana@shop.example', 'secret'));
+  const signIn = (api: Apis) =>
+    run(api.session.login('dana@shop.example', 'secret'));
 
   /** A customer with a Processing order and an open ticket about it (guaranteed by the seed). */
   const editable = (api: Apis) => {
@@ -67,10 +75,19 @@ describe('contesters fake backend', () => {
       const hits = run(api.customers.searchCustomers({ page })).value!.items;
       if (!hits.length) throw new Error('no editable order in the seed');
       for (const c of hits) {
-        const order = run(api.orders.orders(c.customerId)).value!.find((o) => o.status === 'Processing');
+        const order = run(api.orders.orders(c.customerId)).value!.find(
+          (o) => o.status === 'Processing',
+        );
         if (!order) continue;
-        const ticket = run(api.tickets.ticketsByOrder(order.orderId)).value!.find((t) => t.status !== 'Solved');
-        if (ticket) return { customerId: c.customerId, orderId: order.orderId, ticketId: ticket.ticketId };
+        const ticket = run(
+          api.tickets.ticketsByOrder(order.orderId),
+        ).value!.find((t) => t.status !== 'Solved');
+        if (ticket)
+          return {
+            customerId: c.customerId,
+            orderId: order.orderId,
+            ticketId: ticket.ticketId,
+          };
       }
     }
   };
@@ -88,7 +105,9 @@ describe('contesters fake backend', () => {
     expect(status(run(api.customers.searchCustomers({})).error)).toBe(401);
     const hits = run(api.products.searchProducts('a')).value!;
     expect(hits.length).toBeGreaterThan(0);
-    expect(run(api.pricing.prices([hits[0].sku])).value![0].price).toBeGreaterThan(0);
+    expect(
+      run(api.pricing.prices([hits[0].sku])).value![0].price,
+    ).toBeGreaterThan(0);
     signIn(api);
     expect(run(api.session.profile()).value!.name).toBeTruthy();
     run(api.session.logout());
@@ -101,10 +120,16 @@ describe('contesters fake backend', () => {
     signIn(api);
     const hit = run(api.customers.searchCustomers({})).value!.items[0];
     expect(Object.keys(hit).sort()).toEqual(['customerId', 'email', 'name']);
-    expect(Object.keys(run(api.customers.customer(hit.customerId)).value!)).not.toContain('counters');
+    expect(
+      Object.keys(run(api.customers.customer(hit.customerId)).value!),
+    ).not.toContain('counters');
     const { orderId, ticketId } = editable(api);
     const order = run(api.orders.order(orderId)).value!;
-    expect(Object.keys(order.lines[0]).sort()).toEqual(['qty', 'sku', 'unitPrice']);
+    expect(Object.keys(order.lines[0]).sort()).toEqual([
+      'qty',
+      'sku',
+      'unitPrice',
+    ]);
     expect(order).not.toHaveProperty('ticketId');
     const message = run(api.tickets.ticket(ticketId)).value!.messages[0];
     expect(message).toHaveProperty('authorId');
@@ -117,24 +142,37 @@ describe('contesters fake backend', () => {
   it('limits batch calls to MAX_BATCH ids', fakeAsync(() => {
     const api = apis();
     signIn(api);
-    const ids = run(api.customers.searchCustomers({ page: 1 })).value!.items.map((c) => c.customerId);
+    const ids = run(
+      api.customers.searchCustomers({ page: 1 }),
+    ).value!.items.map((c) => c.customerId);
     expect(run(api.customers.tiers(ids)).value!.length).toBe(ids.length);
     const tooMany = Array.from({ length: MAX_BATCH + 1 }, (_, i) => 1001 + i);
     expect(status(run(api.customers.tiers(tooMany)).error)).toBe(400);
     expect(status(run(api.tickets.ticketCounts(tooMany)).error)).toBe(400);
-    expect(status(run(api.products.products(tooMany.map(String))).error)).toBe(400);
+    expect(status(run(api.pricing.prices(tooMany.map(String))).error)).toBe(
+      400,
+    );
+    expect(status(run(api.products.product('no-such-sku')).error)).toBe(404);
+    expect(status(run(api.agents.agent(999_999)).error)).toBe(404);
     discardPeriodicTasks();
   }));
 
   it('pages, filters and sorts customers by data of other services', fakeAsync(() => {
     const api = apis();
     signIn(api);
-    const page1 = run(api.customers.searchCustomers({ sort: 'spend', dir: 'desc' })).value!;
+    const page1 = run(
+      api.customers.searchCustomers({ sort: 'spend', dir: 'desc' }),
+    ).value!;
     expect(page1.items.length).toBe(8);
-    const spend = (id: number) => run(api.orders.orderStats(id)).value!.lifetimeSpend;
-    expect(spend(page1.items[0].customerId)).toBeGreaterThanOrEqual(spend(page1.items[7].customerId));
+    const spend = (id: number) =>
+      run(api.orders.orderStats(id)).value!.lifetimeSpend;
+    expect(spend(page1.items[0].customerId)).toBeGreaterThanOrEqual(
+      spend(page1.items[7].customerId),
+    );
     const vip = run(api.customers.searchCustomers({ filter: 'vip' })).value!;
-    const tiers = run(api.customers.tiers(vip.items.map((c) => c.customerId))).value!;
+    const tiers = run(
+      api.customers.tiers(vip.items.map((c) => c.customerId)),
+    ).value!;
     expect(tiers.every((t) => t.tier === 'VIP')).toBe(true);
     discardPeriodicTasks();
   }));
@@ -146,21 +184,32 @@ describe('contesters fake backend', () => {
     const before = run(api.orders.order(orderId)).value!;
     const statsBefore = run(api.orders.orderStats(customerId)).value!;
     const hit = run(api.products.searchProducts('e')).value!.find(
-      (p) => !before.lines.some((l) => l.sku === p.sku) && run(api.inventory.stock([p.sku])).value![0].stock > 0,
+      (p) =>
+        !before.lines.some((l) => l.sku === p.sku) &&
+        run(api.inventory.stock(p.sku)).value!.stock > 0,
     )!;
     const price = run(api.pricing.prices([hit.sku])).value![0].price;
-    const lines = [...before.lines.map((l) => ({ sku: l.sku, qty: l.qty })), { sku: hit.sku, qty: 1 }];
+    const lines = [
+      ...before.lines.map((l) => ({ sku: l.sku, qty: l.qty })),
+      { sku: hit.sku, qty: 1 },
+    ];
 
-    const saved = run(api.orders.updateOrder(orderId, lines, { ticketId, text: 'Added.' })).value!;
+    const saved = run(
+      api.orders.updateOrder(orderId, lines, { ticketId, text: 'Added.' }),
+    ).value!;
 
     expect(saved.total).toBe(before.total + price);
     expect(saved.lines.find((l) => l.sku === hit.sku)!.unitPrice).toBe(price);
-    expect(run(api.orders.orderStats(customerId)).value!.lifetimeSpend).toBe(statsBefore.lifetimeSpend + price);
+    expect(run(api.orders.orderStats(customerId)).value!.lifetimeSpend).toBe(
+      statsBefore.lifetimeSpend + price,
+    );
     const thread = run(api.tickets.ticket(ticketId)).value!;
     expect(thread.messages.at(-1)!.text).toBe('Added.');
     expect(thread.status).toBe('Waiting');
     const author = thread.messages.at(-1)!.authorId;
-    expect(run(api.agents.agents([author])).value![0].name).toBe(run(api.session.profile()).value!.name);
+    expect(run(api.agents.agent(author)).value!.name).toBe(
+      run(api.session.profile()).value!.name,
+    );
     discardPeriodicTasks();
   }));
 
@@ -168,8 +217,15 @@ describe('contesters fake backend', () => {
     const api = apis();
     signIn(api);
     const rows = run(api.customers.searchCustomers({})).value!.items;
-    const shipped = rows.flatMap((c) => run(api.orders.orders(c.customerId)).value!).find((o) => o.status !== 'Processing')!;
-    expect(status(run(api.orders.updateOrder(shipped.orderId, [{ sku: 'X', qty: 1 }])).error)).toBe(409);
+    const shipped = rows
+      .flatMap((c) => run(api.orders.orders(c.customerId)).value!)
+      .find((o) => o.status !== 'Processing')!;
+    expect(
+      status(
+        run(api.orders.updateOrder(shipped.orderId, [{ sku: 'X', qty: 1 }]))
+          .error,
+      ),
+    ).toBe(409);
     discardPeriodicTasks();
   }));
 
@@ -185,13 +241,18 @@ describe('contesters fake backend', () => {
     expect(api.transport.stats().customers.cancelled).toBe(1);
 
     const customerId = 1001;
-    api.notes.addNote(customerId, 'sent, then the client left').subscribe().unsubscribe();
+    api.notes
+      .addNote(customerId, 'sent, then the client left')
+      .subscribe()
+      .unsubscribe();
     expect(api.transport.stats().addNote.cancelled).toBe(1);
     api.transport.pendingCalls('addNote')[0].release(); // the server still gets it
 
     api.transport.latency.set('fast');
     let texts: string[] = [];
-    api.notes.notes(customerId).subscribe((n) => (texts = n.map((x) => x.text)));
+    api.notes
+      .notes(customerId)
+      .subscribe((n) => (texts = n.map((x) => x.text)));
     tick(500);
     expect(texts).toContain('sent, then the client left');
     discardPeriodicTasks();
@@ -223,7 +284,9 @@ describe('contesters fake backend', () => {
     const first = run(api.activity.activity(1001)).value!;
     const second = run(api.activity.activity(1001)).value!;
     expect(second.length).toBe(first.length + 1);
-    expect(second[0]).toEqual(expect.objectContaining({ kind: 'product-viewed' }));
+    expect(second[0]).toEqual(
+      expect.objectContaining({ kind: 'product-viewed' }),
+    );
     discardPeriodicTasks();
   }));
 });

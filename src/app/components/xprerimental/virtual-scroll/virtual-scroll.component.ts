@@ -3,29 +3,14 @@ import {
   ScrollingModule,
 } from '@angular/cdk/scrolling';
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject, ViewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  distinctUntilChanged,
-  map,
-  Observable,
-  ReplaySubject,
-  shareReplay,
-  Subject,
-  scan,
-  startWith,
-  switchMap,
-  withLatestFrom,
-} from 'rxjs';
+import { Component, inject, viewChild } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { map, Observable, scan, startWith, switchMap } from 'rxjs';
 import {
   Client,
   ClientApiService,
 } from '../../../services/api/ClientApi.service';
-import {
-  combineStatefulObservables,
-  statefulConnection,
-  statefulObservableFactory,
-} from '../../../submodules/stateful-observable/src';
+import { statefulObservableFactory } from '../../../submodules/stateful-observable/src';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
 
 const resizeOf = (element: Element) =>
@@ -76,11 +61,9 @@ const placePages = (
 export class VirtualScrollComponent {
   private readonly clientApiService = inject(ClientApiService);
 
-  protected readonly viewport$ = new ReplaySubject<CdkVirtualScrollViewport>(1);
-  @ViewChild('viewport', { static: true })
-  protected set viewportRef(value: CdkVirtualScrollViewport) {
-    this.viewport$.next(value);
-  }
+  protected readonly viewport =
+    viewChild.required<CdkVirtualScrollViewport>('viewport');
+  private readonly viewport$ = toObservable(this.viewport);
 
   private readonly pageSize = 10;
   protected readonly itemHeight = 52; // px
@@ -96,43 +79,27 @@ export class VirtualScrollComponent {
     refCount: false,
   });
 
-  /** Pages under the rendered range, emitted only when the set changes. */
+  /** Pages under the rendered range; `projectMany` skips a list equal to the current one. */
   private readonly visiblePages$ = this.viewport$.pipe(
     switchMap((v) => v.renderedRangeStream),
     map(({ start, end }) => pagesFor(start, end, this.pageSize)),
     startWith([1]),
-    distinctUntilChanged((a, b) => a.join() === b.join()),
   );
-
-  /** The visible pages combined into one stateful stream per range. */
-  private readonly visibleCombined$ = this.visiblePages$.pipe(
-    map((pages) =>
-      combineStatefulObservables(
-        pages.map((page) => this.pages.get(page)),
-        (results) => results,
-      ),
-    ),
-    shareReplay({ bufferSize: 1, refCount: true }),
-  );
-
-  /** Stable handle for the template; switched to every new range. */
-  public readonly stream = statefulConnection<PageResult[]>({
-    name: 'visiblePages',
-  });
 
   /**
-   * Retry requests. A connection's own `reload()` is a no-op, so the retry is
-   * sent to the currently connected combined stream: only failed pages reload.
+   * The visible pages combined into one stream, placed into the rows. A page
+   * that stays visible keeps its load; `reload({ onlyFailed })` retries only
+   * the failed pages.
    */
-  public readonly retry$ = new Subject<void>();
-
-  public readonly rows$ = this.stream.pipeValue(
-    scan(
-      (rows: (Client | undefined)[], pages: PageResult[]) =>
-        placePages(rows, pages, this.pageSize),
-      [],
-    ),
-  ).value$;
+  public readonly stream = this.pages
+    .projectMany(this.visiblePages$)
+    .pipeValue(
+      scan(
+        (rows: (Client | undefined)[], pages: PageResult[]) =>
+          placePages(rows, pages, this.pageSize),
+        [],
+      ),
+    );
 
   constructor() {
     // CDK measures the viewport only on init and window resize; re-measure
@@ -145,11 +112,5 @@ export class VirtualScrollComponent {
         takeUntilDestroyed(),
       )
       .subscribe((viewport) => viewport.checkViewportSize());
-    this.visibleCombined$
-      .pipe(takeUntilDestroyed())
-      .subscribe((combined) => this.stream.connect(combined));
-    this.retry$
-      .pipe(withLatestFrom(this.visibleCombined$), takeUntilDestroyed())
-      .subscribe(([, combined]) => combined.reload({ onlyFailed: true }));
   }
 }

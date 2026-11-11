@@ -1,17 +1,35 @@
 import './page-env';
 import { ApplicationRef, Type } from '@angular/core';
-import { ComponentFixture, discardPeriodicTasks, flush, flushMicrotasks, TestBed, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { ConsoleApiKey } from '../../../services/contesters/backend/api-keys';
 import { FakeBackend } from '../../../services/contesters/backend/fake-backend.service';
 import { FakeTransport } from '../../../services/contesters/backend/fake-transport.service';
 import { httpError } from '../../../services/contesters/backend/http-error';
 import { pageUrl } from './page-env';
 
-export type ViewStateAttr = 'no-block' | 'idle' | 'loading' | 'ready' | 'reloading' | 'error' | 'stale-error' | 'empty' | null;
-export type PartStateAttr = 'loading' | 'ready' | 'error';
+export type ViewStateAttr =
+  | 'no-block'
+  | 'idle'
+  | 'loading'
+  | 'ready'
+  | 'reloading'
+  | 'error'
+  | 'stale-error'
+  | 'empty'
+  | null;
+/** A field of a view: it shows its value, or it is an empty space (not arrived). */
+export type FieldStateAttr = 'shown' | 'empty';
 
 export type Fixtures = {
-  editable: { customerId: number; customerName: string; orderId: string; ticketId: string; addSku: string; addName: string };
+  editable: {
+    customerId: number;
+    customerName: string;
+    orderId: string;
+    ticketId: string;
+    addSku: string;
+    addName: string;
+  };
   shipped: { customerId: number; customerName: string; orderId: string };
   openTicket: { customerId: number; customerName: string; ticketId: string };
   twoInFlight: { customerId: number; customerName: string; orderIds: string[] };
@@ -21,12 +39,23 @@ export type Fixtures = {
   noted: { customerId: number; customerName: string };
 };
 
-const squash =(s: string | null | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+const squash = (s: string | null | undefined) =>
+  (s ?? '').replace(/\s+/g, ' ').trim();
+
+/**
+ * One turn of the event loop's microtasks, native ones included: the page's
+ * `await`s (a resource's load, a stream's first value) continue in them, and
+ * the fake clock's `advanceTimersByTimeAsync` drains them between timers too.
+ */
+const turn = async () => {
+  await vi.advanceTimersByTimeAsync(0);
+  for (let i = 0; i < 3; i++) await Promise.resolve();
+};
 
 /**
  * A page under test: the implementation's root `*Page` component mounted in
- * TestBed, the fake backend underneath. Everything is synchronous: run the
- * test body in `fakeAsync` (see `pageTest`), time moves only with `idle()`.
+ * TestBed, the fake backend underneath. The test body is async and runs with
+ * fake timers (see `scenario`): time moves only with `idle()`.
  *
  * It queries the DOM by the contract's test ids and attributes, like the e2e
  * suite, so a scenario reads the same in both.
@@ -38,40 +67,46 @@ export class ConsolePage {
 
   private constructor(readonly fixture: ComponentFixture<unknown>) {}
 
-  static open(page: Type<unknown>): ConsolePage {
+  static async open(page: Type<unknown>): Promise<ConsolePage> {
     window.history.replaceState(null, '', pageUrl());
     const harness = new ConsolePage(TestBed.createComponent(page));
     harness.transport.latency.set('manual');
-    harness.refresh();
+    await harness.refresh();
     return harness;
   }
 
   // ---------- time ----------
 
-  /** Re-renders. */
-  refresh() {
-    flushMicrotasks();
-    this.fixture.detectChanges();
-    this.app.tick();
+  /**
+   * Re-renders until the page is quiet: a result settles in a microtask, the
+   * change detection that follows can start effects (signals, resources),
+   * which settle in the next microtask, and so on.
+   */
+  async refresh() {
+    for (let round = 0; round < 6; round++) {
+      await turn();
+      TestBed.flushEffects();
+      this.fixture.detectChanges();
+      this.app.tick();
+    }
+    await turn();
   }
 
   /** Lets timers run (debounce, poll) and the page start its requests. */
-  idle(ms = 400) {
-    tick(ms);
-    this.refresh();
+  async idle(ms = 400) {
+    await vi.advanceTimersByTimeAsync(ms);
+    await this.refresh();
   }
 
   /** Answers every pending request until nothing is pending (follow-up requests included). */
-  settle(rounds = 12) {
+  async settle(rounds = 12) {
     for (let i = 0; i < rounds; i++) {
-      tick(60);
+      await vi.advanceTimersByTimeAsync(60);
+      await this.refresh(); // effects of the last answers start the next requests
       const calls = [...this.transport.pendingCalls()];
-      if (!calls.length) {
-        this.refresh();
-        return;
-      }
+      if (!calls.length) return;
       calls.forEach((c) => c.release());
-      this.refresh();
+      await this.refresh();
     }
     throw new Error('requests kept coming while settling');
   }
@@ -82,37 +117,50 @@ export class ConsolePage {
     return this.transport.pendingCalls(key);
   }
 
-  release(key: ConsoleApiKey, index = 0) {
-    const call = this.pending(key)[index];
-    if (!call) throw new Error(`no pending ${key} #${index}`);
-    call.release();
-    this.refresh();
+  /**
+   * The oldest pending request of `key` that matches, waiting a little for the
+   * page to start it (as the browser suite polls): a page may start a request
+   * after a microtask or a short timer.
+   */
+  private async awaitCall(
+    key: ConsoleApiKey,
+    match: (c: { arg: unknown }, index: number) => boolean = () => true,
+  ) {
+    for (let i = 0; i < 20; i++) {
+      const call = this.pending(key).find((c, index) => match(c, index));
+      if (call) return call;
+      await this.idle(50);
+    }
+    throw new Error(`no pending ${key} for the argument`);
   }
 
-  releaseFor(key: ConsoleApiKey, match: (arg: unknown) => boolean) {
-    const call = this.pending(key).find((c) => match(c.arg));
-    if (!call) throw new Error(`no pending ${key} for the argument`);
-    call.release();
-    this.refresh();
+  async release(key: ConsoleApiKey, index = 0) {
+    (await this.awaitCall(key, (_, i) => i === index)).release();
+    await this.refresh();
   }
 
-  fail(key: ConsoleApiKey, index = 0) {
-    const call = this.pending(key)[index];
-    if (!call) throw new Error(`no pending ${key} #${index}`);
-    call.fail(httpError(500, 'Internal server error', key));
-    this.refresh();
+  async releaseFor(key: ConsoleApiKey, match: (arg: unknown) => boolean) {
+    (await this.awaitCall(key, (c) => match(c.arg))).release();
+    await this.refresh();
   }
 
-  failFor(key: ConsoleApiKey, match: (arg: unknown) => boolean) {
-    const call = this.pending(key).find((c) => match(c.arg));
-    if (!call) throw new Error(`no pending ${key} for the argument`);
-    call.fail(httpError(500, 'Internal server error', key));
-    this.refresh();
+  async fail(key: ConsoleApiKey, index = 0) {
+    (await this.awaitCall(key, (_, i) => i === index)).fail(
+      httpError(500, 'Internal server error', key),
+    );
+    await this.refresh();
   }
 
-  failAll(key: ConsoleApiKey) {
-    this.idle(120);
-    while (this.pending(key).length) this.fail(key);
+  async failFor(key: ConsoleApiKey, match: (arg: unknown) => boolean) {
+    (await this.awaitCall(key, (c) => match(c.arg))).fail(
+      httpError(500, 'Internal server error', key),
+    );
+    await this.refresh();
+  }
+
+  async failAll(key: ConsoleApiKey) {
+    await this.idle(120);
+    while (this.pending(key).length) await this.fail(key);
   }
 
   setThrow(key: ConsoleApiKey, on: boolean) {
@@ -133,7 +181,14 @@ export class ConsolePage {
 
   /** What the backend holds right now (no latency, counters or session check). */
   truth<T = any>(method: keyof FakeBackend, ...args: unknown[]): T {
-    return JSON.parse(JSON.stringify((this.backend[method] as (...a: unknown[]) => unknown).apply(this.backend, args) ?? null));
+    return JSON.parse(
+      JSON.stringify(
+        (this.backend[method] as (...a: unknown[]) => unknown).apply(
+          this.backend,
+          args,
+        ) ?? null,
+      ),
+    );
   }
 
   /** Seeded cases (see `FakeBackend.testFixtures`; all present for the default seed). */
@@ -149,7 +204,9 @@ export class ConsolePage {
 
   /** Every element with the test id (inside `scope` when given). */
   all(testId: string, scope: ParentNode = this.root): HTMLElement[] {
-    return [...scope.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`)];
+    return [
+      ...scope.querySelectorAll<HTMLElement>(`[data-testid="${testId}"]`),
+    ];
   }
 
   one(testId: string, scope: ParentNode = this.root): HTMLElement | null {
@@ -173,6 +230,20 @@ export class ConsolePage {
     return squash((testId ? this.one(testId) : this.root)?.textContent);
   }
 
+  /**
+   * Text of a region without what sits in a block that is loading: while a
+   * block loads, the previous key's data may stay under its spinner (R-C2).
+   */
+  settledContentOf(testId: string): string {
+    const region = this.one(testId);
+    if (!region) return '';
+    const copy = region.cloneNode(true) as HTMLElement;
+    copy
+      .querySelectorAll('[data-testid="state-block"].loading')
+      .forEach((b) => b.remove());
+    return squash(copy.textContent);
+  }
+
   /** The block (`state-block`) around a view, found from an element inside it. */
   private blockOf(root: Element | null): Element | null {
     return root?.closest('[data-testid="state-block"]') ?? null;
@@ -180,7 +251,9 @@ export class ConsolePage {
 
   /** The block of a section: inside the host that carries `data-section="<section>"` (the view is gone while it shows an error). */
   private sectionBlock(section: string): Element | null {
-    return this.root.querySelector(`[data-section="${section}"] > [data-testid="state-block"]`);
+    return this.root.querySelector(
+      `[data-section="${section}"] > [data-testid="state-block"]`,
+    );
   }
 
   /**
@@ -194,94 +267,130 @@ export class ConsolePage {
     const block = this.sectionBlock(section);
     if (!block) return 'no-block' as ViewStateAttr;
     if (block.querySelector(':scope > app-generic-error')) return 'error';
-    const content = block.querySelector(`[data-testid="${section}"]`)?.getAttribute('data-content') ?? 'none';
+    const content =
+      block
+        .querySelector(`[data-testid="${section}"]`)
+        ?.getAttribute('data-content') ?? 'none';
     const hasData = content === 'shown' || content === 'empty';
-    if (block.classList.contains('loading')) return hasData ? 'reloading' : 'loading';
-    return content === 'shown' ? 'ready' : content === 'empty' ? 'empty' : 'idle';
+    if (block.classList.contains('loading'))
+      return hasData ? 'reloading' : 'loading';
+    return content === 'shown'
+      ? 'ready'
+      : content === 'empty'
+        ? 'empty'
+        : 'idle';
   }
 
-  /** State of a row or a box inside a section: its `Part`. */
-  partState(testId: string): PartStateAttr | null {
+  /** A field of a view, by its test id: `shown` when it has content, `empty` while it is a blank space, null when absent. */
+  fieldState(testId: string): FieldStateAttr | null {
     const el = this.one(testId);
-    return ((el?.getAttribute('data-part-state') ?? el?.querySelector('[data-part-state]')?.getAttribute('data-part-state')) as PartStateAttr | null) ?? null;
+    return el ? (squash(el.textContent) ? 'shown' : 'empty') : null;
   }
 
-  /** Every Part of that test id in the region is in one of the states (and there is at least one). */
-  partsAre(region: ParentNode, testId: string, ...states: PartStateAttr[]): boolean {
-    const got = this.partStates(region, testId);
-    return got.length > 0 && got.every((s) => states.includes(s));
+  /** States of every field of that test id in the region, in DOM order. */
+  fieldStates(region: ParentNode, testId: string): FieldStateAttr[] {
+    return this.all(testId, region).map((e) =>
+      squash(e.textContent) ? 'shown' : 'empty',
+    );
+  }
+
+  /** Every field of that test id in the region is in the state (and there is at least one). */
+  fieldsAre(
+    region: ParentNode,
+    testId: string,
+    state: FieldStateAttr,
+  ): boolean {
+    const got = this.fieldStates(region, testId);
+    return got.length > 0 && got.every((s) => s === state);
+  }
+
+  /** The tracking box of an in-flight order in S9: shown when its content is. */
+  trackingOf(orderId: string): FieldStateAttr | null {
+    const row = this.one(`shipment-${orderId}`);
+    const box = row?.querySelector('[data-testid="shipment-tracking"]');
+    return box ? (squash(box.textContent) ? 'shown' : 'empty') : null;
   }
 
   /** Lets the page start its requests, then checks that at least `count` of `key` are waiting. */
-  waitPending(key: ConsoleApiKey, count = 1) {
-    for (let i = 0; i < 20 && this.pending(key).length < count; i++) this.idle(50);
-    expect(this.pending(key).length, `${key} pending`).toBeGreaterThanOrEqual(count);
+  async waitPending(key: ConsoleApiKey, count = 1) {
+    for (let i = 0; i < 20 && this.pending(key).length < count; i++)
+      await this.idle(50);
+    expect(this.pending(key).length, `${key} pending`).toBeGreaterThanOrEqual(
+      count,
+    );
   }
 
   /** The error text of the section's block: names the failed sources. */
   failedSources(section: string): string {
-    return squash(this.sectionBlock(section)?.querySelector(':scope > app-generic-error')?.textContent);
+    return squash(
+      this.sectionBlock(section)?.querySelector(':scope > app-generic-error')
+        ?.textContent,
+    );
   }
 
-  partStates(region: ParentNode, testId?: string): PartStateAttr[] {
-    const sel = testId ? `[data-testid="${testId}"][data-part-state], [data-testid="${testId}"] [data-part-state]` : '[data-part-state]';
-    return [...region.querySelectorAll(sel)].map((e) => e.getAttribute('data-part-state') as PartStateAttr);
+  /** The texts of the error views inside a section (its own block, or the blocks of its fields). */
+  errorsIn(section: string): string[] {
+    const host = this.root.querySelector(`[data-section="${section}"]`);
+    return [...(host?.querySelectorAll('app-generic-error') ?? [])].map((e) =>
+      squash(e.textContent),
+    );
   }
 
-  /** The region's block shows an error, or a `Part` inside is in `error`. */
+  /** The region's block shows an error. */
   hasError(region: Element): boolean {
-    return !!this.blockOf(region)?.querySelector(':scope > app-generic-error') || region.querySelector('[data-part-state="error"]') !== null;
+    return !!this.blockOf(region)?.querySelector(':scope > app-generic-error');
   }
 
-  /** The region's block is loading, or a skeleton or a `Part` inside is. */
+  /** The region's block is loading. */
   isLoading(region: Element): boolean {
-    return !!this.blockOf(region)?.classList.contains('loading') || region.querySelector('.skeleton, [data-part-state="loading"]') !== null;
+    return !!this.blockOf(region)?.classList.contains('loading');
   }
 
   // ---------- user actions ----------
 
-  click(target: string | HTMLElement) {
+  async click(target: string | HTMLElement) {
     const el = typeof target === 'string' ? this.one(target) : target;
     if (!el) throw new Error(`nothing to click: ${String(target)}`);
     el.click();
-    this.refresh();
+    await this.refresh();
   }
 
   /** Types into an input (the element, or the input inside a test id). */
-  fill(target: string | HTMLElement, value: string) {
+  async fill(target: string | HTMLElement, value: string) {
     const host = typeof target === 'string' ? this.one(target) : target;
-    const input = (host instanceof HTMLInputElement || host instanceof HTMLTextAreaElement ? host : host?.querySelector('input, textarea')) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | null
-      | undefined;
+    const input = (
+      host instanceof HTMLInputElement || host instanceof HTMLTextAreaElement
+        ? host
+        : host?.querySelector('input, textarea')
+    ) as HTMLInputElement | HTMLTextAreaElement | null | undefined;
     if (!input) throw new Error(`no input: ${String(target)}`);
     input.value = value;
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    this.refresh();
+    await this.refresh();
   }
 
   /** Types a text key by key, `delayMs` apart (a typing user: debounce sees every keystroke). */
-  type(target: string | HTMLElement, text: string, delayMs = 30) {
+  async type(target: string | HTMLElement, text: string, delayMs = 30) {
     for (let i = 1; i <= text.length; i++) {
-      this.fill(target, text.slice(0, i));
-      tick(delayMs);
+      await this.fill(target, text.slice(0, i));
+      await vi.advanceTimersByTimeAsync(delayMs);
     }
-    this.refresh();
+    await this.refresh();
   }
 
   /** Picks an option of a `<select>`. */
-  select(target: string, value: string) {
+  async select(target: string, value: string) {
     const el = this.one(target) as HTMLSelectElement | null;
     if (!el) throw new Error(`no select: ${target}`);
     el.value = value;
     el.dispatchEvent(new Event('change', { bubbles: true }));
-    this.refresh();
+    await this.refresh();
   }
 
   /** The element and its ancestors are not `hidden` (layout does not exist in jsdom). */
   isShown(el: HTMLElement | null): boolean {
-    for (let e: HTMLElement | null = el; e; e = e.parentElement) if (e.hidden) return false;
+    for (let e: HTMLElement | null = el; e; e = e.parentElement)
+      if (e.hidden) return false;
     return el !== null;
   }
 
@@ -293,38 +402,60 @@ export class ConsolePage {
   /** Shown elements carrying data of a customer, optionally inside a region (test id). */
   shownForCustomer(id: number, region?: string): HTMLElement[] {
     const scope: ParentNode | null = region ? this.one(region) : this.root;
-    return [...(scope?.querySelectorAll<HTMLElement>(`[data-customer-id="${id}"]`) ?? [])].filter((e) => this.isShown(e));
+    return [
+      ...(scope?.querySelectorAll<HTMLElement>(`[data-customer-id="${id}"]`) ??
+        []),
+    ].filter((e) => this.isShown(e));
+  }
+
+  /** Like `shownForCustomer`, without the elements in a block that is loading (old data may stay under a spinner, R-C2). */
+  shownForCustomerSettled(id: number, region?: string): HTMLElement[] {
+    return this.shownForCustomer(id, region).filter(
+      (e) => !e.closest('[data-testid="state-block"].loading'),
+    );
   }
 
   /** Shown elements matching a CSS selector. */
   shownBy(selector: string): HTMLElement[] {
-    return [...this.root.querySelectorAll<HTMLElement>(selector)].filter((e) => this.isShown(e));
+    return [...this.root.querySelectorAll<HTMLElement>(selector)].filter((e) =>
+      this.isShown(e),
+    );
   }
 
   /** The Retry button of a section's block. */
-  retry(section: string) {
-    const button = [...(this.sectionBlock(section)?.querySelectorAll<HTMLElement>(':scope > app-generic-error button') ?? [])].find((b) => /retry/i.test(b.textContent ?? ''));
+  async retry(section: string) {
+    const button = [
+      ...(this.sectionBlock(section)?.querySelectorAll<HTMLElement>(
+        ':scope > app-generic-error button',
+      ) ?? []),
+    ].find((b) => /retry/i.test(b.textContent ?? ''));
     if (!button) throw new Error(`no Retry in ${section}`);
-    this.click(button);
+    await this.click(button);
   }
 
-  /** The Retry button inside any element (a row, a box, a hits list). */
-  retryIn(testId: string) {
-    const button = [...(this.one(testId)?.querySelectorAll<HTMLElement>('button') ?? [])].find((b) => /retry/i.test(`${b.textContent} ${b.getAttribute('aria-label') ?? ''}`));
-    if (!button) throw new Error(`no Retry in ${testId}`);
-    this.click(button);
+  /** The Retry button of the error view inside an element (a field, a row). */
+  async retryIn(root: Element) {
+    const button = [
+      ...root.querySelectorAll<HTMLElement>('app-generic-error button'),
+    ].find((b) => /retry/i.test(b.textContent ?? ''));
+    if (!button) throw new Error('no Retry in the element');
+    await this.click(button);
   }
 
   /** A double click: two clicks in a row, before the page can answer. */
-  dblclick(target: string) {
-    this.click(target);
-    this.click(target);
+  async dblclick(target: string) {
+    await this.click(target);
+    await this.click(target);
   }
 
   /** The value of an input or textarea. */
   value(testId: string): string {
     const host = this.one(testId);
-    const el = (host instanceof HTMLInputElement || host instanceof HTMLTextAreaElement ? host : host?.querySelector('input, textarea')) as HTMLInputElement | null;
+    const el = (
+      host instanceof HTMLInputElement || host instanceof HTMLTextAreaElement
+        ? host
+        : host?.querySelector('input, textarea')
+    ) as HTMLInputElement | null;
     return el?.value ?? '';
   }
 
@@ -332,17 +463,11 @@ export class ConsolePage {
     return !(this.one(testId) as HTMLButtonElement | null)?.disabled;
   }
 
-  /** The state of the `Part` hosted by an element (itself or a descendant). */
-  partOf(testId: string): PartStateAttr | null {
-    const el = this.one(testId);
-    return ((el?.getAttribute('data-part-state') ?? el?.querySelector('[data-part-state]')?.getAttribute('data-part-state')) as PartStateAttr | null) ?? null;
-  }
-
   /** Logs out and lets the server answer the logout request, if the page sent one. */
-  logout() {
-    this.click('logout');
-    this.idle(100);
-    while (this.pending('logout').length) this.release('logout');
+  async logout() {
+    await this.click('logout');
+    await this.idle(100);
+    while (this.pending('logout').length) await this.release('logout');
   }
 
   total(key: ConsoleApiKey) {
@@ -353,60 +478,64 @@ export class ConsolePage {
     return Object.fromEntries(keys.map((k) => [k, this.total(k)]));
   }
 
-  login() {
-    this.click('login');
-    this.release('login');
+  async login() {
+    await this.click('login');
+    await this.release('login');
   }
 
-  loginAndSettle() {
-    this.login();
-    this.settle();
+  async loginAndSettle() {
+    await this.login();
+    await this.settle();
   }
 
   /** Makes the customer's row visible, searching by name if needed (answers the list's requests only). */
-  findCustomer(id: number, name: string): HTMLElement {
+  async findCustomer(id: number, name: string): Promise<HTMLElement> {
     if (!this.has(`customer-${id}`)) {
-      this.fill('customer-search', name);
-      this.idle();
-      while (this.pending('customers').length) this.release('customers');
+      await this.fill('customer-search', name);
+      await this.idle();
+      while (this.pending('customers').length) await this.release('customers');
+      // the new rows' own calls (tiers, counters) leave in a later task than the search result
+      await this.idle();
+      for (const key of ['tiers', 'ticketCounts'] as const) {
+        while (this.pending(key).length) await this.release(key);
+      }
     }
     const row = this.one(`customer-${id}`);
     if (!row) throw new Error(`customer-${id} row`);
     return row;
   }
 
-  selectCustomer(id: number, name: string) {
-    this.click(this.findCustomer(id, name));
+  async selectCustomer(id: number, name: string) {
+    await this.click(await this.findCustomer(id, name));
   }
 
-  selectAndSettle(id: number, name: string) {
-    this.selectCustomer(id, name);
-    this.settle();
+  async selectAndSettle(id: number, name: string) {
+    await this.selectCustomer(id, name);
+    await this.settle();
   }
 
-  tab(name: 'orders' | 'cart' | 'tickets' | 'notes') {
-    this.click(`tab-${name}-toggle`);
+  async tab(name: 'orders' | 'cart' | 'tickets' | 'notes') {
+    await this.click(`tab-${name}-toggle`);
   }
 
-  openOrder(orderId: string) {
-    this.click(`order-${orderId}`);
+  async openOrder(orderId: string) {
+    await this.click(`order-${orderId}`);
   }
 
-  openTicket(ticketId: string) {
-    this.click(`ticket-${ticketId}`);
+  async openTicket(ticketId: string) {
+    await this.click(`ticket-${ticketId}`);
   }
 
   /** Ends the test: nothing may keep running. */
   close() {
     this.fixture.destroy();
-    discardPeriodicTasks();
-    flush();
+    vi.clearAllTimers();
   }
 }
 
 /** A signed-in page with everything loaded, and the seeded fixtures. */
-export const signedIn = (page: Type<unknown>) => {
-  const c = ConsolePage.open(page);
-  c.loginAndSettle();
+export const signedIn = async (page: Type<unknown>) => {
+  const c = await ConsolePage.open(page);
+  await c.loginAndSettle();
   return { c, fx: c.fixtures() };
 };

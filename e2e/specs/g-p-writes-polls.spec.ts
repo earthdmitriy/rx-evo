@@ -11,7 +11,7 @@ const expectOpenTicketsShown = async (c: Console, customerId: number) => {
   const open = await openTickets(c, customerId);
   await expect(c.testId('kpi-open-tickets')).toHaveText(String(open));
   await expect(c.testId('tab-tickets-toggle')).toHaveText(new RegExp('Tickets\\s*' + open + '\\s*$'));
-  await expect(c.testId(`customer-${customerId}`).getByTestId('row-open-tickets')).toHaveText(open ? String(open) : '');
+  await expect(c.testId(`customer-${customerId}`).getByTestId('row-open-tickets')).toHaveText(String(open));
 };
 
 /** The spend and orders KPIs and the Orders badge must be what `orderStats` says. */
@@ -157,14 +157,14 @@ scenario('G1', 2, 'an order change refreshes exactly what it changed', async ({ 
   await c.testId('save').click();
   await c.release('updateOrder');
   await c.settle();
-  const t = await c.totals('orders', 'orderStats', 'ticketCounts', 'tickets', 'ticketsByOrder', 'customer', 'customers', 'tiers', 'cart', 'notes', 'activity', 'agents');
+  const t = await c.totals('orders', 'orderStats', 'ticketCounts', 'tickets', 'ticketsByOrder', 'customer', 'customers', 'tiers', 'cart', 'notes', 'activity', 'agent');
   // asked now: the keys whose sections are shown (S5/S9, S4 and S3 row, S7, the ticket box)
   expect({ orders: t.orders > 0, orderStats: t.orderStats > 0, tickets: t.tickets > 0, ticketsByOrder: t.ticketsByOrder > 0 }).toEqual({
     orders: true, orderStats: true, tickets: true, ticketsByOrder: true,
   });
   expect(t.ticketCounts).toBeGreaterThan(0);
-  expect({ customer: t.customer, customers: t.customers, tiers: t.tiers, cart: t.cart, notes: t.notes, activity: t.activity, agents: t.agents }).toEqual({
-    customer: 0, customers: 0, tiers: 0, cart: 0, notes: 0, activity: 0, agents: 0,
+  expect({ customer: t.customer, customers: t.customers, tiers: t.tiers, cart: t.cart, notes: t.notes, activity: t.activity, agent: t.agent }).toEqual({
+    customer: 0, customers: 0, tiers: 0, cart: 0, notes: 0, activity: 0, agent: 0,
   });
 }, { smoke: true });
 

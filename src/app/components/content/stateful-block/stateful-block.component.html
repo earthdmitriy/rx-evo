@@ -1,12 +1,17 @@
-<div data-testid="state-block" [class.loading]="loading()">
-  @if (error(); as error) {
-    <app-generic-error
-      class="relative z-50 block"
-      [error]="error"
-      [showReload]="true"
-      (reload)="retry.emit()"
-    ></app-generic-error>
+@if (stream(); as stream) {
+  @if (isInactive(stream.raw$ | async)) {
+    <div class="empty-state">{{ inactiveText() }}</div>
   } @else {
-    <ng-content></ng-content>
+    <div data-testid="state-block" [class.loading]="stream.pending$ | async">
+      @if (stream.error$ | async; as error) {
+        <app-generic-error
+          [error]="error"
+          [showReload]="true"
+          (reload)="stream.reload()"
+        ></app-generic-error>
+      } @else {
+        <ng-content></ng-content>
+      }
+    </div>
   }
-</div>
+}

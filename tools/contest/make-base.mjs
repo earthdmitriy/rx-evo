@@ -76,20 +76,41 @@ run('git', ['archive', '--format=tar', '-o', tar, source], repo);
 run('tar', ['-xf', relative(out, tar).split('\\').join('/')], out); // relative: GNU tar reads 'C:' as a host
 rmSync(tar);
 
+// the skeleton view components (template finished, data a TODO): copied into the stage folder below
+const SKELETON_DIR = 'src/app/components/contesters/skeleton';
+const skeleton = readdirSync(join(out, SKELETON_DIR))
+  .filter((name) => /\.(ts|html)$/.test(name) && !/\.spec\.ts$/.test(name))
+  .map((name) => [name, readFileSync(join(out, SKELETON_DIR, name), 'utf8')]);
+
 // ---------- 2. remove what an implementer must not see ----------
 
 const REMOVE = [
   // evaluator material
   'AGENTS.md', 'TODO.md', 'opencode.json', '.opencode', 'skills', 'tools', 'docs', 'README.md',
   'e2e/reporters', 'e2e/validate-suite.mjs',
-  'src/app/components/contesters/reference', 'src/app/components/contesters/page-tests', 'src/app/components/contesters/layout-draft',
+  'src/app/components/contesters/test-oracle', 'src/app/components/contesters/page-tests', 'src/app/components/contesters/layout-draft',
   // other samples and their machinery
   ...['legacy', 'optimized', 'pipe', 'signals', 'wip', 'xprerimental'].map((g) => `src/app/components/${g}`),
   'src/app/services/tinyStore', 'src/app/services/resource', 'src/app/services/rx-utils.ts',
   'src/app/app.component.spec.ts', 'src/app/app.component.dataflow.md', 'src/app/directives', 'src/app/utils',
-  ...(approach === 'stateful-observable' ? [] : ['src/app/submodules', '.gitmodules']),
+  '.gitmodules',
+  // statefulObservable: its sources only; no tests, docs, comparison or tooling of the library repo
+  ...(approach === 'stateful-observable'
+    ? ['AGENTS.md', 'docs', 'tests', 'eslint.config.ts', 'package.json', 'package-lock.json', 'readme.md', 'tsconfig.build.json', 'tsconfig.json', 'tsconfig.spec.json', 'tsup.config.ts', 'vitest.config.ts'].map((f) => `src/app/submodules/stateful-observable/${f}`)
+    : ['src/app/submodules']),
 ];
+// the submodule is a pointer in the git tree: take its sources from the working copy
+if (approach === 'stateful-observable') {
+  const lib = 'src/app/submodules/stateful-observable';
+  if (!existsSync(join(repo, lib, 'src'))) throw new Error('git submodule update --init first: ' + lib);
+  mkdirSync(join(out, lib), { recursive: true });
+  cpSync(join(repo, lib, 'src'), join(out, lib, 'src'), { recursive: true });
+}
 for (const p of REMOVE) remove(p);
+// every approach's folder, finished or not: an implementer sees only the stub (stage 1) or the previous stage (--prev)
+for (const n of readdirSync(join(out, 'src/app/components/contesters'))) {
+  if (n !== 'shared') remove(`src/app/components/contesters/${n}`);
+}
 // the specs of removed code (the backend spec stays)
 const dropSpecs = (dir) => {
   for (const n of readdirSync(join(out, dir))) {
@@ -118,8 +139,8 @@ if (docs) cpSync(docs, join(out, 'docs-vendor', approach), { recursive: true });
 //   `@s1-line`                                          line dropped from stage 2 on
 //   `<!-- @s1-alt … -->`                                what a stage-1 base shows in place of the stage-2 lines before it
 //   `@s2-narrow`                                        `| 'error'` leaves the line before stage 2
-// Before stage 2 a few attributes are dropped as well (they only exist on
-// parts that can fail), and the blocks that show errors are not shipped.
+// Before stage 2 the imports of the error alert are dropped as well, and the
+// blocks that show errors are not shipped.
 
 const dropUntilStage2 = (text) => {
   let t = text.replace(/^[^\n]*@s2-begin[^\n]*\n[\s\S]*?^[^\n]*@s2-end[^\n]*\n/gm, '');
@@ -142,15 +163,10 @@ const forStage = (raw) => {
   return cleanMarkers(staged);
 };
 const FRAGMENTS_BEFORE_STAGE_2 = [
-  / \(retry\)="[^"]*"/g,
-  / \[retryable\]="true"/g,
-  / errorText="[^"]*"/g,
-  /imports: \[GenericErrorComponent\]/g,
+  /^ *imports: \[GenericErrorComponent\],?\n/gm, // a decorator property of its own: the whole line goes
   /GenericErrorComponent, /g,
   /, GenericErrorComponent/g,
 ];
-/** The Retry outputs listed in the shared README's table. */
-const README_RETRY_TOKENS = [/, `retry[A-Za-z]*(?:: \w+)?`/g, /`retry[A-Za-z]*(?:: \w+)?`, /g];
 const walkFiles = (dir) =>
   readdirSync(join(out, dir)).flatMap((n) => {
     const p = `${dir}/${n}`;
@@ -161,10 +177,6 @@ for (const p of [...walkFiles('src/app/components/contesters/shared'), ...walkFi
   let text = forStage(read(p));
   if (stage < 2 && p.startsWith('src/app/components/contesters/shared/') && p.endsWith('.ts')) {
     for (const re of FRAGMENTS_BEFORE_STAGE_2) text = text.replace(re, '');
-  }
-  if (stage < 2 && p === 'src/app/components/contesters/shared/README.md') {
-    for (const re of README_RETRY_TOKENS) text = text.replace(re, '');
-    text = text.replace(/\| `retry[A-Za-z]*` \|/g, '| — |'); // a cell that had only a Retry output
   }
   write(p, text);
 }
@@ -193,7 +205,19 @@ if (!existsSync(join(out, folder, 'console-page.component.ts'))) {
     `${folder}/console-page.component.ts`,
     `import { ChangeDetectionStrategy, Component } from '@angular/core';
 
-/** Root of the ${tool} implementation, stage ${stage} (docs/contest/spec.md §2.4). */
+/**
+ * Root of the ${tool} implementation, stage ${stage} (docs/contest/spec.md §2.4).
+ *
+ * The views ask the implementation for the values of other services by id:
+ * finish the skeleton field components in components/*.component.{ts,html}
+ * (replace the TODO props with whatever you like) and provide them here, in
+ * the \`providers\` of this component:
+ *   providers: [{ provide: PRODUCT_NAME_FIELD, useValue: <your component> }, ...]
+ * Tokens (exported by '../../shared'): PRODUCT_NAME_FIELD, CUSTOMER_TIER_FIELD,
+ * OPEN_TICKETS_FIELD, KPI_FIELD, AGENT_NAME_FIELD, CUSTOMER_NAME_FIELD,
+ * SHIPMENT_TRACKING_FIELD, PRODUCT_PRICE_FIELD, LINE_TOTAL_FIELD,
+ * CART_TOTAL_FIELD, PRODUCT_STOCK_FIELD, HIT_ADD_FIELD.
+ */
 @Component({
   selector: 'app-console-page',
   template: '',
@@ -202,10 +226,19 @@ if (!existsSync(join(out, folder, 'console-page.component.ts'))) {
 export class ConsolePageComponent {}
 `,
   );
+  // the skeleton field components, with the import path of the block fixed for the stage folder
+  for (const [name, text] of skeleton) {
+    write(
+      `${folder}/components/${name}`,
+      text.replace("'../../content/spinner-block/", "'../../../../content/spinner-block/").replace("'../shared/view-models'", "'../../../shared/view-models'").replace("'../shared/fields'", "'../../../shared/fields'"),
+    );
+  }
 }
 if (!existsSync(join(out, folder, 'README.md'))) write(`${folder}/README.md`, `# ${tool} · stage ${stage}\n`);
 
 const stages = [1, 2, 3].filter((n) => n <= stage);
+/** The tool's name inside a single-quoted string of the route entry. */
+const toolJs = tool.replaceAll('\\', '\\\\').replaceAll("'", "\\'");
 const routeEntry = (n) => `      sampleRoute(
         '${approach}/stage-${n}',
         () =>
@@ -213,12 +246,12 @@ const routeEntry = (n) => `      sampleRoute(
             (m) => m.ConsolePageComponent,
           ),
         {
-          title: '${tool} · stage ${n}',
-          summary: 'Support console on ${tool}, stage ${n}.',
+          title: '${toolJs} · stage ${n}',
+          summary: 'Support console on ${toolJs}, stage ${n}.',
           verdict: 'experimental',
           scenario: 'dashboard',
           layout: 'wide',
-          tags: ['${tool}'],
+          tags: ['${toolJs}'],
           folder: 'contesters/${approach}/stage-${n}',
           readme: () =>
             import('./components/contesters/${approach}/stage-${n}/README.md').then(
@@ -395,7 +428,8 @@ write('.gitignore', `${read('.gitignore')}\n/e2e/.results\n/e2e/report\n`);
 
 // ---------- 7. one clean commit ----------
 
-const exploreList = ['docs/contest', 'src/app/components/contesters/shared', 'src/app/services/contesters', 'e2e', folder, ...(docs ? [`docs-vendor/${approach}`] : [])];
+const libraryFolders = approach === 'stateful-observable' ? ['src/app/submodules/stateful-observable/src'] : [];
+const exploreList = [...libraryFolders, 'docs/contest', 'src/app/components/contesters/shared', 'src/app/components/content', 'src/app/services/contesters', 'e2e', folder, ...(docs ? [`docs-vendor/${approach}`] : [])];
 run('git', ['init', '-q', '-b', 'contest-base'], out);
 run('git', ['add', '-A'], out);
 run('git', ['-c', 'user.name=contest', '-c', 'user.email=contest@localhost', 'commit', '-q', '-m', `contest base: ${approach} stage ${stage}`], out);
@@ -406,7 +440,7 @@ and implement stage ${stage} of the page
 approach: ${approach}
 use ${tool} to handle dataflow
 you can explore only folders: ${exploreList.join(', ')}
-forbidden to change: ${['src/app/services/contesters', 'src/app/components/contesters/shared', 'e2e', 'docs', 'src/app/layout', 'src/app/app.component.*', 'tsconfig*.json', 'angular.json'].join(', ')}
+forbidden to change: ${[...libraryFolders, 'src/app/services/contesters', 'src/app/components/contesters/shared', 'e2e', 'docs', 'src/app/components/content', 'src/app/layout', 'src/app/app.component.*', 'tsconfig*.json', 'angular.json'].join(', ')}
 `;
 writeFileSync(`${out}.prompt.txt`, prompt);
 console.log(`base: ${out}\ncommit: ${base}\nprompt: ${out}.prompt.txt\n\n${prompt}`);

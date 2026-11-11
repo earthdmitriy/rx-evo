@@ -1,0 +1,65 @@
+# Custom Nodes
+
+Author packs under `.langflower/nodes/<pack>/`. Default seed packs:
+**`my-nodes/`** (git-diff / review-gate) and **`hello-embed/`** (markdown
+→ local sqlite embeddings; copy as a starting point).
+
+Import **`defineNode`** (default), `defineToolRegistrations` (LLM tool packs),
+or `defineReactiveNode` from `@langflower/node-sdk` — not from a root
+`nodes/types.ts`.
+
+Each `*.ts` file may `export default` a definition or an array. No required
+`index.ts`. Run `npm install` inside the pack when you add author dependencies;
+Langflower does **not** auto-install on start, bootstrap, or palette reload.
+Startup **does** compile packs under `.langflower/nodes/`.
+
+Port OpenCode / CLI `.mjs` tools into pack TypeScript (`defineToolRegistrations`)
+and compile — do **not** spawn `node` on a leftover sidecar (that breaks when
+the pack is copied). **Do** wrap named scripts from the project root or a
+monorepo workspace `package.json` as tools (`npm run <script>`, allowlisted
+literal, no `start` / `dev` / watch) so the agent does not need bash.
+
+If pack files `import` each other with a **`.ts` suffix**, set
+`"allowImportingTsExtensions": true` next to `"noEmit": true` in the pack
+`tsconfig.json` (hello-embed seed). Without it the pack does not compile.
+`my-nodes` uses extensionless imports and does not need the flag.
+
+- `hello-embed/` — sample embedding KB (`ingest` / `search` /
+  `search-handle`). See [`nodes/hello-embed/README.md`](nodes/hello-embed/README.md).
+  Workflows: `kb-ingest`, `kb-manual-search`, `kb-tool`, `kb-rag`.
+  Settings default embedding model required.
+
+See [`nodes/my-nodes/README.md`](nodes/my-nodes/README.md) for the author
+contract.
+
+## Seed demo
+
+- `my-nodes/git-diff.ts` — `defineNode`; runs `git diff`, emits `diff`.
+- `my-nodes/git-diff-tool.ts` — `defineToolRegistrations`; emits `git_diff`
+  ToolHandle for agent `tools` ports (on demand).
+- `my-nodes/review-gate.ts` — `defineReactiveNode`; runs `npm run test`,
+  emits on **`ok`** or **`fail`** independently. `fail` text that feeds
+  an agent must be filtered to failures (failing names, diffs, formatter
+  errors), not the raw test or formatter log.
+
+`git-diff` / `git-diff-tool` use `child_process` until a shell Cap exists on
+`ExecutionContext`.
+
+## Load custom nodes
+
+Call **`compile_custom_nodes`** (no args) — on starter, Helper and Writer
+already have it because **Langflower Tools** is wired — or, in the editor
+Custom section, click **Update** (or reconnect). Same composer: typecheck
+each pack (`tsc --noEmit` when `tsconfig.json` is present), esbuild-bundle
+entries that passed, hot-swap live custom instances, refresh **Custom**.
+Stop is not required for already-placed custom types. Already-wired custom
+tools can be invoked later in the **same run**. New types are not auto-placed
+or auto-wired mid-run. Failures write `COMPILATION_ERRORS.md` in the pack
+without dropping other successful custom nodes.
+
+## Gaps
+
+1. No shell Cap on public `ExecutionContext` yet (seed demos use
+   `child_process`).
+2. Sample workflows catalog UI is not shipped — extra skeleton workflows stay
+   in the packaged `skeleton/` until catalog import lands.

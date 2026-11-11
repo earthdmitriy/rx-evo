@@ -27,10 +27,19 @@ export type PendingCall = {
 /** Who may call: `user` needs a session (401 otherwise), `public` does not. */
 export type CallScope = 'user' | 'public';
 
-const emptyStats = (): CallStats => ({ total: 0, ok: 0, errors: 0, cancelled: 0, inFlight: 0 });
+const emptyStats = (): CallStats => ({
+  total: 0,
+  ok: 0,
+  errors: 0,
+  cancelled: 0,
+  inFlight: 0,
+});
 
 const readLatency = (): LatencyMode => {
-  const value = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('latency');
+  const value =
+    typeof location === 'undefined'
+      ? null
+      : new URLSearchParams(location.search).get('latency');
   return value === 'fast' || value === 'manual' ? value : 'slow';
 };
 
@@ -54,7 +63,9 @@ export class FakeTransport {
   public readonly faults = signal<Partial<Record<ConsoleApiKey, boolean>>>({});
 
   private readonly statsState = signal(
-    Object.fromEntries(CONSOLE_API_KEYS.map((k) => [k, emptyStats()])) as Record<ConsoleApiKey, CallStats>,
+    Object.fromEntries(
+      CONSOLE_API_KEYS.map((k) => [k, emptyStats()]),
+    ) as Record<ConsoleApiKey, CallStats>,
   );
   public readonly stats = this.statsState.asReadonly();
 
@@ -64,7 +75,9 @@ export class FakeTransport {
   private readonly log: { key: ConsoleApiKey; arg: unknown }[] = [];
 
   /** Calls started since the last `resetStats`, oldest first. */
-  public calls(key?: ConsoleApiKey): readonly { key: ConsoleApiKey; arg: unknown }[] {
+  public calls(
+    key?: ConsoleApiKey,
+  ): readonly { key: ConsoleApiKey; arg: unknown }[] {
     return this.log.filter((c) => !key || c.key === key);
   }
 
@@ -77,7 +90,10 @@ export class FakeTransport {
     this.statsState.update(
       (all) =>
         Object.fromEntries(
-          Object.entries(all).map(([k, s]) => [k, { ...emptyStats(), inFlight: s.inFlight }]),
+          Object.entries(all).map(([k, s]) => [
+            k,
+            { ...emptyStats(), inFlight: s.inFlight },
+          ]),
         ) as Record<ConsoleApiKey, CallStats>,
     );
   }
@@ -88,7 +104,12 @@ export class FakeTransport {
   }
 
   /** A read: answered by `respond` when the request arrives, cancellable. */
-  public read<T>(key: ConsoleApiKey, arg: unknown, scope: CallScope, respond: () => T): Observable<T> {
+  public read<T>(
+    key: ConsoleApiKey,
+    arg: unknown,
+    scope: CallScope,
+    respond: () => T,
+  ): Observable<T> {
     return new Observable<T>((subscriber) => {
       this.count(key, 'start');
       this.log.push({ key, arg });
@@ -126,7 +147,12 @@ export class FakeTransport {
    * A write: reaches the backend even if the subscriber leaves, then applies
    * `apply` there. The session is checked when the request is sent.
    */
-  public write<T>(key: ConsoleApiKey, arg: unknown, scope: CallScope, apply: () => T): Observable<T> {
+  public write<T>(
+    key: ConsoleApiKey,
+    arg: unknown,
+    scope: CallScope,
+    apply: () => T,
+  ): Observable<T> {
     return new Observable<T>((subscriber) => {
       this.count(key, 'start');
       this.log.push({ key, arg });
@@ -170,7 +196,8 @@ export class FakeTransport {
 
   private answer<T>(key: ConsoleApiKey, scope: CallScope, respond: () => T): T {
     if (this.faults()[key]) throw httpError(500, 'Internal server error', key);
-    if (scope === 'user' && this.backend.session() === null) throw httpError(401, 'Not signed in', key);
+    if (scope === 'user' && this.backend.session() === null)
+      throw httpError(401, 'Not signed in', key);
     // a fresh copy: the client can never mutate the backend's tables
     return copyJson(respond());
   }
@@ -179,7 +206,11 @@ export class FakeTransport {
   private arrival(key: ConsoleApiKey, arg: unknown): Observable<void> {
     const mode = this.latency();
     if (mode !== 'manual') {
-      const max = this.skipDelay ? 0 : mode === 'slow' ? randomDelayMs : fastDelayMs;
+      const max = this.skipDelay
+        ? 0
+        : mode === 'slow'
+          ? randomDelayMs
+          : fastDelayMs;
       return timer(Math.random() * max).pipe(map(() => undefined));
     }
     return new Observable<void>((subscriber) => {
@@ -207,15 +238,21 @@ export class FakeTransport {
     if (index >= 0) this.pending.splice(index, 1);
   }
 
-  private count(key: ConsoleApiKey, event: 'start' | 'ok' | 'errors' | 'cancelled') {
+  private count(
+    key: ConsoleApiKey,
+    event: 'start' | 'ok' | 'errors' | 'cancelled',
+  ) {
     this.statsState.update((all) => {
       const s = all[key];
       const next =
         event === 'start'
           ? { ...s, total: s.total + 1, inFlight: s.inFlight + 1 }
-          : { ...s, [event]: s[event] + 1, inFlight: Math.max(0, s.inFlight - 1) };
+          : {
+              ...s,
+              [event]: s[event] + 1,
+              inFlight: Math.max(0, s.inFlight - 1),
+            };
       return { ...all, [key]: next };
     });
   }
 }
-

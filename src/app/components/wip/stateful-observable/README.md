@@ -3,7 +3,7 @@
 ## Idea
 **Purpose:** the final solution. History and design decisions: [ADR](https://github.com/earthdmitriy/stateful-observable/blob/main/docs/adr.md).
 
-Client and bucket each get their own root: `statefulObservable(clientId$)` turns the input into a stream of loading, value and error states. `pipeValue` maps only successes, `pipeError` only failures, and `combineStatefulObservables` merges bucket and products. `app-stateful-block` renders loading, error with Retry, or the projected content. Products come from the root `allProductsToken`.
+Client and bucket each get their own root: `statefulObservable(clientId$)` turns the input into a stream of loading, value and error states. `pipeValue` maps only successes, `pipeError` only failures, and `combineStatefulObservables` merges bucket and products. `app-view-block` renders loading, error with Retry, or the projected content. Products come from the root `allProductsToken`.
 
 ## Good
 - One primitive for every block; the template is just a block plus its content.

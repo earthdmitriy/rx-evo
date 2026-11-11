@@ -10,8 +10,10 @@ export class AgentsApi {
   private readonly http = inject(FakeTransport);
   private readonly backend = inject(FakeBackend);
 
-  /** Up to `MAX_BATCH` agent ids per call (400 above). */
-  public agents(agentIds: number[]): Observable<AgentRef[]> {
-    return this.http.read('agents', agentIds, 'user', () => this.backend.agents(agentIds));
+  /** One agent per call (the directory has no batch endpoint). 404 for an unknown id. */
+  public agent(agentId: number): Observable<AgentRef> {
+    return this.http.read('agent', agentId, 'user', () =>
+      this.backend.agent(agentId),
+    );
   }
 }

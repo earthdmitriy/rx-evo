@@ -11,9 +11,6 @@ The CDK viewport reports the rendered range; it is turned into the set of 1-base
 - A failed page affects only its rows; the error box appears above the list, and **Retry** reloads only the failed pages (`reload({ onlyFailed: true })` on the combined stream).
 - The scrollbar has the full height from the first response (`Total` in the footer), and only the visible rows are in the DOM (`Rendered rows`).
 
-## Bad
-- A connection's `reload()` is a no-op, so Retry cannot be called on the handle the template holds: the component keeps the current combined stream and routes a `retry$` subject to it.
-
 ## Try it
 - Scroll fast to the middle: rows show skeletons until their pages arrive; the **Client** counter grows by the number of new pages, not by scroll events.
 - Scroll back to rows you have seen: they appear instantly and the counter does not move.

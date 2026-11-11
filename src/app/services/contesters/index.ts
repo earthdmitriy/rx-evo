@@ -5,7 +5,10 @@
  */
 export * from './console.types';
 export { CONSOLE_API_KEYS, type ConsoleApiKey } from './backend/api-keys';
-export { PRODUCT_SEARCH_LIMIT, PUSH_PERIOD_MS } from './backend/fake-backend.service';
+export {
+  PRODUCT_SEARCH_LIMIT,
+  PUSH_PERIOD_MS,
+} from './backend/fake-backend.service';
 export * from './api/session-api.service';
 export * from './api/notifications-api.service';
 export * from './api/customers-api.service';

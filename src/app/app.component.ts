@@ -56,7 +56,11 @@ export class AppComponent {
   protected readonly verdicts = VERDICTS;
   protected readonly repoTree = repoTree;
   protected readonly repoBlob = repoBlob;
-  protected readonly stageNames: Record<number, string> = { 1: 'Baseline', 2: 'Robust', 3: 'Efficient' };
+  protected readonly stageNames: Record<number, string> = {
+    1: 'Baseline',
+    2: 'Robust',
+    3: 'Efficient',
+  };
 
   private readonly active = toSignal(
     this.router.events.pipe(
@@ -68,6 +72,11 @@ export class AppComponent {
 
   protected readonly sample = computed(() => this.active().sample);
   protected readonly group = computed(() => this.active().group);
+  /** The sample when it has a live demo (not a `doc` page). */
+  protected readonly demo = computed(() => {
+    const sample = this.sample();
+    return sample?.kind === 'doc' ? undefined : sample;
+  });
 
   /** Contest stages of the same approach (`contesters/<approach>/stage-<n>`), for the stage switch. */
   protected readonly stages = computed(() => {
@@ -76,7 +85,11 @@ export class AppComponent {
     if (!match) return [];
     return this.flat
       .filter((e) => e.folder.startsWith(`${match[1]}/stage-`))
-      .map((e) => ({ url: e.url, stage: Number(e.folder.split('stage-')[1]), active: e.folder === folder }))
+      .map((e) => ({
+        url: e.url,
+        stage: Number(e.folder.split('stage-')[1]),
+        active: e.folder === folder,
+      }))
       .sort((x, y) => x.stage - y.stage);
   });
 

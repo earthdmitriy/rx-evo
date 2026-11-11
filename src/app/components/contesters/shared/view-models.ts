@@ -4,25 +4,45 @@
  * backend. The backend's DTOs (services/contesters) do not match these
  * shapes; producing them is the data layer's job.
  *
- * Fields typed `Part<T>` come from another service than the rest of their
- * object: they load and fail on their own, and the view shows the rest
- * meanwhile (a row without its badge, a line without its name).
+ * View models carry DATA ONLY, no status, and each carries only the data of
+ * one source. What other services know about the things a view shows (the
+ * tier of a customer, the name or the price of a product, a total made of
+ * them) is NOT inside the rows and is NOT an input of the view: the view
+ * renders a field component by id (`fields.ts`) that the implementation
+ * supplies, and the component is empty until its value has arrived. `null` is
+ * real data ("there is none"). How a page shows that something is loading
+ * below the level of a section is up to the implementation.
  */
 
 export type ISODate = string;
 
-/** One field that loads and fails on its own. */
-export type Part<T> =
-  | { state: 'error'; value: null } // @s2-line
-  | { state: 'loading'; value: null }
-  | { state: 'ready'; value: T };
-
 // ---------- top bar ----------
 
-export type AgentVm = { agentId: number; name: string; initials: string; role: string };
+export type AgentVm = {
+  agentId: number;
+  name: string;
+  initials: string;
+  role: string;
+};
 
-/** One notification, ready to read. */
-export type NotificationVm = { id: number; text: Part<string>; at: ISODate; unread: boolean };
+export type NotificationKindVm =
+  | 'ticket-reply'
+  | 'ticket-escalated'
+  | 'order-delivered';
+
+/**
+ * One notification by kind and reference. The view writes the sentence: a
+ * reply names its customer, from the `customerNames` lookup.
+ */
+export type NotificationVm = {
+  id: number;
+  kind: NotificationKindVm;
+  customerId: number;
+  ticketId?: string;
+  orderId?: string;
+  at: ISODate;
+  unread: boolean;
+};
 
 // ---------- customer list ----------
 
@@ -41,11 +61,14 @@ export type CustomerRowVm = {
   name: string;
   initials: string;
   email: string;
-  tier: Part<TierVm>;
-  openTickets: Part<number>;
 };
 
-export type CustomerPageVm = { rows: CustomerRowVm[]; total: number; page: number; pageSize: number };
+export type CustomerPageVm = {
+  rows: CustomerRowVm[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 
 // ---------- customer header and tabs ----------
 
@@ -59,37 +82,62 @@ export type CustomerHeaderVm = {
   since: ISODate;
 };
 
-export type KpisVm = {
-  lifetimeSpend: Part<number>;
-  orders: Part<number>;
-  avgOrder: Part<number>;
-  openTickets: Part<number>;
-};
-
-/** Tab badges; a tab without a counter shows none. */
-export type TabCountersVm = { orders: Part<number>; openTickets: Part<number> };
-
 export type OrderStatusVm = 'Processing' | 'Shipped' | 'Delivered' | 'Refunded';
 
-export type OrderRowVm = { orderId: string; date: ISODate; status: OrderStatusVm; items: number; total: number };
+export type OrderRowVm = {
+  orderId: string;
+  date: ISODate;
+  status: OrderStatusVm;
+  items: number;
+  total: number;
+};
 
-export type CartLineVm = { sku: string; qty: number; name: Part<string>; price: Part<number> };
+export type CartLineVm = { sku: string; qty: number };
 
 export type TicketStatusVm = 'Open' | 'Waiting' | 'Solved';
 
-export type TicketRowVm = { ticketId: string; subject: string; status: TicketStatusVm; updated: ISODate; orderId: string | null };
+export type TicketRowVm = {
+  ticketId: string;
+  subject: string;
+  status: TicketStatusVm;
+  updated: ISODate;
+  orderId: string | null;
+};
 
-export type NoteVm = { noteId: number; author: Part<string>; at: ISODate; text: string };
+/** `authorId` is an agent id (the agent directory names it). */
+export type NoteVm = {
+  noteId: number;
+  authorId: number;
+  at: ISODate;
+  text: string;
+};
 
 // ---------- rail ----------
 
-export type ShipmentVm = { carrier: string; state: 'Label created' | 'In transit' | 'Delayed'; eta: ISODate; lastScan: string };
+export type ShipmentVm = {
+  carrier: string;
+  state: 'Label created' | 'In transit' | 'Delayed';
+  eta: ISODate;
+  lastScan: string;
+};
 
-export type ActivityVm = { at: ISODate; text: Part<string> };
+export type ActivityKindVm =
+  | 'order-placed'
+  | 'order-changed'
+  | 'order-delivered'
+  | 'product-viewed'
+  | 'ticket-opened';
+
+/**
+ * One event by kind and reference (an order id, a sku or a ticket id). The
+ * view writes the sentence: a viewed product names itself, from the
+ * `productNames` lookup.
+ */
+export type ActivityVm = { at: ISODate; kind: ActivityKindVm; refId: string };
 
 // ---------- panels ----------
 
-export type OrderLineVm = { sku: string; name: Part<string>; qty: number; unitPrice: number };
+export type OrderLineVm = { sku: string; qty: number; unitPrice: number };
 
 export type OrderVm = {
   orderId: string;
@@ -105,12 +153,22 @@ export type OrderVm = {
 };
 
 /** The ticket an order is discussed in, as shown in the order panel. */
-export type LinkedTicketVm = { ticketId: string; subject: string; status: TicketStatusVm };
+export type LinkedTicketVm = {
+  ticketId: string;
+  subject: string;
+  status: TicketStatusVm;
+};
 
-/** A search hit in the order editor: name from search, price and stock from their services. */
-export type ProductHitVm = { sku: string; name: string; price: Part<number>; stock: Part<number> };
+/** A search hit in the order editor: sku and name from the search (price and stock are lookups by sku). */
+export type ProductHitVm = { sku: string; name: string };
 
-export type MessageVm = { from: 'customer' | 'agent'; author: Part<string>; at: ISODate; text: string };
+/** `authorId` is a customer id or an agent id, by `from`. */
+export type MessageVm = {
+  from: 'customer' | 'agent';
+  authorId: number;
+  at: ISODate;
+  text: string;
+};
 
 export type TicketThreadVm = {
   ticketId: string;
@@ -119,11 +177,4 @@ export type TicketThreadVm = {
   status: TicketStatusVm;
   orderId: string | null;
   messages: MessageVm[];
-};
-
-/** Helpers for producing parts. */
-export const part = {
-  loading: <T>(): Part<T> => ({ state: 'loading', value: null }),
-  ready: <T>(value: T): Part<T> => ({ state: 'ready', value }),
-  error: <T>(): Part<T> => ({ state: 'error', value: null }), // @s2-line
 };

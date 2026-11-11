@@ -1,16 +1,23 @@
-import { Component, input, output } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, input } from '@angular/core';
+import {
+  isInactive,
+  StatefulObservable,
+} from '../../../submodules/stateful-observable/src';
 import { GenericErrorComponent } from '../generic-error/generic-error.component';
 
+/**
+ * `app-view-block` tuned to a `StatefulObservable`: its shape require only one input for state meta.
+ */
 @Component({
   selector: 'app-stateful-block',
-  imports: [GenericErrorComponent],
+  imports: [AsyncPipe, GenericErrorComponent],
   templateUrl: './stateful-block.component.html',
 })
-export class StatefulBlockComponent {
-  /** A fetch is in flight: the content is dimmed. */
-  public readonly loading = input(false);
-  /** Set when the fetch failed: shown above the content, which stays (the view shows what it has) and offers Retry. */
-  public readonly error = input<unknown>(null);
-  /** The user asked to try again. */
-  public readonly retry = output<void>();
+export class StatefulBlockComponent<T> {
+  public readonly stream = input.required<StatefulObservable<T>>();
+  /** Shown instead of the content while the stream is inactive (`active: false`). */
+  public readonly inactiveText = input('Inactive');
+
+  protected isInactive = isInactive;
 }

@@ -88,7 +88,7 @@ public readonly clientStream = statefulObservable({
 });
 ```
 
-Consumer: `<app-stateful-block [stream]="clientStream">` then
+Consumer: `<app-view-block [stream]="clientStream">` then
 `clientStream.value$ | async` into `client-info`.
 
 **Intermediate in this repo:** raw `switchMap` / `tiny-store` / `rxResource`

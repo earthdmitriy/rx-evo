@@ -30,7 +30,10 @@ export type AgentRef = {
 
 // ---------- notifications service ----------
 
-export type NotificationKind = 'ticket-reply' | 'ticket-escalated' | 'order-delivered';
+export type NotificationKind =
+  | 'ticket-reply'
+  | 'ticket-escalated'
+  | 'order-delivered';
 
 /** No text: the client composes it from the ticket, order and customer it refers to. */
 export type AgentNotification = {
@@ -161,7 +164,11 @@ export type CartLine = { sku: string; qty: number };
 
 // ---------- product, pricing and inventory services ----------
 
-/** At most this many ids per batch call (`products`, `prices`, `stock`, `tiers`, `ticketCounts`, `agents`); 400 above. */
+/**
+ * At most this many ids per batch call; 400 above. Only `tiers`, `ticketCounts` and `prices` are batch
+ * endpoints (the ones asked for most often: every list row, every cart line and hit). `agent`, `product`
+ * and `stock` take one id per call.
+ */
 export const MAX_BATCH = 20;
 
 /** Product service: names only. Prices and stock live elsewhere. */
@@ -212,7 +219,12 @@ export type Note = {
 
 // ---------- activity service ----------
 
-export type ActivityKind = 'order-placed' | 'order-changed' | 'order-delivered' | 'product-viewed' | 'ticket-opened';
+export type ActivityKind =
+  | 'order-placed'
+  | 'order-changed'
+  | 'order-delivered'
+  | 'product-viewed'
+  | 'ticket-opened';
 
 /** An event by kind and reference: an order id, a sku or a ticket id. The client writes the sentence. */
 export type ActivityEntry = {

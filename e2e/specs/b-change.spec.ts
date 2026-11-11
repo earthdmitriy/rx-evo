@@ -18,14 +18,15 @@ scenario('B1', 1, 'the latest customer wins a race', async ({ c }) => {
   await expect(c.shownForCustomer(a.id, 'console-rail')).toHaveCount(0);
 }, { smoke: true });
 
-scenario('B2', 1, 'switching customer never shows the previous one', async ({ c }) => {
+scenario('B2', 1, 'a block that is not loading never shows the previous customer', async ({ c }) => {
   await signedIn(c);
   const [a, b] = await firstCustomers(c);
   await c.selectAndSettle(a.id, a.name);
   await c.selectCustomer(b.id, b.name);
   await c.idle(200);
-  await expect(c.shownForCustomer(a.id, 'console-main')).toHaveCount(0);
-  await expect(c.shownForCustomer(a.id, 'console-rail')).toHaveCount(0);
+  // old data may stay under a block's spinner; outside a loading block nothing of the previous customer shows
+  await expect(c.shownForCustomerSettled(a.id, 'console-main')).toHaveCount(0);
+  await expect(c.shownForCustomerSettled(a.id, 'console-rail')).toHaveCount(0);
 });
 
 scenario('B4', 1, 'typing a search ends on the whole text, page 1', async ({ c }) => {
@@ -95,7 +96,7 @@ scenario('B9', 1, 'the latest customer wins for the counters too', async ({ c })
   const stats = await c.truth('orderStats', b.id);
   await expect(c.testId('kpi-spend')).toHaveText(usd0(stats.lifetimeSpend));
   await expect(c.testId('kpi-orders')).toHaveText(String(stats.orders));
-  await c.expectParts(c.testId('customer-header'), 'kpi-spend', 'ready');
+  await c.expectFields(c.testId('customer-header'), 'kpi-spend', 'shown');
 });
 
 // ---------- stage 2 ----------
@@ -163,7 +164,7 @@ scenario('B5', 3, 'a filter change resets the page in one request', async ({ c }
 });
 
 
-scenario('B10', 3, 'the editor search is debounced: one search, one batch of prices and stock', async ({ c }) => {
+scenario('B10', 3, 'the editor search is debounced: one search, one batch of prices, stock once per hit', async ({ c }) => {
   const fx = await signedIn(c);
   await c.selectAndSettle(fx.editable.customerId, fx.editable.customerName);
   await c.openOrder(fx.editable.orderId);
@@ -176,5 +177,9 @@ scenario('B10', 3, 'the editor search is debounced: one search, one batch of pri
   expect(await c.total('searchProducts')).toBe(1);
   const t = await c.totals('prices', 'stock');
   expect(t.prices).toBeLessThanOrEqual(1);
-  expect(t.stock).toBeLessThanOrEqual(1);
+  // stock has no batch endpoint: one call per hit of the one search, none twice
+  const hits = ((await c.truth('searchProducts', fx.editable.addName.slice(0, 5))) as unknown[]).length;
+  expect(t.stock).toBeLessThanOrEqual(hits);
+  const stockCalls = await c.calls<string>('stock');
+  expect(new Set(stockCalls).size).toBe(stockCalls.length);
 });

@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import { filter, map } from 'rxjs';
 import { ClientBucketComponent } from '../../content/client-bucket/client-bucket.component';
 import { ClientInfoComponent } from '../../content/client-info/client-info.component';
-import { StatefulObservableBlockComponent } from '../../content/stateful-observable-block/stateful-observable-block.component';
+import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
 import {
   loggedInToken,
   profileBucketToken,
@@ -15,7 +15,7 @@ import {
   selector: 'app-login-logout',
   imports: [
     AsyncPipe,
-    StatefulObservableBlockComponent,
+    StatefulBlockComponent,
     ClientInfoComponent,
     ClientBucketComponent,
   ],

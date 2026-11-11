@@ -5,7 +5,7 @@ export const CONSOLE_API_KEYS = [
   'logout',
   'profile',
   // agent directory
-  'agents',
+  'agent',
   // notifications service
   'notifications',
   'markNotificationsRead',
@@ -25,7 +25,7 @@ export const CONSOLE_API_KEYS = [
   // cart service
   'cart',
   // product, pricing and inventory services
-  'products',
+  'product',
   'searchProducts',
   'prices',
   'stock',

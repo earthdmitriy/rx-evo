@@ -1,4 +1,4 @@
-# Reference dataflow (evaluator only)
+# Dataflow of the test oracle (evaluator only)
 
 The full page (stage 3) as sources, inputs and derived views, independent of
 any tool. **Never give this file to an implementer**: it shows requirements
@@ -30,7 +30,7 @@ flowchart LR
     profile[profile]
     notifications["notifications ⟳30s"]
     customers["customers(query)"]
-    agents["agents(ids) ⟦batch⟧"]
+    agents["agent(id)"]
   end
 
   subgraph rowScope [per list page]
@@ -56,9 +56,9 @@ flowchart LR
   end
 
   subgraph publicScope [public: survives logout]
-    products["products(skus) ⟦batch⟧"]
+    products["product(sku)"]
     prices["prices(skus) ⟦batch⟧"]
-    stock["stock(skus) ⟦batch⟧"]
+    stock["stock(sku)"]
     search["searchProducts(text)"]
   end
 
@@ -89,19 +89,19 @@ flowchart LR
   search --> editor
   prices --> editor
   stock --> editor
-  rows{{"list rows = customers ⨝ tiers ⨝ ticketCounts"}}
+  rows{{"list view inputs: customers, tiers, ticketCounts"}}
   customers --> rows
   tiers --> rows
   counts --> rows
-  header{{"header + KPIs = customer ⨝ orderStats ⨝ ticketCounts"}}
+  header{{"header view inputs: customer, orderStats, ticketCounts"}}
   customer --> header
   stats --> header
   counts --> header
-  threads{{"thread / notes = ticket / notes ⨝ agents ⨝ customer"}}
+  threads{{"thread / notes view inputs: ticket / notes, agents, customer"}}
   ticket --> threads
   notes --> threads
   agents --> threads
-  sentences{{"activity and notification sentences = events ⨝ products / customer"}}
+  sentences{{"activity and bell view inputs: events, products / customer names"}}
   activity --> sentences
   products --> sentences
   notifications --> sentences
@@ -138,13 +138,14 @@ What the draft exposes per implementation (the interesting parts to compare):
   panel → `order`/`ticketsByOrder`/`ticket`; edit mode with a typed text →
   `searchProducts`; dropdown open → the customer look-ups of notification
   sentences (R-L11).
-- **Joins across services:** every view is a join of sources that answer
-  at different times, so each field has its own state (loading, ready,
-  error: the `Part` of the view contract). A failed source breaks its fields,
-  not the section (R-G6).
-- **Batching and sharing:** `tiers`, `ticketCounts`, `products`, `prices`,
-  `stock` and `agents` take at most 20 ids per call; ids asked by several
-  sections in the same moment go out once (R-L9, R-L10).
+- **Several sources per view:** a view takes one input per source (its own
+  data, and a field component per other-service value), and the sources answer
+  at different times. The view does the join by id and shows an empty space
+  for a key that has not arrived; the view models carry data only. A failed
+  source leaves its empty spaces, not the section broken (R-G6).
+- **Batching and sharing:** `tiers`, `ticketCounts` and `prices` take at most
+  20 ids per call (`product`, `stock` and `agent` one id); ids asked by
+  several sections in the same moment go out once (R-L9, R-L10).
 - **Public + user combination:** `cart ⨝ products ⨝ prices` and the order
   editor combine public data with user-scope data. The public side must not
   be requested while the user-scope side is gated off (stage 3, R-L2), and
@@ -154,7 +155,7 @@ What the draft exposes per implementation (the interesting parts to compare):
 - **Parallel instead of chained:** `order` and `ticketsByOrder` both need
   only the order id (R-P3); the linked ticket does not wait for the order.
 - **Shared key, several consumers:** `orders` (S5, S9), `notifications`
-  (badge, list), `products` (cart, order, activity), `customer` (header,
+  (badge, list), `product` (cart, order, activity), `customer` (header,
   notification sentences), `ticketCounts` (row, KPI, badge).
 - **Keyed cache:** customers pages, per-customer sources, panels, per-id
   entities (R-L5).
@@ -162,5 +163,6 @@ What the draft exposes per implementation (the interesting parts to compare):
 - **Invalidation after writes**, including a write that outlives its view
   (R-W8, R-W10), and counters owned by other services (`orderStats`,
   `ticketCounts`) that no write response carries.
-- **Session switch without stale data** (R-S4, R-C2) vs **same-key reload with
-  stale data** (R-C3).
+- **Session switch without stale data** (R-S4) and **customer switch that may
+  show the previous data only under a spinner** (R-C2) vs **same-key reload
+  with stale data** (R-C3).

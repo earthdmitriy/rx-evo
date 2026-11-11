@@ -12,6 +12,8 @@ export class ActivityApi {
 
   /** Newest first. Every successful call after the first adds one new event, so polls see changes. */
   public activity(customerId: number): Observable<ActivityEntry[]> {
-    return this.http.read('activity', customerId, 'user', () => this.backend.activity(customerId));
+    return this.http.read('activity', customerId, 'user', () =>
+      this.backend.activity(customerId),
+    );
   }
 }

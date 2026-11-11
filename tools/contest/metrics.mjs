@@ -47,13 +47,19 @@ const codeLines = (text) => {
   });
 };
 
+const TEMPLATE_WIRING = /\|\s*async|@if|@switch|@case|\[state\]|State\(\)|\.state\b/;
+
 const measure = async (dir) => {
   const all = files(dir);
   const ts = all.filter((f) => f.endsWith('.ts') && !f.endsWith('.spec.ts'));
   const html = all.filter((f) => f.endsWith('.html'));
   const out = { folder: dir, lines: 0, templateWiring: 0, concepts: new Set(), imperativeWriters: 0, manualSubscribe: 0, files: ts.length + html.length };
   for (const f of ts) {
-    const lines = codeLines(await format(f, readFileSync(f, 'utf8')));
+    const formatted = await format(f, readFileSync(f, 'utf8'));
+    // inline templates are counted as templates (wiring), not as code lines
+    const inlineTemplate = /template: `([\s\S]*?)`,?\n/g;
+    for (const [, tpl] of formatted.matchAll(inlineTemplate)) out.templateWiring += codeLines(tpl).filter((l) => TEMPLATE_WIRING.test(l)).length;
+    const lines = codeLines(formatted.replace(inlineTemplate, ''));
     out.lines += lines.length;
     const text = lines.join('\n');
     for (const m of text.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"]([^.'"][^'"]*)['"]/g)) {
@@ -66,7 +72,7 @@ const measure = async (dir) => {
   }
   for (const f of html) {
     const lines = codeLines(readFileSync(f, 'utf8'));
-    out.templateWiring += lines.filter((l) => /\|\s*async|@if|@switch|@case|\[state\]|State\(\)|\.state\b/.test(l)).length;
+    out.templateWiring += lines.filter((l) => TEMPLATE_WIRING.test(l)).length;
   }
   return { ...out, concepts: [...out.concepts].sort() };
 };

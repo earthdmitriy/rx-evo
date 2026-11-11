@@ -7,7 +7,7 @@
       <app-generic-error
         text="Some pages failed to load."
         [showReload]="true"
-        (reload)="retry$.next()"
+        (reload)="stream.reload({ onlyFailed: true })"
       ></app-generic-error>
     </div>
   }
@@ -15,7 +15,7 @@
     #viewport
     [itemSize]="itemHeight"
     class="min-h-0 w-full flex-1 [&_.cdk-virtual-scroll-content-wrapper]:w-full"
-    [class.loading]="!(rows$ | async)"
+    [class.loading]="!(stream.value$ | async)"
   >
     <table
       class="table table-hover w-full table-fixed border-separate border-spacing-0"
@@ -28,7 +28,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *cdkVirtualFor="let client of rows$" class="h-[52px]">
+        <tr *cdkVirtualFor="let client of stream.value$" class="h-[52px]">
           @if (client) {
             <td
               class="h-[52px] truncate border-b border-slate-100 py-0 font-medium text-slate-900"

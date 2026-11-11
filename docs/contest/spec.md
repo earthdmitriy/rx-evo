@@ -5,6 +5,16 @@ console**, with the data layer named in your prompt. This file describes the
 page and everything provided; the requirements of your stage are in the
 stage files you were given. Together they are self-contained.
 
+> This file (and the stage-by-stage, separate-repository workflow it
+> describes) is for an external implementer working through
+> `make-base.mjs`/`evaluate.mjs`. The five approaches currently in the repo
+> (`docs/contest/README.md`'s "Approaches") were not built this way: each is
+> one flat folder written in a single pass against the full requirement set
+> (`stage-1.md` + `stage-2.md` + `stage-3.md` together), directly in this
+> repo — see `docs/contest/README.md`'s "Implementations in the repo". The
+> stage-by-stage flow below still works and stays available for a future
+> external round.
+
 ## 0. How to read your prompt
 
 Your prompt looks like this:
@@ -73,22 +83,24 @@ a section shows from several services is your data layer's job.
   | Client | Service | Methods |
   | --- | --- | --- |
   | `SessionApi` | session | `login`, `logout`, `profile` |
-  | `AgentsApi` | agent directory | `agents(ids)` |
+  | `AgentsApi` | agent directory | `agent(id)` |
   | `NotificationsApi` | notifications | `notifications`, `markNotificationsRead`, `push$` |
   | `CustomersApi` | customer search, CRM | `searchCustomers(query)`, `customer(id)`, `tiers(ids)` |
   | `OrdersApi` | orders | `orders`, `orderStats`, `order`, `updateOrder`, `resendConfirmation` |
   | `ShipmentsApi` | shipping | `shipment(orderId)` |
   | `CartApi` | cart | `cart(customerId)` |
-  | `ProductsApi` | products | `products(skus)`, `searchProducts(text)` |
+  | `ProductsApi` | products | `product(sku)`, `searchProducts(text)` |
   | `PricingApi` | pricing | `prices(skus)` |
-  | `InventoryApi` | inventory | `stock(skus)` |
+  | `InventoryApi` | inventory | `stock(sku)` |
   | `TicketsApi` | tickets | `tickets`, `ticketsByOrder`, `ticketCounts(ids)`, `ticket`, `replyTicket` |
   | `NotesApi` | notes | `notes`, `addNote` |
   | `ActivityApi` | activity | `activity(customerId)` |
 
-- **Batch calls** (`agents`, `tiers`, `ticketCounts`, `products`, `prices`,
-  `stock`) take **at most `MAX_BATCH` (20) ids**; more is a 400. There is
-  no "whole catalog" call: products are fetched by sku or by search.
+- **Batch calls** (only `tiers`, `ticketCounts` and `prices`: the three most
+  frequently asked) take **at most `MAX_BATCH` (20) ids**; more is a 400.
+  `agent`, `product` and `stock` take one id per call (404 for an unknown
+  id). There is no "whole catalog" call: products are fetched by sku or by
+  search.
 - Every method returns a **cold `Observable`** that emits one value and
   completes, or errors with an `HttpErrorResponse` (401 signed out, 404
   unknown id, 409 conflict, 400 bad input, 500 when a test turns the fault
@@ -114,14 +126,59 @@ The views and their data shapes are **fixed by UX and product**; they do not
 follow the backend's shapes, and you do not change them.
 
 - **View models** (`view-models.ts`): the data each view takes, e.g.
-  `CustomerRowVm`, `KpisVm`, `CartLineVm`, `OrderVm`, `ProductHitVm`,
+  `CustomerRowVm`, `CartLineVm`, `OrderVm`, `ProductHitVm`,
   `TicketThreadVm`. They never import backend types. Producing them from
   the backend's DTOs is your job.
-- **`Part<T>`**: a field that comes from another service than the rest of
-  its object and loads on its own (`{ state, value }`; the states your
-  stage uses are in its stage file): a row's tier badge, a KPI tile, a cart
-  line's name or price, a message's author. The view shows the rest of the
-  object meanwhile. Helpers: `part.loading()`, `part.ready(v)`.
+- **Data only, no status; one source per view model.** A view model carries
+  no status and the data of one source only. What other services know about
+  the things a view shows is not inside the rows: the views show it with
+  **field components** (next bullet). A field component that has nothing to
+  show yet means "has not arrived (or will not)": the view shows the rest
+  meanwhile, with an empty space of the value's usual width. `null` is
+  real data ("there is none", e.g. no linked ticket). **Sentences** (activity,
+  notifications) are written by the views from a kind and references plus the
+  one name they need (rendered by a field component), so the wording is not
+  yours to produce. How a page shows that a value below a section is still on
+  its way is up to you; only sections have a prescribed state (§7).
+- **Field components.** A value shown by an id is a component that the
+  **implementation supplies**, so the kit does not force how it is fetched (a
+  cached lookup, an independent stream per id, a pipe, a resource ...). The kit
+  ships **skeleton** view components with a finished template and a TODO data
+  part (`contesters/skeleton`; the stage-1 base holds a copy of each in
+  `components/<name>.component.ts`). Each template has its own
+  `data-testid` (below) and the `state-block` of the block that wraps it; the
+  props marked TODO (`value`/`name`/..., `loading`) you replace with whatever
+  you like (a signal, an observable + `async`, a getter ...) and adjust the
+  template's bindings. Provide each component under its token (`shared/fields.ts`)
+  in the `providers` of `ConsolePageComponent`. The views render them by id;
+  without one they show an empty space. A component renders its value as inline
+  content and **nothing while the value has not arrived**.
+
+  | Token | Inputs the views set | Visible text | Test id inside | Shown in |
+  | --- | --- | --- | --- | --- |
+  | `PRODUCT_NAME_FIELD` | `sku`, `prefix` | `<prefix><name>` | `product-name` | cart line, order line, "Viewed <name>" |
+  | `CUSTOMER_TIER_FIELD` | `customerId` | `VIP`, `Regular` or `New` as a badge (VIP accent, others neutral) | `field-tier` | list row |
+  | `OPEN_TICKETS_FIELD` | `customerId`, `variant` | `row`: red badge with the number, a muted `0` for none; `kpi`: the number; `badge`: the number as a neutral badge | `field-open-tickets` | list row, header KPI, Tickets tab badge |
+  | `KPI_FIELD` | `customerId`, `kind` | `lifetimeSpend`/`avgOrder`: `$1,234` (USD, no cents); `orders`: the number; `orderCount`: the number as a neutral badge | `field-kpi` | header KPIs, Orders tab badge |
+  | `AGENT_NAME_FIELD` | `agentId` | the agent's name | `field-agent-name` | note author, agent message author |
+  | `CUSTOMER_NAME_FIELD` | `customerId`, `prefix` | `<prefix><name>` | `field-customer-name` | customer message author, bell sentence "<ticket>: new message from <name>" |
+  | `SHIPMENT_TRACKING_FIELD` | `orderId` | state badge, `ETA <date>`, `<carrier> · <last scan>` | `field-shipment-tracking` | shipments rail |
+  | `PRODUCT_PRICE_FIELD` | `sku` | the current price, `$1,234.50` (USD) | `field-product-price` | cart line, search hit |
+  | `LINE_TOTAL_FIELD` | `sku`, `qty` | `qty × current price`, `$1,234.50`; nothing until the price is known | `field-line-total` | cart line |
+  | `CART_TOTAL_FIELD` | `lines` (`{ sku, qty }[]`) | the sum of `qty × current price`, `$1,234.50`; nothing while the price of any line is missing | `field-cart-total` | cart total |
+  | `PRODUCT_STOCK_FIELD` | `sku` | `N in stock`, or `out of stock` for 0 | `field-product-stock` | search hit |
+  | `HIT_ADD_FIELD` | `sku`, `onAdd` | the Add button, enabled only when price and stock are known and stock > 0 | `add-<sku>` (the button) | search hit |
+
+  `HIT_ADD_FIELD` is an **action** field: when its button is clicked it calls
+  `onAdd({ sku, unitPrice })` with the current price and the view puts the line
+  into the draft with that price. It is a callback input, not an `output()`,
+  because `ngComponentOutlet` binds inputs only.
+
+  `prefix` is shown only together with the value. The anchors the tests
+  read (`row-tier`, `kpi-spend`, `line-name`, `note-author`, `shipment-tracking`
+  ...) stay in the views, around the rendered component. The views that show
+  the KPIs and the tab badges take a `customerId` input (the selected
+  customer); the page passes it.
 - **Presentational components** for every section of §3: data in, user
   intents out. They do not fetch, cache or hold data, and they take **no
   status input**: with `null` data they show nothing, with an
@@ -137,11 +194,11 @@ follow the backend's shapes, and you do not change them.
   | Block | Inputs and outputs |
   | --- | --- |
   | `app-spinner-block` | `[loading]`: the content is dimmed and a spinner drawn over it |
-  | `app-stateful-block` | `[loading]`, `[error]` (shown in place of the content), `(retry)` | <!-- @s2-line -->
+  | `app-view-block` | `[loading]`, `[error]` (shown in place of the content), `(retry)` | <!-- @s2-line -->
 
   Your data layer maps its own status to the block's inputs (whole
-  sections) and to `Part` (single fields); the blocks and views turn them
-  into DOM the tests can read (§7).
+  sections); the blocks and views turn them into DOM the tests can read
+  (§7). Field components carry no status the tests read.
 
 ### 2.3 Route
 
@@ -175,7 +232,7 @@ Typical subfolders:
 
 ```
 contesters/<ROUTE>/stage-<STAGE>/
-  console-page.component.ts|html   the root page component (the route's entry)
+  console-page.component.ts        the root page component (the route's entry)
   services/      data access, stores, caches
   components/    container components between the page and the shared views
   pipes/         view-model mapping, formatting
@@ -215,23 +272,23 @@ search and the section nav are **static stubs** with no data.
 ### Sections
 
 What each section shows (its view model) and which services it is composed
-from. A `Part` in the view model is noted with its service.
+from. A field that arrives on its own is noted with its service.
 
 | ID | Section | Shows | Services |
 | --- | --- | --- | --- |
 | S0 | Sign-in screen | Email, password, Sign in | session (`login`) |
 | S1 | Agent | Name, initials, role, Log out | session (`profile`) |
 | S2 | Notifications | Unread badge on the bell; dropdown list with a sentence per notification ("T-9003: new message from Iva Homenick", "SO-50017 delivered"), Mark all read | notifications; the text needs the ticket (`ticket` or `tickets`) and the customer name (`customer`) it refers to |
-| S3 | Customer list | Search box, filter chips (All / VIP / Open tickets), sort (name, last order, lifetime spend, open tickets; asc/desc), pages of 8. Row: initials, name, email; tier badge and open-tickets badge as `Part`s | customer search; CRM `tiers(ids)` and tickets `ticketCounts(ids)` per page |
-| S4 | Customer header | Profile: name, tier, id, email, city, since. KPIs as `Part`s: lifetime spend, orders, average order (orders `orderStats`), open tickets (tickets `ticketCounts`) | CRM `customer`; orders; tickets |
-| S5 | Orders tab | Order, date, status, items, total. Row opens S11. Tab badge: number of orders (`Part`, orders `orderStats`) | orders |
-| S6 | Cart tab (read-only) | Line: sku, qty; name and price as `Part`s; line total; cart total | cart; products (names); pricing (current prices) |
-| S7 | Tickets tab | Id, subject, linked order, status, updated. Row opens S12; the order link opens S11. Tab badge: open tickets (`Part`) | tickets |
-| S8 | Notes tab | Internal notes, newest first, author as `Part`; "Add note" form | notes; agent directory |
+| S3 | Customer list | Search box, filter chips (All / VIP / Open tickets), sort (name, last order, lifetime spend, open tickets; asc/desc), pages of 8. Row: initials, name, email; tier badge and open-tickets badge, each from its own service (the `CUSTOMER_TIER_FIELD` and `OPEN_TICKETS_FIELD` components) | customer search; CRM `tiers(ids)` and tickets `ticketCounts(ids)` per page |
+| S4 | Customer header | Profile: name, tier, id, email, city, since. KPIs from their own services: lifetime spend, orders, average order (orders `orderStats`, the `KPI_FIELD` component), open tickets (tickets `ticketCounts`, the `OPEN_TICKETS_FIELD` component) | CRM `customer`; orders; tickets |
+| S5 | Orders tab | Order, date, status, items, total. Row opens S11. Tab badge: number of orders (orders `orderStats`) | orders |
+| S6 | Cart tab (read-only) | Line: sku, qty; the name from the products service (the product name field) and the price from pricing (the price field); line total (the line total field); cart total (the cart total field) | cart; products (names); pricing (current prices) |
+| S7 | Tickets tab | Id, subject, linked order, status, updated. Row opens S12; the order link opens S11. Tab badge: open tickets (tickets `ticketCounts`) | tickets |
+| S8 | Notes tab | Internal notes, newest first, author from the agent directory; "Add note" form | notes; agent directory |
 | S9 | Shipments in transit | One row per in-flight order: order link, state, ETA, carrier, last scan | orders → shipping, per in-flight order |
-| S10 | Recent activity | One sentence per event, newest first, as a `Part` ("Placed order SO-50017", "Viewed Intelligent sweater, cyan") | activity; products for `product-viewed` events |
-| S11 | Order panel | Linked ticket box (opens S12), status, lines with name as `Part`, unit price, total, address. **Edit items** while `Processing`: qty ±, remove, add from the product search (hits with price and stock as `Part`s; Add needs both), price difference, Save (and reply on the linked ticket). Not editable once shipped: **Create return** (stub) | orders (`order`); products (line names); tickets `ticketsByOrder` (the linked ticket: the order does not know it); in the editor: products `searchProducts`, pricing, inventory |
-| S12 | Ticket panel | Header, thread with authors as `Part`s, reply box with "then set status" (not shown when Solved); link to the order | tickets (`ticket`); CRM (customer authors); agent directory (agent authors) |
+| S10 | Recent activity | One sentence per event, newest first, written by the view from the event's kind and reference ("Placed order SO-50017", "Viewed Intelligent sweater, cyan"; a viewed product shows its name with the product name field) | activity; products for `product-viewed` events |
+| S11 | Order panel | Linked ticket box (opens S12), status, lines with the name from products, unit price, total, address. **Edit items** while `Processing`: qty ±, remove, add from the product search (hits with price, stock and the Add button from the price, stock and Add fields; Add needs both and stock > 0), price difference, Save (and reply on the linked ticket). Not editable once shipped: **Create return** (stub) | orders (`order`); products (line names); tickets `ticketsByOrder` (the linked ticket: the order does not know it); in the editor: products `searchProducts`, pricing, inventory |
+| S12 | Ticket panel | Header, thread with authors from the CRM or the agent directory, reply box with "then set status" (not shown when Solved); link to the order | tickets (`ticket`); CRM (customer authors); agent directory (agent authors) |
 
 ## 4. Fake backend
 
@@ -244,7 +301,7 @@ for a seed; every call is counted and controllable by the harness (§8).
 | Key | Service | Input | Returns | Scope |
 | --- | --- | --- | --- | --- |
 | `profile` | session | — | the signed-in agent: id, name, initials, role | user |
-| `agents` | agent directory | agent ids (batch) | `{ agentId, name, initials }[]` | user |
+| `agent` | agent directory | `agentId` (one per call) | `{ agentId, name, initials }` | user |
 | `notifications` | notifications | — | `{ id, kind, at, unread, customerId, ticketId?, orderId? }[]`, no text | user |
 | `customers` | customer search | `{ text, filter, sort, dir, page }` | `{ items: { customerId, name, email }[], total, page, pageSize }` | user |
 | `customer` | CRM | `customerId` | profile: name, initials, email, tier, city, since (no counters) | user |
@@ -254,10 +311,10 @@ for a seed; every call is counted and controllable by the harness (§8).
 | `order` | orders | `orderId` | lines `{ sku, qty, unitPrice }[]`, address, payment, shipping; no ticket link | user |
 | `shipment` | shipping | `orderId` (in flight only, else 404) | carrier, state, ETA, last scan | user |
 | `cart` | cart | `customerId` | `{ sku, qty }[]` | user |
-| `products` | products | skus (batch) | `{ sku, name }[]` | **public** |
+| `product` | products | `sku` (one per call) | `{ sku, name }` | **public** |
 | `searchProducts` | products | text | up to 10 `{ sku, name }` | **public** |
 | `prices` | pricing | skus (batch) | `{ sku, price }[]` (current price) | **public** |
-| `stock` | inventory | skus (batch) | `{ sku, stock }[]` | **public** |
+| `stock` | inventory | `sku` (one per call) | `{ sku, stock }` | **public** |
 | `tickets` | tickets | `customerId` | `TicketRow[]` (id, subject, status, updated, `orderId?`) | user |
 | `ticketsByOrder` | tickets | `orderId` | the tickets that mention that order | user |
 | `ticketCounts` | tickets | customer ids (batch) | `{ customerId, open }[]` | user |
@@ -337,7 +394,7 @@ Every block has `data-testid="state-block"` inside; the tests read:
 | What the tests see | Meaning |
 | --- | --- |
 | the block has class `loading` | a request for the section is on its way (`.loading`: content dimmed, spinner) |
-| the block has an `app-generic-error` child | the section failed (`app-stateful-block`, which then shows the error **instead of** the view); its text names the failed source; its **Retry** button emits `retry` | <!-- @s2-line -->
+| the block has an `app-generic-error` child | the section failed (`app-view-block`, which then shows the error **instead of** the view); its text names the failed source; its **Retry** button emits `retry` | <!-- @s2-line -->
 | the section root's `data-content` is `shown`, `empty` or `none` | the view has data, an empty list (`.empty-state`), or `null` |
 
 From those, a section's state in the scenarios is:
@@ -360,14 +417,16 @@ From those, a section's state in the scenarios is:
 | `empty` | no | `empty` |
 -->
 
-Each `app-part` carries `data-part-state` (`loading`, `ready`, `error`). The tests <!-- @s2-line -->
-read those too. A field that fails on its own (S1's agent, S4's profile, <!-- @s2-line -->
-S2's list, a tier badge, a price, a row's tracking, the ticket box, the <!-- @s2-line -->
-product hits) is a `Part`; a failed `Part` shows a dash with a small <!-- @s2-line -->
-**Retry** (↻), or "… unavailable · Retry" for boxes and rows. <!-- @s2-line -->
+Nothing below a section has a state attribute. A field that has not
+arrived (or whose service failed) is an empty space in its view, and the
+tests read the content: a field shows text, or it is empty. <!-- @s2-line -->
+S1's agent, S2's list and S4's profile are sections of their own: when their <!-- @s2-line -->
+source fails their block shows the error in place of the view, and Log out <!-- @s2-line -->
+(the frame's button) stays. <!-- @s2-line -->
 <!-- @s1-alt
-Each `app-part` carries `data-part-state` (`loading`, `ready`). The tests
-read those too.
+Nothing below a section has a state attribute. A field that has not
+arrived is an empty space in its view, and the tests read the content: a
+field shows text, or it is empty.
 -->
 
 The shared views already render the test ids below. Your job is to use
@@ -378,8 +437,13 @@ status with your own markup. Test ids:
 - Section roots: `data-testid="<section>"`: `signin`, `agent`, `notifications`,
   `customers`, `customer-header`, `tab-orders`, `tab-cart`, `tab-tickets`,
   `tab-notes`, `shipments`, `activity`, `order-panel`, `ticket-panel`.
-  Partial parts: `shipment-<orderId>`, `order-ticket` (ticket box in S11),
-  `catalog-search`.
+  Values shown by field components: `row-tier`, `row-open-tickets`,
+  `kpi-spend`, `kpi-orders`, `kpi-avg`, `kpi-open-tickets`,
+  `tab-<id>-count`, `line-name`, `line-price`, `note-author`,
+  `activity-text`, `notification-text`, `shipment-tracking`,
+  `message-author`, `hit-price`, `hit-stock`; also `shipment-<orderId>`,
+  `order-ticket` (ticket box in S11), `catalog-search`,
+  `notifications-body`.
 - Content identity: `data-user-id` (S1), `data-customer-id` (S4–S10 content,
   S3 rows), `data-order-id` (S5 rows, S9 rows, S11), `data-ticket-id` (S7
   rows, S12), so tests can find data of the wrong key.
@@ -444,8 +508,19 @@ status are expressed, where state lives.
 What TOOL made easy in this stage, with requirement ids (R-…).
 
 ## Bad
-What TOOL made hard or could not do, with requirement or scenario ids and
-the visible symptom. Every unmet requirement is here, with the reason.
+Only two kinds of bullet belong here:
+- A requirement or scenario a test actually fails, with its id and the
+  visible symptom. Every unmet requirement is here, with the reason.
+- Excess, messy or boilerplate code needed to meet a real behavioural
+  requirement (progressive loading, graceful degradation, error handling,
+  avoiding unnecessary requests, ...), even though everything passes — name
+  the requirement and what the code costs to satisfy it.
+
+Not here: a mechanism explanation with nothing failing, a fact inherent to
+the language or framework (nothing this implementation could do differently),
+a decision already covered in a separate "Decisions" note, a past issue the
+code already handles, or anything with no test or requirement id attached.
+If a bullet names no failing test and no line of excess code, it is not Bad.
 
 ## Requirements
 | Requirement | How it is met |

@@ -7,13 +7,21 @@
 } @else if (readme.error()) {
   <div class="alert-error">Could not load the description.</div>
 } @else {
-  <div
-    [class]="wide() ? 'grid items-start gap-3 lg:grid-cols-2 2xl:grid-cols-3' : 'space-y-3'"
-  >
+  <div [class]="wide() ? 'gap-3 lg:columns-2 2xl:columns-3' : 'space-y-3'">
     @for (section of sections(); track section.heading) {
-      <section class="rounded-xl border p-4" [class]="section.card">
-        <h2 class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          <span class="w-4 text-center" [class]="section.iconClass" aria-hidden="true">{{ section.icon }}</span>
+      <section
+        class="rounded-xl border p-4"
+        [class]="section.card + (wide() ? ' mb-3 break-inside-avoid' : '')"
+      >
+        <h2
+          class="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900"
+        >
+          <span
+            class="w-4 text-center"
+            [class]="section.iconClass"
+            aria-hidden="true"
+            >{{ section.icon }}</span
+          >
           {{ section.heading }}
         </h2>
         <app-markdown-view [html]="section.html" />

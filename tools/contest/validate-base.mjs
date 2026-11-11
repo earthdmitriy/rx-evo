@@ -7,15 +7,15 @@
 //
 //   node tools/contest/validate-base.mjs [--out <dir>] [--ref <ref|WORKTREE>] [--no-impl]
 //
-// For stages 2 and 3 the reference, copied and re-rooted as a stage folder,
+// For stages 2 and 3 the test oracle, copied and re-rooted as a stage folder,
 // stands in for the work of an implementer (it uses the vocabulary of stage
 // 2). Stage 1 has no stand-in: the stage-1 vocabulary is too small for the
-// reference, so only the empty stage is built and its smoke scenarios listed;
+// test oracle, so only the empty stage is built and its smoke scenarios listed;
 // a real stage-1 submission is checked by evaluate.mjs.
 // --ref WORKTREE validates the working tree without committing it.
 import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
 const opt = (name) => {
@@ -47,7 +47,7 @@ const walk = (dir) =>
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 
-/** The reference as a stage folder of an approach: renamed, imports re-rooted, defect switches off. */
+/** The test oracle as a stage folder of an approach: renamed, imports re-rooted, defect switches off. */
 const makeImpl = () => {
   const dir = join(out, 'impl');
   const tree = (() => {
@@ -59,31 +59,30 @@ const makeImpl = () => {
     rmSync(index, { force: true });
     return id;
   })();
-  const tar = join(out, 'reference.tar');
-  sh('git', ['archive', '--format=tar', '-o', tar, tree, 'src/app/components/contesters/reference'], repo);
+  const tar = join(out, 'oracle.tar');
+  sh('git', ['archive', '--format=tar', '-o', tar, tree, 'src/app/components/contesters/test-oracle'], repo);
   mkdirSync(dir, { recursive: true });
   const x = sh('tar', ['-xf', relative(dir, tar).split('\\').join('/')], dir);
   if (x.status !== 0) throw new Error(x.stderr);
-  const ref0 = join(dir, 'src/app/components/contesters/reference');
+  const ref0 = join(dir, 'src/app/components/contesters/test-oracle');
   const stageDir = join(out, 'impl-stage');
   cpSync(ref0, stageDir, { recursive: true });
   rmSync(dir, { recursive: true, force: true });
   rmSync(tar, { force: true });
   for (const f of ['README.md']) rmSync(join(stageDir, f), { force: true });
-  renameSync(join(stageDir, 'reference-console.component.ts'), join(stageDir, 'console-page.component.ts'));
-  renameSync(join(stageDir, 'reference-console.component.html'), join(stageDir, 'console-page.component.html'));
+  renameSync(join(stageDir, 'oracle-console.component.ts'), join(stageDir, 'console-page.component.ts'));
   const edit = (p, f) => writeFileSync(p, f(readFileSync(p, 'utf8')));
   edit(join(stageDir, 'console-page.component.ts'), (s) =>
     s
-      .replace(/ReferenceConsoleComponent/g, 'ConsolePageComponent')
-      .replace(/app-reference-console/g, 'app-console-page')
-      .replace('reference-console.component.html', 'console-page.component.html')
-      .replace(/'\.\.\/shared'/g, "'../../shared'")
-      .replace(/'\.\.\/\.\.\/content\//g, "'../../../content/"),
+      .replace(/OracleConsoleComponent/g, 'ConsolePageComponent')
+      .replace(/app-oracle-console/g, 'app-console-page'),
   );
-  for (const f of readdirSync(join(stageDir, 'data'))) {
-    edit(join(stageDir, 'data', f), (s) =>
-      s.replace(/'\.\.\/\.\.\/shared'/g, "'../../../shared'").replace(/'\.\.\/\.\.\/\.\.\/\.\.\/services\/contesters'/g, "'../../../../../services/contesters'"),
+  // the stand-in sits one folder deeper than the test oracle (contesters/<approach>/stage-N): every relative import that
+  // leaves the test oracle tree (shared, content, services) needs one more ../; imports inside the tree are unchanged
+  for (const file of walk(stageDir).filter((p) => p.endsWith('.ts'))) {
+    const depth = relative(stageDir, dirname(file)).split(/[\\/]/).filter(Boolean).length;
+    edit(file, (s) =>
+      s.replace(/(from\s+['"])((?:\.\.\/)+)/g, (m, head, ups) => (ups.length / 3 > depth ? head + '../' + ups : m)),
     );
   }
   // no defect switches in an implementation
@@ -96,12 +95,12 @@ const APPROACH = 'validation';
 const MUST_NOT_EXIST = [
   'AGENTS.md', 'TODO.md', 'tools', '.opencode', 'opencode.json', 'skills',
   'e2e/reporters', 'e2e/validate-suite.mjs',
-  'src/app/components/contesters/reference', 'src/app/components/contesters/page-tests', 'src/app/components/contesters/layout-draft',
+  'src/app/components/contesters/test-oracle', 'src/app/components/contesters/page-tests', 'src/app/components/contesters/layout-draft',
   'src/app/components/legacy', 'src/app/components/wip', 'src/app/components/xprerimental', 'src/app/components/signals',
   'src/app/components/pipe', 'src/app/components/optimized', 'src/app/submodules',
   'docs/contest/methodology.md', 'docs/contest/dataflow.md', 'docs/contest/README.md', 'docs/reactive_patterns',
 ];
-const WORDS = [/\bdefect\b/i, /page-tests/, /validate-suite/, /contest-reporter/, /methodology/, /ReferenceConsole/, /contesters\/reference/];
+const WORDS = [/\bdefect\b/i, /page-tests/, /validate-suite/, /contest-reporter/, /methodology/, /OracleConsole/, /contesters\/test-oracle/];
 
 for (const stage of [1, 2, 3]) {
   console.log(`\n== stage ${stage}`);
@@ -138,7 +137,7 @@ for (const stage of [1, 2, 3]) {
   const BLOCKS = ['stateful-block', 'generic-error'];
   if (stage < 2) {
     for (const d of BLOCKS) check(!existsSync(join(base, `src/app/components/content/${d}`)), `absent before stage 2: content/${d}`);
-    const VOCAB = /retry|stateful|generic-error|part\.error|\bstale|errorText|retryable|state: 'error'|unavailable/i;
+    const VOCAB = /retry|stateful|generic-error|\bstale|errorText|retryable|unavailable|\[error\]|\berror\(\)/i;
     const hits = [...walk(join(base, SHARED)), join(base, 'docs/contest/spec.md')]
       .filter((f) => /\.(ts|md)$/.test(f) && !f.endsWith('console-controls.component.ts'))
       .filter((f) => VOCAB.test(readFileSync(f, 'utf8')))
@@ -168,6 +167,11 @@ for (const stage of [1, 2, 3]) {
   const build = sh('npm', ['run', 'build'], base);
   const warnings = (strip(`${build.stdout}${build.stderr}`).match(/\[WARNING\]/g) ?? []).length;
   check(build.status === 0, `ng build${build.status ? ' failed' : `, ${warnings} warnings`}`);
+  // the build only compiles what the page reaches: compile every shared view as well (the stub page uses none)
+  writeFileSync(join(base, 'tsconfig.shared.json'), JSON.stringify({ extends: './tsconfig.app.json', files: [], include: ['src/app/components/contesters/shared/**/*.ts', 'src/**/*.d.ts'] }));
+  const sharedTsc = sh('npx', ['tsc', '-p', 'tsconfig.shared.json', '--noEmit'], base);
+  check(sharedTsc.status === 0, `every shared view compiles${sharedTsc.status ? `: ${strip(sharedTsc.stdout).split('\n').slice(0, 3).join(' | ')}` : ''}`);
+  rmSync(join(base, 'tsconfig.shared.json'), { force: true });
   const unit = sh('npm', ['test'], base);
   const unitText = strip(`${unit.stdout}${unit.stderr}`);
   check(unit.status === 0, `npm test: ${unitText.match(/Tests\s+[^\n]*/)?.[0]?.trim() ?? 'failed'}`);

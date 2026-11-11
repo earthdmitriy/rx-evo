@@ -1,7 +1,11 @@
 import { ApplicationRef, inject, isDevMode } from '@angular/core';
 import { CONSOLE_API_KEYS, ConsoleApiKey } from '../backend/api-keys';
 import { FakeBackend } from '../backend/fake-backend.service';
-import { CallStats, FakeTransport, LatencyMode } from '../backend/fake-transport.service';
+import {
+  CallStats,
+  FakeTransport,
+  LatencyMode,
+} from '../backend/fake-transport.service';
 import { httpError } from '../backend/http-error';
 
 type Selector = { index?: number };
@@ -13,7 +17,9 @@ type Selector = { index?: number };
  */
 export type ConsoleTestHook = {
   keys: readonly ConsoleApiKey[];
-  pending(key?: ConsoleApiKey): { id: number; key: ConsoleApiKey; arg: unknown }[];
+  pending(
+    key?: ConsoleApiKey,
+  ): { id: number; key: ConsoleApiKey; arg: unknown }[];
   release(key: ConsoleApiKey, selector?: Selector): boolean;
   releaseAll(key?: ConsoleApiKey): number;
   fail(key: ConsoleApiKey, selector?: Selector, status?: number): boolean;
@@ -47,11 +53,15 @@ export const installConsoleTestHook = () => {
     appRef.tick();
     return result;
   };
-  const pick = (key: ConsoleApiKey, { index = 0 }: Selector = {}) => transport.pendingCalls(key)[index];
+  const pick = (key: ConsoleApiKey, { index = 0 }: Selector = {}) =>
+    transport.pendingCalls(key)[index];
 
   window.__api = {
     keys: CONSOLE_API_KEYS,
-    pending: (key) => transport.pendingCalls(key).map(({ id, key: k, arg }) => ({ id, key: k, arg })),
+    pending: (key) =>
+      transport
+        .pendingCalls(key)
+        .map(({ id, key: k, arg }) => ({ id, key: k, arg })),
     release: (key, selector) => {
       const call = pick(key, selector);
       call?.release();
@@ -64,14 +74,31 @@ export const installConsoleTestHook = () => {
     },
     fail: (key, selector, status = 500) => {
       const call = pick(key, selector);
-      call?.fail(httpError(status, status === 500 ? 'Internal server error' : 'Request failed', key));
+      call?.fail(
+        httpError(
+          status,
+          status === 500 ? 'Internal server error' : 'Request failed',
+          key,
+        ),
+      );
       return tick(!!call);
     },
     setThrow: (key, on) => tick(transport.setFault(key, on)),
     setLatency: (mode) => tick(transport.latency.set(mode)),
     stats: () => transport.stats(),
-    calls: (key) => transport.calls(key).map((c) => JSON.parse(JSON.stringify(c.arg ?? null))),
-    truth: (method, ...args) => JSON.parse(JSON.stringify((backend[method] as (...a: unknown[]) => unknown).apply(backend, args) ?? null)),
+    calls: (key) =>
+      transport
+        .calls(key)
+        .map((c) => JSON.parse(JSON.stringify(c.arg ?? null))),
+    truth: (method, ...args) =>
+      JSON.parse(
+        JSON.stringify(
+          (backend[method] as (...a: unknown[]) => unknown).apply(
+            backend,
+            args,
+          ) ?? null,
+        ),
+      ),
     resetStats: () => tick(transport.resetStats()),
     push: () => tick(backend.pushNow() !== null),
     fixtures: () => backend.testFixtures(),

@@ -1,10 +1,10 @@
 /**
  * What the suite runs against (docs/contest/methodology.md §3): every
- * implemented stage of every approach, plus the reference (all stages) with
+ * implemented stage of every approach, plus the test oracle (all stages) with
  * optional defect switches for validating the suite.
  *
  * Env: E2E_CONTESTER=<approach> (default: all), E2E_STAGE=<n> (default: all
- * implemented), E2E_DEFECT=<defects> (reference only).
+ * implemented), E2E_DEFECT=<defects> (test oracle only).
  */
 export type Target = {
   /** Playwright project name and report column. */
@@ -16,32 +16,46 @@ export type Target = {
   defect?: string;
 };
 
-/** Implemented stages per approach. Add a stage here when it lands. */
+/**
+ * Stages each CONTEST approach's single implementation claims to meet (no
+ * stage folders any more: one implementation per approach, scored against
+ * whichever requirements it meets). Add an approach here when it lands.
+ */
 export const IMPLEMENTED: Record<string, (1 | 2 | 3)[]> = {
-  reference: [3],
-  'vanilla-rxjs': [],
-  'stateful-observable': [],
-  resources: [],
-  'signal-store': [],
-  'tanstack-query': [],
+  'test-oracle': [3],
+  'vanilla-rxjs': [3],
+  'signal-store': [3],
+  resources: [3],
+  'stateful-observable': [3],
 };
 
 const env = (name: string) => process.env[name] || undefined;
 
-export const TARGETS: Target[] = Object.entries(IMPLEMENTED).flatMap(([approach, stages]) =>
-  stages.map((stage): Target => {
-    if (approach === 'reference') {
-      const defect = env('E2E_DEFECT');
-      return { id: defect ? `reference~${defect}` : 'reference', approach, stage, path: '/contesters/reference', defect };
-    }
-    return { id: `${approach}/stage-${stage}`, approach, stage, path: `/contesters/${approach}/stage-${stage}` };
-  }),
-);
+export const TARGETS: Target[] = [
+  ...Object.entries(IMPLEMENTED).flatMap(([approach, stages]) =>
+    stages.map((stage): Target => {
+      // only the test oracle defines defect switches (E2E_DEFECT)
+      const defect = approach === 'test-oracle' ? env('E2E_DEFECT') : undefined;
+      return {
+        id: defect ? `${approach}~${defect}` : approach,
+        approach,
+        stage,
+        // the oracle is part of the Contest group, the entries are Contesters
+        path: approach === 'test-oracle' ? '/contest/test-oracle' : `/contesters/${approach}`,
+        defect,
+      };
+    }),
+  ),
+];
 
 export const selectedTargets = (): Target[] => {
   const approach = env('E2E_CONTESTER');
   const stage = env('E2E_STAGE');
-  return TARGETS.filter((t) => (!approach || t.approach === approach) && (!stage || t.stage === Number(stage)));
+  return TARGETS.filter(
+    (t) =>
+      (!approach || t.approach === approach) &&
+      (!stage || t.stage === Number(stage)),
+  );
 };
 
 export const E2E_SEED = Number(process.env['E2E_SEED'] ?? 1);

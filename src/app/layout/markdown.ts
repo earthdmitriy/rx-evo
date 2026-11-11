@@ -1,7 +1,15 @@
 import { marked } from 'marked';
 
 /** Kinds of README sections the notes panel knows how to style. */
-export type SectionKind = 'warning' | 'idea' | 'good' | 'bad' | 'try' | 'next' | 'other';
+export type SectionKind =
+  | 'warning'
+  | 'idea'
+  | 'cost'
+  | 'good'
+  | 'bad'
+  | 'try'
+  | 'next'
+  | 'other';
 
 export type MarkdownSection = {
   kind: SectionKind;
@@ -12,13 +20,23 @@ export type MarkdownSection = {
 const KIND_BY_HEADING: Record<string, SectionKind> = {
   warning: 'warning',
   idea: 'idea',
+  'extra code': 'cost',
   good: 'good',
   bad: 'bad',
   'try it': 'try',
   'next step': 'next',
 };
 
-const ORDER: SectionKind[] = ['warning', 'idea', 'good', 'bad', 'try', 'next', 'other'];
+const ORDER: SectionKind[] = [
+  'warning',
+  'idea',
+  'cost',
+  'good',
+  'bad',
+  'try',
+  'next',
+  'other',
+];
 
 export const renderMarkdown = (md: string): string =>
   marked.parse(md, { async: false, gfm: true });

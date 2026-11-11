@@ -45,6 +45,10 @@ export type SampleMeta = {
   docs?: DocLink[];
   /** `wide`: the demo takes the full width and the notes move below it (default `side`). */
   layout?: 'side' | 'wide';
+  /** `doc`: a page with no demo; the README is the page (default `demo`). */
+  kind?: 'demo' | 'doc';
+  /** Reachable by URL, left out of the sidebar, index and pager (drafts). */
+  hidden?: boolean;
 };
 
 export type SampleGroupMeta = {
@@ -133,7 +137,10 @@ export const collectGroups = (routes: Routes): GroupEntry[] => {
       url: `/${r.path}`,
       step: idx + 1,
       samples: (r.children ?? [])
-        .filter((c) => (c.data as SampleRouteData | undefined)?.sample)
+        .filter((c) => {
+          const sample = (c.data as SampleRouteData | undefined)?.sample;
+          return !!sample && !sample.hidden;
+        })
         .map((c) => ({
           ...(c.data as SampleRouteData).sample,
           url: `/${r.path}/${c.path}`,

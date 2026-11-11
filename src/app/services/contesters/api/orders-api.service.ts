@@ -2,7 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { FakeBackend } from '../backend/fake-backend.service';
 import { FakeTransport } from '../backend/fake-transport.service';
-import { OrderDetail, OrderLineChange, OrderRow, OrderStats } from '../console.types';
+import {
+  OrderDetail,
+  OrderLineChange,
+  OrderRow,
+  OrderStats,
+} from '../console.types';
 
 /** The orders service: a customer's orders and stats, one order, changes to it. */
 @Injectable({ providedIn: 'root' })
@@ -12,17 +17,23 @@ export class OrdersApi {
 
   /** Newest first. */
   public orders(customerId: number): Observable<OrderRow[]> {
-    return this.http.read('orders', customerId, 'user', () => this.backend.orders(customerId));
+    return this.http.read('orders', customerId, 'user', () =>
+      this.backend.orders(customerId),
+    );
   }
 
   /** Number of orders, lifetime spend, average order, last order date. */
   public orderStats(customerId: number): Observable<OrderStats> {
-    return this.http.read('orderStats', customerId, 'user', () => this.backend.orderStats(customerId));
+    return this.http.read('orderStats', customerId, 'user', () =>
+      this.backend.orderStats(customerId),
+    );
   }
 
   /** Lines by sku with the price they were sold at, address, payment. No ticket link (see `TicketsApi.ticketsByOrder`). */
   public order(orderId: string): Observable<OrderDetail> {
-    return this.http.read('order', orderId, 'user', () => this.backend.order(orderId));
+    return this.http.read('order', orderId, 'user', () =>
+      this.backend.order(orderId),
+    );
   }
 
   /**
@@ -41,12 +52,17 @@ export class OrdersApi {
     lines: OrderLineChange[],
     reply?: { ticketId: string; text: string },
   ): Observable<OrderDetail> {
-    return this.http.write('updateOrder', { orderId, lines, reply }, 'user', () =>
-      this.backend.updateOrder(orderId, lines, reply),
+    return this.http.write(
+      'updateOrder',
+      { orderId, lines, reply },
+      'user',
+      () => this.backend.updateOrder(orderId, lines, reply),
     );
   }
 
   public resendConfirmation(orderId: string): Observable<void> {
-    return this.http.write('resendConfirmation', orderId, 'user', () => this.backend.resendConfirmation(orderId));
+    return this.http.write('resendConfirmation', orderId, 'user', () =>
+      this.backend.resendConfirmation(orderId),
+    );
   }
 }

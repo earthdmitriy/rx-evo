@@ -27,8 +27,13 @@ in `spec.md`. Scenario notation: `spec.md` §6.
   that arrives after logout changes nothing on screen.
 - **R-S4.** **No data of a previous session is ever visible**, at any moment
   of a new session, not even dimmed while the new data loads.
-- **R-S5.** Navigating to another sample and back keeps the session, the
-  selected customer, the tab and the open panel.
+- **R-S5.** Navigating to another sample and back keeps the session and the
+  tab preference (the next customer selected opens on the tab last active, not
+  back to Orders). The selected customer and the open panel are page state,
+  not required to survive: keeping them would mean holding the whole page
+  (which record is open) somewhere that outlives the page component, which is
+  the global-state shape this contract otherwise avoids. A tab is a display
+  preference, not a record, so remembering it is a small exception.
 
 ### Data
 
@@ -50,30 +55,38 @@ in `spec.md`. Scenario notation: `spec.md` §6.
 ### Joined data
 
 The backend returns ids; the page shows names, prices and sentences. Each
-service owns one piece, and the page puts them together.
+service owns one piece, and the page hands each piece to the view as its own
+input (a lookup by id, or a counter), so nothing is joined into the rows.
 
 - **R-J1.** **Nothing is shown unresolved.** Where the UX shows a name, the
   name is shown, never an id: product names (cart lines, order lines,
   activity, editor hits), authors (thread messages, notes), notification
   and activity sentences, the tier badge, the KPIs and tab badges. A piece
-  still on its way is a `Part` in `loading`, never a raw id or a zero.
+  still on its way is left out (its field component shows nothing, or its
+  price, line total or stock field shows nothing: an empty space), never shown
+  as a raw id or a zero.
 - **R-J2.** **The right piece for the right thing.** A name, price, stock,
   tier, count or author is the one of *its* sku, customer or agent: batch
-  answers are matched by id (a batch answer may come back in another order or
-  with fewer items than asked), and nothing of another entity leaks in.
-- **R-J3.** **Batch calls respect the limit.** `products`, `prices`,
-  `stock`, `tiers`, `ticketCounts` and `agents` take at most 20 ids; a list
-  that is longer is split (a cart of 24 lines shows all 24 names and prices).
+  answers (`prices`, `tiers`, `ticketCounts`) are matched by id (a batch answer
+  may come back in another order or with fewer items than asked), and nothing of another entity leaks in.
+- **R-J3.** **Batch calls respect the limit.** The three batch endpoints,
+  `prices`, `tiers` and `ticketCounts`, take at most 20 ids; a list that is
+  longer is split (a cart of 24 lines shows all 24 prices). `product`, `stock`
+  and `agent` take one id per call (a cart of 24 lines asks 24 names).
   A stage-1 page may use one call per id, or any split, as long as no call is
   refused.
 - **R-J4.** **Which price.** Cart lines and editor hits show the **current**
-  price (`prices`); order lines show the price the line was **sold at**
+  price (the price field, from `prices`); order lines show the price the line was **sold at**
   (`order.lines[].unitPrice`). A line added in the editor is shown at the
   current price; after Save the order shows what the server stored.
 - **R-J5.** **The linked ticket of an order** is found through
   `ticketsByOrder`: the order's open ticket (status not Solved), else the
   most recently updated one; none: no ticket box.
-- **R-J6.** **Sentences.** Exact wording (tests read it):
+- **R-J6.** **Sentences.** Written by the shared views from a kind, the
+  references and the one name they need (the customer name field for a reply, the
+  product name field for a viewed product); your part is to supply that name by
+  the right id. Exact wording (tests read
+  it):
 
   | Source | Sentence |
   | --- | --- |
@@ -100,10 +113,12 @@ service owns one piece, and the page puts them together.
   `customer`, `orders`, `orderStats`, `cart`, `tickets`, `notes`,
   `activity`, `order`, `ticketsByOrder`, `ticket`, `shipment`,
   `searchProducts`.
-- **R-C2.** **Switching customer never shows the previous customer's data**
-  under the new customer, not even dimmed, in any section (KPIs, badges and
-  names included). Reason: the agent acts on what is shown; an action on the
-  wrong customer is an incident.
+- **R-C2.** **Switching customer never leaves the previous customer's data
+  as current.** Once a section's block has stopped loading, it shows only data
+  of the current customer (KPIs, badges and names included). While the block
+  loads, the previous customer's data may stay visible under the spinner: the
+  spinner says it is not current. Reason: the agent acts on what is shown; an
+  action on the wrong customer is an incident.
 
 ### Writes
 
@@ -140,7 +155,7 @@ service owns one piece, and the page puts them together.
 | A3 | Select a customer, open an order, release all; Log out. | S0 at once. No element with that customer's `data-customer-id` or `data-order-id`, or the agent's `data-user-id`, remains. |
 | A4 | Select a customer; hold `orders`; Log out; release `orders`. | The page stays S0. |
 | A5 | Session 1: select customer X, release all, Log out. Session 2: sign in as another agent; hold everything. | Until released, no element shows X or agent 1. |
-| A8 | Signed in with a customer, tab and order panel open; go to another sample and back; release all. | Same customer, tab and panel. |
+| A8 | Signed in with a customer, order panel open and the Cart tab active; go to another sample and back, release all; select a customer. | Still signed in; the selected customer opens on the Cart tab, not Orders (the customer and the panel from before are page state, not asserted either way). |
 
 ### H. Joined data
 
@@ -149,9 +164,9 @@ after "release all".
 
 | ID | Scenario | Expected |
 | --- | --- | --- |
-| H1 | Sign in; release all. | Every S3 row (8): name and email as searched; tier badge from `tiers` (VIP shown, others none); open-tickets badge from `ticketCounts` (count shown, none for 0). All row parts `ready`. |
+| H1 | Sign in; release all. | Every S3 row (8): name and email as searched; tier badge from `tiers` (the tier name); open-tickets badge from `ticketCounts` (the count, `0` for none). Every badge shows text. |
 | H2 | Select a customer; release all. | S4: name, tier, city from `customer`; KPIs spend, orders, average from `orderStats`; open tickets from `ticketCounts`; the Orders and Tickets badges show the same numbers. |
-| H3 | Open Cart. | Each line: product name from `products`, **current** price from `prices`, line total = qty × price; cart total = their sum. |
+| H3 | Open Cart. | Each line: product name from `product`, **current** price from `prices`, line total = qty × price; cart total = their sum. |
 | H4 | Open an order with several lines. | Each line shows its product name, qty, and the unit price **stored in the order**. |
 | H5 | Open a ticket that has agent replies. | Each message shows its author's name: the customer's from the CRM, an agent's from the agent directory. |
 | H6 | Open Notes of a customer with notes. | Each note shows its author agent's name. |
@@ -159,15 +174,15 @@ after "release all".
 | H8 | Open the bell. | Each sentence as in R-J6; a `ticket-reply` names the customer of its `customerId`. |
 | H9 | Edit items; type a product name in the search. | Up to 10 hits, each with its name, current price and stock (`out of stock` for 0); Add is disabled for 0 stock. |
 | H10 | Open an order that has a ticket. | The ticket box shows the open ticket of that order (R-J5): id, subject, status. An order without tickets shows no box. |
-| H11 | Select customer A, open Cart; select customer B (same tab). | Lines and names of B only; no name, price or KPI of A is visible in any state. |
-| H12 | Select the customer with the 24-line cart; open Cart. | All 24 lines show name and price; no request failed (`errors` 0 on `products`, `prices`). |
+| H11 | Select customer A, open Cart; select customer B (same tab); release all. | A block that is not loading leaves no name, price or counter of A; lines and names of B only. (While a block loads, A may stay under the spinner.) |
+| H12 | Select the customer with the 24-line cart; open Cart. | All 24 lines show name and price; no request failed (`errors` 0 on `product`, `prices`). |
 
 ### B. Change awareness
 
 | ID | Scenario | Expected |
 | --- | --- | --- |
 | B1 | Select A, then B; release B's requests, then A's. | S4–S10 show B. A's responses never appear. |
-| B2 | Select A, release all; select B, hold. | No element with A's `data-customer-id` in the main column or the rail. |
+| B2 | Select A, release all; select B, hold. | In the main column and the rail, no element with A's `data-customer-id` outside a block that is loading. |
 | B4 | Type 5 characters in the search quickly; release all. | S3 shows the results for the whole text, page 1. |
 | B5 | Go to page 3; change the filter chip; release all. | S3 shows page 1 of the new filter. |
 | B6 | Change the sort while a `customers` request is held; release the new one, then the old one. | S3 shows the new order; the old response never appears. |

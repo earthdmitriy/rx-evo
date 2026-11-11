@@ -25,7 +25,9 @@
         ></app-generic-error>
       }
       @if (populatedBucketResource.hasValue()) {
-        <app-client-bucket [bucket]="populatedBucketResource.value()"></app-client-bucket>
+        <app-client-bucket
+          [bucket]="populatedBucketResource.value()"
+        ></app-client-bucket>
       }
     </div>
   }

@@ -18,12 +18,41 @@ const SECTION_STYLE: Record<
     icon: '⚠',
     iconClass: 'text-rose-700',
   },
-  idea: { card: 'border-slate-200 bg-white', icon: '◆', iconClass: 'text-indigo-500' },
-  good: { card: 'border-emerald-200 bg-emerald-50/50', icon: '✓', iconClass: 'text-emerald-600' },
-  bad: { card: 'border-rose-200 bg-rose-50/50', icon: '✕', iconClass: 'text-rose-600' },
-  try: { card: 'border-sky-200 bg-sky-50/50', icon: '▶', iconClass: 'text-sky-600' },
-  next: { card: 'border-indigo-200 bg-indigo-50/50', icon: '→', iconClass: 'text-indigo-600' },
-  other: { card: 'border-slate-200 bg-white', icon: '•', iconClass: 'text-slate-400' },
+  idea: {
+    card: 'border-slate-200 bg-white',
+    icon: '◆',
+    iconClass: 'text-indigo-500',
+  },
+  cost: {
+    card: 'border-amber-300 bg-amber-50/60 ring-1 ring-amber-200',
+    icon: '≡',
+    iconClass: 'text-amber-600',
+  },
+  good: {
+    card: 'border-emerald-200 bg-emerald-50/50',
+    icon: '✓',
+    iconClass: 'text-emerald-600',
+  },
+  bad: {
+    card: 'border-rose-200 bg-rose-50/50',
+    icon: '✕',
+    iconClass: 'text-rose-600',
+  },
+  try: {
+    card: 'border-sky-200 bg-sky-50/50',
+    icon: '▶',
+    iconClass: 'text-sky-600',
+  },
+  next: {
+    card: 'border-indigo-200 bg-indigo-50/50',
+    icon: '→',
+    iconClass: 'text-indigo-600',
+  },
+  other: {
+    card: 'border-slate-200 bg-white',
+    icon: '•',
+    iconClass: 'text-slate-400',
+  },
 };
 
 /** Notes panel: the sample README rendered as Idea / Good / Bad / Try it / Next step cards. */
@@ -35,7 +64,7 @@ const SECTION_STYLE: Record<
 })
 export class SampleNotesComponent {
   public readonly sample = input.required<SampleMeta>();
-  /** Below a wide demo: sections in columns instead of one stack. */
+  /** Below a wide demo: sections in masonry columns instead of one stack. */
   public readonly wide = input(false);
 
   protected readonly readme = resource({

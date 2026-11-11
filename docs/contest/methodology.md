@@ -198,7 +198,7 @@ impossible:
   views, fake backend, harness, smoke tests, `docs/contest/spec.md` and the
   stage files up to that stage, and the approach's own previous stage. No
   other approaches, no statefulObservable samples (`wip/`, `xprerimental/`),
-  no reference implementation (`contesters/reference/`), no evaluator docs
+  no test oracle (`contesters/test-oracle/`), no evaluator docs
   (`methodology.md`, `dataflow.md`, `README.md`), no full suite, no
   `tools/contest/`.
 - A **fresh single-branch clone** per stage and approach, not a worktree
@@ -207,7 +207,12 @@ impossible:
   published packages.
 - Network limited to the npm registry; docs come as a local snapshot
   (`docs-vendor/<tool>/`).
-- Implementations are not published until the round is complete.
+- Implementations are not published until the round is complete. After
+  that (and for every accepted stage in between, once the audit and review
+  passed) the stage folder is **copied into the main repository** next to
+  the others, with its route, e2e target and page-test registration, so all
+  implementations can be run and compared in one place
+  (`docs/contest/README.md`, "Implementations in the repo").
 
 ### 6.3 Audit
 

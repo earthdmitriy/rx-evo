@@ -72,11 +72,13 @@
                 (click)="navToggle.checked = false"
               >
                 <span class="truncate">{{ s.title }}</span>
-                <span
-                  class="verdict-dot"
-                  [attr.data-verdict]="s.verdict"
-                  [title]="verdicts[s.verdict].label"
-                ></span>
+                @if (s.kind !== "doc") {
+                  <span
+                    class="verdict-dot"
+                    [attr.data-verdict]="s.verdict"
+                    [title]="verdicts[s.verdict].label"
+                  ></span>
+                }
               </a>
             </li>
           }
@@ -121,23 +123,31 @@
           <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
             {{ s.title }}
           </h1>
-          <span
-            class="badge"
-            [class]="verdicts[s.verdict].badge"
-            [title]="verdicts[s.verdict].hint"
-            >{{ verdicts[s.verdict].label }}</span
-          >
+          @if (s.kind !== "doc") {
+            <span
+              class="badge"
+              [class]="verdicts[s.verdict].badge"
+              [title]="verdicts[s.verdict].hint"
+              >{{ verdicts[s.verdict].label }}</span
+            >
+          }
         </div>
         <p class="mt-2 max-w-3xl text-slate-600">{{ s.summary }}</p>
         @if (stages().length) {
           <nav class="mt-3 flex items-center gap-3" aria-label="Contest stage">
             <span class="section-title">Stage</span>
-            <div class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium">
+            <div
+              class="inline-flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium"
+            >
               @for (st of stages(); track st.url) {
                 <a
                   [routerLink]="st.url"
                   class="rounded-md px-2.5 py-1 transition-colors"
-                  [class]="st.active ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                  [class]="
+                    st.active
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  "
                   [attr.aria-current]="st.active ? 'page' : null"
                   [attr.data-testid]="'stage-' + st.stage"
                   >{{ st.stage }} · {{ stageNames[st.stage] }}</a
@@ -160,16 +170,18 @@
         </div>
       </header>
 
-      @if (s.scenario !== "dashboard") {
-        <app-controller class="mb-4" [scenario]="s.scenario" />
-      } @else {
-        <app-console-controls class="mb-4 block" />
+      @if (demo()) {
+        @if (s.scenario !== "dashboard") {
+          <app-controller class="mb-4" [scenario]="s.scenario" />
+        } @else {
+          <app-console-controls class="mb-4 block" />
+        }
       }
     }
 
     <div
       [class]="
-        !sample()
+        !demo()
           ? 'flex flex-1 flex-col'
           : sample()?.layout === 'wide'
             ? 'grid flex-1 gap-6'
@@ -178,12 +190,12 @@
     >
       <div
         [class]="
-          sample()
+          demo()
             ? 'demo-frame card flex min-h-[24rem] min-w-0 flex-col self-stretch'
             : 'flex flex-1 flex-col'
         "
       >
-        @if (sample()) {
+        @if (demo()) {
           <div class="card-header">
             <span class="section-title">Live demo</span>
             <span class="hidden text-xs text-slate-400 sm:inline"
@@ -193,7 +205,7 @@
         }
         <div
           [class]="
-            sample()
+            demo()
               ? 'flex flex-1 flex-col rounded-b-xl bg-slate-50 p-4 sm:p-5'
               : 'flex flex-1 flex-col'
           "
@@ -202,7 +214,7 @@
         </div>
       </div>
 
-      @if (sample(); as s) {
+      @if (demo(); as s) {
         <aside
           class="min-w-0"
           [class.xl:sticky]="s.layout !== 'wide'"

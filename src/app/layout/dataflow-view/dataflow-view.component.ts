@@ -24,7 +24,8 @@ let renderId = 0;
 export class DataflowViewComponent {
   public readonly source = input.required<() => Promise<string>>();
 
-  private readonly target = viewChild.required<ElementRef<HTMLElement>>('target');
+  private readonly target =
+    viewChild.required<ElementRef<HTMLElement>>('target');
 
   protected readonly markdown = resource({
     params: () => this.source(),
@@ -55,7 +56,10 @@ export class DataflowViewComponent {
             mermaid
               .render(`dataflow-${++renderId}`, code)
               .then((r) => r.svg)
-              .catch(() => '<p class="text-rose-300 text-sm">Diagram failed to render.</p>'),
+              .catch(
+                () =>
+                  '<p class="text-rose-300 text-sm">Diagram failed to render.</p>',
+              ),
           ),
         );
         if (cancelled) return;

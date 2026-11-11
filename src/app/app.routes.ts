@@ -595,30 +595,49 @@ export const routes: Routes = [
   ),
 
   groupRoute(
-    'contesters',
+    'contest',
     {
-      title: 'Contesters',
+      title: 'Contest',
       blurb:
-        'One busy internal app, a shop support console, rebuilt on different data layers.',
+        'One busy internal app, a shop support console, rebuilt on different data layers: the rules and the suite.',
     },
     [
       sampleRoute(
-        'reference',
+        'idea',
         () =>
-          import('./components/contesters/reference/reference-console.component').then(
-            (m) => m.ReferenceConsoleComponent,
+          import('./layout/doc-page/doc-page.component').then(
+            (m) => m.DocPageComponent,
           ),
         {
-          title: 'Reference (test oracle)',
+          title: 'Idea',
+          summary:
+            'Why the contest exists, what the page imitates, what it is optimized for, and how it is measured.',
+          verdict: 'getting-there',
+          kind: 'doc',
+          scenario: 'dashboard',
+          tags: ['contest'],
+          folder: 'contesters',
+          readme: () =>
+            import('./components/contesters/IDEA.md').then((m) => m.default),
+        },
+      ),
+      sampleRoute(
+        'test-oracle',
+        () =>
+          import('./components/contesters/test-oracle/oracle-console.component').then(
+            (m) => m.OracleConsoleComponent,
+          ),
+        {
+          title: 'Test oracle',
           summary:
             'Not a contest entry: plain RxJS over a keyed-query cache, meeting every stage, with defect switches to validate the e2e suite.',
           verdict: 'experimental',
           scenario: 'dashboard',
           layout: 'wide',
           tags: ['RxJS', 'keyed cache', 'defect switches'],
-          folder: 'contesters/reference',
+          folder: 'contesters/test-oracle',
           readme: () =>
-            import('./components/contesters/reference/README.md').then(
+            import('./components/contesters/test-oracle/README.md').then(
               (m) => m.default,
             ),
         },
@@ -634,6 +653,7 @@ export const routes: Routes = [
           summary:
             'Temporary: the support console layout with static data, for review before any data layer.',
           verdict: 'experimental',
+          hidden: true,
           scenario: 'dashboard',
           layout: 'wide',
           tags: ['layout'],
@@ -655,6 +675,7 @@ export const routes: Routes = [
           summary:
             'Temporary: the console while logged out, for layout review.',
           verdict: 'experimental',
+          hidden: true,
           scenario: 'dashboard',
           layout: 'wide',
           tags: ['layout'],
@@ -663,6 +684,119 @@ export const routes: Routes = [
             import('./components/contesters/layout-draft/SIGN-IN.md').then(
               (m) => m.default,
             ),
+        },
+      ),
+    ],
+  ),
+
+  groupRoute(
+    'contesters',
+    {
+      title: 'Contesters',
+      blurb: 'The support console on four data layers, and how they compare.',
+    },
+    [
+      sampleRoute(
+        'vanilla-rxjs',
+        () =>
+          import('./components/contesters/vanilla-rxjs/vanilla-rxjs-console.component').then(
+            (m) => m.VanillaRxjsConsoleComponent,
+          ),
+        {
+          title: 'Vanilla RxJS',
+          summary:
+            'Plain RxJS, no library: a keyed-query cache and an entity cache (own code, no `statefulObservable`), the same shared views as every other approach.',
+          verdict: 'getting-there',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['RxJS', 'keyed cache', 'no library'],
+          folder: 'contesters/vanilla-rxjs',
+          readme: () =>
+            import('./components/contesters/vanilla-rxjs/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'signal-store',
+        () =>
+          import('./components/contesters/ngrx-signal-store/signal-store-console.component').then(
+            (m) => m.SignalStoreConsoleComponent,
+          ),
+        {
+          title: 'NgRx SignalStore',
+          summary:
+            "Every fetched entity is a `withEntities`/`rxMethod` keyed cache, built from SignalStore's own primitives (not Vanilla RxJS's Query/EntityCache classes); the customer list's filter/sort/page is `withState`/`withMethods`.",
+          verdict: 'getting-there',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['NgRx', 'SignalStore', 'rxMethod'],
+          folder: 'contesters/ngrx-signal-store',
+          readme: () =>
+            import('./components/contesters/ngrx-signal-store/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'resources',
+        () =>
+          import('./components/contesters/resources/resources-console.component').then(
+            (m) => m.ResourcesConsoleComponent,
+          ),
+        {
+          title: 'Signals + resource()',
+          summary:
+            "Every section fetches its own data with `rxResource()`, no shared cache (not NgRx, not another approach's RxJS classes); a version bus stands in for cache invalidation.",
+          verdict: 'getting-there',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['Signals', 'resource()', 'rxResource()'],
+          folder: 'contesters/resources',
+          readme: () =>
+            import('./components/contesters/resources/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'stateful-observable',
+        () =>
+          import('./components/contesters/stateful-observable/console-page.component').then(
+            (m) => m.ConsolePageComponent,
+          ),
+        {
+          title: 'statefulObservable',
+          summary:
+            'Every entity is a library factory per id (batch factories for the batch endpoints), sessions gate sources with `active`, field components bind stateful blocks.',
+          verdict: 'getting-there',
+          scenario: 'dashboard',
+          layout: 'wide',
+          tags: ['statefulObservable', 'factory', 'pipeValue'],
+          folder: 'contesters/stateful-observable',
+          readme: () =>
+            import('./components/contesters/stateful-observable/README.md').then(
+              (m) => m.default,
+            ),
+        },
+      ),
+      sampleRoute(
+        'results',
+        () =>
+          import('./layout/doc-page/doc-page.component').then(
+            (m) => m.DocPageComponent,
+          ),
+        {
+          title: 'Results',
+          summary:
+            'The four contesters side by side: tests, gaps, code size and the eight criteria.',
+          verdict: 'getting-there',
+          kind: 'doc',
+          scenario: 'dashboard',
+          tags: ['contest'],
+          folder: 'contesters',
+          readme: () =>
+            import('./components/contesters/RESULTS.md').then((m) => m.default),
         },
       ),
     ],

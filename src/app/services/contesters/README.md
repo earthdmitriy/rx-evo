@@ -8,14 +8,14 @@ index.ts                  public surface: types + one client per service
 console.types.ts          data types (ids for other services' entities, no joined shapes)
 api/                      client-side endpoints, one per backend service
   session-api            login · logout · profile
-  agents-api             agents(ids)                       agent directory
+  agents-api             agent(id)                         agent directory (one per call)
   notifications-api      notifications · markNotificationsRead · push$ (hot)
   customers-api          searchCustomers · customer · tiers(ids)   search + CRM
   orders-api             orders · orderStats · order · updateOrder · resendConfirmation
   shipments-api          shipment(orderId)
   cart-api               cart(customerId)
-  products-api           ProductsApi: products(skus) · searchProducts(text)
-                         PricingApi: prices(skus) · InventoryApi: stock(skus)
+  products-api           ProductsApi: product(sku) · searchProducts(text)
+                         PricingApi: prices(skus) (batch) · InventoryApi: stock(sku)
   tickets-api            tickets · ticketsByOrder · ticketCounts(ids) · ticket · replyTicket
   notes-api              notes · addNote
   activity-api           activity(customerId)
@@ -31,9 +31,10 @@ harness/test-hook.ts      window.__api for the e2e suite
 ## Shape of the data
 
 A set of services, no backend-for-frontend: responses carry ids of other
-services' entities, nothing is joined on the server. Batch calls (`agents`,
-`tiers`, `ticketCounts`, `products`, `prices`, `stock`) take at most
-`MAX_BATCH` (20) ids. There is no whole-catalog call. Order lines carry a sku
+services' entities, nothing is joined on the server. Only three calls are batch
+endpoints (`tiers`, `ticketCounts`, `prices`: the entities asked for most
+often); they take at most `MAX_BATCH` (20) ids. `agent`, `product` and `stock`
+take one id per call. There is no whole-catalog call. Order lines carry a sku
 and the price they were sold at; ticket messages and notes carry author ids;
 activity entries and notifications carry a kind and references, no text;
 customer search hits carry id, name and email only; `customer(id)` has no

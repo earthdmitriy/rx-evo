@@ -1,7 +1,7 @@
 # With Collapse
 
 ## Idea
-A paged table (same flow as [Pagination](/x/pagination)) whose rows expand into the client card. Details are loaded per row by `statefulObservableFactory`, keyed by `clientId`, and rendered by `app-stateful-block`.
+A paged table (same flow as [Pagination](/x/pagination)) whose rows expand into the client card. Details are loaded per row by `statefulObservableFactory`, keyed by `clientId`, and rendered by `app-view-block`.
 
 ## Good
 - Row details are a separate stream per client: loading and error states are local to the expanded row.

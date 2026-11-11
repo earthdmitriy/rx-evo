@@ -12,6 +12,8 @@ export class CartApi {
 
   /** Skus and quantities only: names and prices come from the catalog. */
   public cart(customerId: number): Observable<CartLine[]> {
-    return this.http.read('cart', customerId, 'user', () => this.backend.cart(customerId));
+    return this.http.read('cart', customerId, 'user', () =>
+      this.backend.cart(customerId),
+    );
   }
 }

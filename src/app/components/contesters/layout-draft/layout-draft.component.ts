@@ -1,5 +1,10 @@
 import { CurrencyPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  signal,
+} from '@angular/core';
 import * as mock from './layout-draft.mock';
 import { SignInDraftComponent } from './sign-in-draft.component';
 
@@ -45,7 +50,11 @@ export class LayoutDraftComponent {
     return [...mock.CUSTOMERS].sort((a, b) => {
       const x = a[key];
       const y = b[key];
-      return (typeof x === 'string' ? x.localeCompare(y as string) : x - (y as number)) * dir;
+      return (
+        (typeof x === 'string'
+          ? x.localeCompare(y as string)
+          : x - (y as number)) * dir
+      );
     });
   });
 
@@ -68,7 +77,9 @@ export class LayoutDraftComponent {
     () => mock.ORDERS.find((o) => o.id === this.openOrder()) ?? null,
   );
   /** Items can change only before the order ships. */
-  protected readonly editable = computed(() => this.order()?.status === 'Processing');
+  protected readonly editable = computed(
+    () => this.order()?.status === 'Processing',
+  );
   protected readonly ticket = computed(
     () => mock.TICKETS.find((t) => t.orderId === this.openOrder()) ?? null,
   );
@@ -77,7 +88,12 @@ export class LayoutDraftComponent {
   protected readonly catalogQuery = signal('');
   protected readonly catalogHits = computed(() => {
     const q = this.catalogQuery().trim().toLowerCase();
-    return q ? mock.CATALOG.filter((p) => p.product.toLowerCase().includes(q)).slice(0, 4) : [];
+    return q
+      ? mock.CATALOG.filter((p) => p.product.toLowerCase().includes(q)).slice(
+          0,
+          4,
+        )
+      : [];
   });
   protected readonly originalTotal = sum(mock.ORDER_LINES);
   protected readonly total = computed(() => sum(this.lines()));
@@ -97,14 +113,20 @@ export class LayoutDraftComponent {
 
   protected setQty(sku: string, qty: number) {
     this.lines.update((ls) =>
-      qty > 0 ? ls.map((l) => (l.sku === sku ? { ...l, qty } : l)) : ls.filter((l) => l.sku !== sku),
+      qty > 0
+        ? ls.map((l) => (l.sku === sku ? { ...l, qty } : l))
+        : ls.filter((l) => l.sku !== sku),
     );
   }
 
   protected add(p: (typeof mock.CATALOG)[number]) {
     const existing = this.lines().find((l) => l.sku === p.sku);
     if (existing) this.setQty(p.sku, existing.qty + 1);
-    else this.lines.update((ls) => [...ls, { product: p.product, sku: p.sku, qty: 1, price: p.price }]);
+    else
+      this.lines.update((ls) => [
+        ...ls,
+        { product: p.product, sku: p.sku, qty: 1, price: p.price },
+      ]);
     this.catalogQuery.set('');
   }
 
@@ -135,4 +157,5 @@ export class LayoutDraftComponent {
   };
 }
 
-const sum = (lines: mock.OrderLine[]) => lines.reduce((t, l) => t + l.qty * l.price, 0);
+const sum = (lines: mock.OrderLine[]) =>
+  lines.reduce((t, l) => t + l.qty * l.price, 0);

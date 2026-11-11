@@ -59,15 +59,16 @@ step('working copy');
 rmSync(out, { recursive: true, force: true });
 mkdirSync(out, { recursive: true });
 cpSync(sub, work, { recursive: true, filter: (p) => !/(^|[\\/])(node_modules|dist|\.git|\.results|\.angular)([\\/]|$)/.test(relative(sub, p)) });
-for (const p of ['e2e', 'src/app/components/contesters/shared', 'src/app/services/contesters', 'src/app/components/contesters/page-tests']) {
+for (const p of ['e2e', 'src/app/components/contesters/shared', 'src/app/services/contesters', 'src/app/components/contesters/page-tests', 'src/app/components/content']) {
   rmSync(join(work, p), { recursive: true, force: true });
 }
 const tar = join(out, 'evaluator.tar');
-const archive = sh('git', ['archive', '--format=tar', '-o', tar, ref, 'e2e', 'src/app/components/contesters/shared', 'src/app/services/contesters', 'src/app/components/contesters/page-tests'], repo);
+const archive = sh('git', ['archive', '--format=tar', '-o', tar, ref, 'e2e', 'src/app/components/contesters/shared', 'src/app/services/contesters', 'src/app/components/contesters/page-tests', 'src/app/components/content'], repo);
 if (archive.status !== 0) throw new Error(archive.stderr);
 const extract = sh('tar', ['-xf', relative(work, tar).split('\\').join('/')], work);
 if (extract.status !== 0) throw new Error(extract.stderr);
 rmSync(tar);
+rmSync(join(work, 'src/app/components/content/stateful-observable-block'), { recursive: true, force: true }); // library-specific, needs the submodule
 rmSync(join(work, 'e2e/validate-suite.mjs'), { force: true });
 
 symlinkSync(existsSync(join(sub, 'node_modules')) ? join(sub, 'node_modules') : join(repo, 'node_modules'), join(work, 'node_modules'), 'junction');
@@ -75,16 +76,19 @@ symlinkSync(existsSync(join(sub, 'node_modules')) ? join(sub, 'node_modules') : 
 // the page under test, for the e2e targets and for the page tests
 const targets = join(work, 'e2e/targets.ts');
 let t = readFileSync(targets, 'utf8');
-t = new RegExp(`['"]?${approach}['"]?:\\s*\\[[^\\]]*\\]`).test(t)
-  ? t.replace(new RegExp(`(['"]?${approach}['"]?):\\s*\\[[^\\]]*\\]`), `'${approach}': [${stage}]`)
+// (not a substring of another key: `stateful-observable` must not match `x-stateful-observable`)
+t = new RegExp(`(?<![\\w-])['"]?${approach}['"]?:\\s*\\[[^\\]]*\\]`).test(t)
+  ? t.replace(new RegExp(`(?<![\\w-])(['"]?${approach}['"]?):\\s*\\[[^\\]]*\\]`), `'${approach}': [${stage}]`)
   : t.replace('export const IMPLEMENTED: Record<string, (1 | 2 | 3)[]> = {', `export const IMPLEMENTED: Record<string, (1 | 2 | 3)[]> = {\n  '${approach}': [${stage}],`);
 writeFileSync(targets, t);
-const scenario = join(work, 'src/app/components/contesters/page-tests/scenario.ts');
+// the page tests mount the submission: a registry with just this page
 writeFileSync(
-  scenario,
-  readFileSync(scenario, 'utf8')
-    .replace("import { ReferenceConsoleComponent } from '../reference/reference-console.component';", `import { ConsolePageComponent } from '../${approach}/stage-${stage}/console-page.component';`)
-    .replace('export const PAGE = ReferenceConsoleComponent;', 'export const PAGE = ConsolePageComponent;'),
+  join(work, 'src/app/components/contesters/page-tests/pages.ts'),
+  `import type { Type } from '@angular/core';
+import { ConsolePageComponent } from '../${approach}/stage-${stage}/console-page.component';
+
+export const PAGES: Record<string, Type<unknown>> = { '${approach}/stage-${stage}': ConsolePageComponent };
+`,
 );
 
 // ---------- 3. the build ----------
@@ -119,7 +123,9 @@ if (buildOk && !args.includes('--skip-e2e')) {
 const pages = {};
 if (buildOk && !args.includes('--skip-pages')) {
   step('page tests (all scenarios, all stages)');
-  const r = sh('npx', ['ng', 'test', '--watch=false', '--reporters=verbose', '--include=src/app/components/contesters/page-tests/**/*.spec.ts'], work);
+  const r = sh('npx', ['ng', 'test', '--watch=false', '--reporters=verbose', '--include=src/app/components/contesters/page-tests/**/*.spec.ts'], work, {
+    env: { ...process.env, PAGE_TARGET: `${approach}/stage-${stage}` },
+  });
   log('pages.log', r);
   for (const m of strip(`${r.stdout}\n${r.stderr}`).matchAll(/^\s*([✓×])\s+\S+\s+\S+\.spec\.ts > .*?> (\w+) · stage (\d) ·/gm)) {
     pages[`${m[2]} s${m[3]}`] = { outcome: m[1] === '✓' ? 'passed' : 'failed' };

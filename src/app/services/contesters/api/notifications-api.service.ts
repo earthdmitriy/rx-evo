@@ -15,11 +15,15 @@ export class NotificationsApi {
    * it from the ticket, order and customer each one refers to.
    */
   public notifications(): Observable<AgentNotification[]> {
-    return this.http.read('notifications', undefined, 'user', () => this.backend.notifications());
+    return this.http.read('notifications', undefined, 'user', () =>
+      this.backend.notifications(),
+    );
   }
 
   public markNotificationsRead(): Observable<void> {
-    return this.http.write('markNotificationsRead', undefined, 'user', () => this.backend.markNotificationsRead());
+    return this.http.write('markNotificationsRead', undefined, 'user', () =>
+      this.backend.markNotificationsRead(),
+    );
   }
 
   /**

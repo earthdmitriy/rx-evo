@@ -80,7 +80,7 @@ public readonly itemsStream = statefulObservable({
 });
 ```
 
-Consumer: `<app-stateful-block [stream]="itemsStream">` then
+Consumer: `<app-view-block [stream]="itemsStream">` then
 `@for (item of itemsStream.value$ | async)`.
 
 Shared catalog in a service (still `statefulObservable`):

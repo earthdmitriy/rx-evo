@@ -3,14 +3,14 @@ import { E2E_SEED, Target } from '../targets';
 
 /** One key per backend call (src/app/services/contesters/backend/api-keys.ts). */
 export type ApiKey =
-  | 'login' | 'logout' | 'profile' | 'agents' | 'notifications' | 'markNotificationsRead'
+  | 'login' | 'logout' | 'profile' | 'agent' | 'notifications' | 'markNotificationsRead'
   | 'customers' | 'customer' | 'tiers' | 'orders' | 'orderStats' | 'order' | 'updateOrder' | 'resendConfirmation'
-  | 'shipment' | 'cart' | 'products' | 'searchProducts' | 'prices' | 'stock'
+  | 'shipment' | 'cart' | 'product' | 'searchProducts' | 'prices' | 'stock'
   | 'tickets' | 'ticketsByOrder' | 'ticketCounts' | 'ticket' | 'replyTicket'
   | 'notes' | 'addNote' | 'activity';
 
-/** State of a `Part` (`app-part` host, `data-part-state`). */
-export type PartStateAttr = 'loading' | 'ready' | 'error'; // @s2-narrow
+/** A field of a view: it shows its value, or it is an empty space (not arrived). */
+export type FieldStateAttr = 'shown' | 'empty';
 
 export type ViewStateAttr = 'idle' | 'loading' | 'ready' | 'reloading' | 'error' | 'empty' | null; // @s2-narrow
 
@@ -56,7 +56,7 @@ export class Console {
     if (options.clock) await this.page.clock.install();
     const defect = this.target.defect ? `&defect=${this.target.defect}` : '';
     await this.page.goto(`${this.target.path}?seed=${E2E_SEED}&latency=manual&push=off${defect}`);
-    await expect(this.page.getByTestId('signin').or(this.page.getByTestId('agent'))).toBeVisible();
+    await expect(this.page.getByTestId('signin').or(this.page.getByTestId('logout'))).toBeVisible();
   }
 
   testId(id: string): Locator {
@@ -83,18 +83,25 @@ export class Console {
       .toBe('ok');
   }
 
-  /** State of a row or a box inside a section: its `Part`. */
-  async partState(part: string): Promise<PartStateAttr | null> {
-    return this.partOf(this.testId(part));
+  /** A field of a view, by test id: `shown` when it has content, `empty` while it is a blank space, null when absent. */
+  async fieldState(testId: string): Promise<FieldStateAttr | null> {
+    const el = this.testId(testId);
+    if (!(await el.count())) return null;
+    return (await el.first().evaluate((e) => (e.textContent ?? '').trim() !== '')) ? 'shown' : 'empty';
   }
 
-  async expectPartState(part: string, ...states: PartStateAttr[]) {
+  async expectFieldState(testId: string, state: FieldStateAttr) {
     await expect
-      .poll(async () => {
-        const s = await this.partState(part);
-        return states.includes(s) ? 'ok' : `${s}`;
-      }, { message: `${part} state should be ${states.join(' | ')}` })
+      .poll(async () => ((await this.fieldState(testId)) === state ? 'ok' : `${await this.fieldState(testId)}`), { message: `${testId} should be ${state}` })
       .toBe('ok');
+  }
+
+  /** The tracking box of an in-flight order in S9. */
+  async expectTracking(orderId: string, state: FieldStateAttr) {
+    const box = this.testId(`shipment-${orderId}`).getByTestId('shipment-tracking');
+    await expect
+      .poll(async () => ((await box.count()) ? ((await box.first().evaluate((e) => (e.textContent ?? '').trim() !== '')) ? 'shown' : 'empty') : 'none'), { message: `tracking of ${orderId} should be ${state}` })
+      .toBe(state);
   }
 
   /** Visible elements carrying data of a customer, optionally inside a region. */
@@ -103,10 +110,32 @@ export class Console {
     return scope.locator(`[data-customer-id="${id}"]:visible`);
   }
 
+  /** Like `shownForCustomer`, without what sits in a block that is loading: old data may stay under a spinner (R-C2). */
+  shownForCustomerSettled(id: number, region?: string): Locator {
+    const scope = region ? this.testId(region) : this.page.locator('body');
+    return scope.locator(`[data-customer-id="${id}"]:visible:not([data-testid="state-block"].loading *)`);
+  }
+
+  /** Text of a region without what sits in a block that is loading. */
+  async settledContentOf(testId: string): Promise<string> {
+    return this.testId(testId).evaluate((region) => {
+      const copy = region.cloneNode(true) as HTMLElement;
+      copy.querySelectorAll('[data-testid="state-block"].loading').forEach((b) => b.remove());
+      return (copy.textContent ?? '').replace(/s+/g, ' ').trim();
+    });
+  }
+
   // @s2-begin
   /** The error text of the section's block: names the failed sources. */
   async failedSources(section: string): Promise<string> {
     return (await this.page.locator(`[data-section="${section}"]`).first().evaluate((host) => host.querySelector(':scope > [data-testid="state-block"] > app-generic-error')?.textContent ?? '')).trim();
+  }
+
+  /** The texts of the error views inside a section (its own block, or the blocks of its fields). */
+  async errorsIn(section: string): Promise<string[]> {
+    return this.page
+      .locator(`[data-section="${section}"] app-generic-error`)
+      .evaluateAll((views) => views.map((view) => (view.textContent ?? '').replace(/\s+/g, ' ').trim()));
   }
 
   /** Clicks Retry in the section's block. */
@@ -117,47 +146,34 @@ export class Console {
       .click();
   }
 
-  /** Clicks Retry inside a row or a box (a `Part` in error). */
-  async retryIn(testId: string) {
-    await this.testId(testId).locator('[data-testid="part-retry"]').first().click();
-  }
-
   // @s2-end
 
-  // ---------- parts ----------
+  // ---------- fields ----------
 
-  /** State of the `Part` hosted by `locator` (an `app-part` or a parent of exactly one). */
-  async partOf(locator: Locator): Promise<PartStateAttr | null> {
-    if (!(await locator.count())) return null;
-    return locator.first().evaluate((el) => (el.getAttribute('data-part-state') ?? el.querySelector('[data-part-state]')?.getAttribute('data-part-state') ?? null) as PartStateAttr | null);
+  /** States of every field of that test id inside a region, in DOM order. */
+  async fieldStates(region: Locator, testId: string): Promise<FieldStateAttr[]> {
+    return region.locator(`[data-testid="${testId}"]`).evaluateAll((els) => els.map((e) => ((e.textContent ?? '').trim() !== '' ? 'shown' : 'empty') as FieldStateAttr));
   }
 
-  /** States of every `Part` (optionally of one test id) inside a region, in DOM order. */
-  async partStates(region: Locator, testId?: string): Promise<PartStateAttr[]> {
-    const parts = testId ? region.locator(`[data-testid="${testId}"][data-part-state], [data-testid="${testId}"] [data-part-state]`) : region.locator('[data-part-state]');
-    return parts.evaluateAll((els) => els.map((e) => e.getAttribute('data-part-state') as PartStateAttr));
-  }
-
-  /** Waits until every `Part` of that test id in the region has one of the states. */
-  async expectParts(region: Locator, testId: string, ...states: PartStateAttr[]) {
+  /** Waits until every field of that test id in the region is in the state (and there is at least one). */
+  async expectFields(region: Locator, testId: string, state: FieldStateAttr) {
     await expect
       .poll(async () => {
-        const got = await this.partStates(region, testId);
-        return got.length > 0 && got.every((s) => states.includes(s)) ? 'ok' : got.join() || 'none';
-      }, { message: `${testId} parts should be ${states.join(' | ')}` })
+        const got = await this.fieldStates(region, testId);
+        return got.length > 0 && got.every((s) => s === state) ? 'ok' : got.join() || 'none';
+      }, { message: `${testId} should be ${state}` })
       .toBe('ok');
   }
 
-  /** Nothing in the region is loading: no skeleton, no `loading` part. */
+  /** The region's block is not loading. */
   async expectNoLoading(region: Locator) {
-    await expect(region.locator('.skeleton:visible, [data-part-state="loading"]')).toHaveCount(0);
     await expect.poll(() => region.first().evaluate((r) => !!r.closest('[data-testid="state-block"].loading')), { message: 'the block is not loading' }).toBe(false);
   }
 
   // @s2-begin
-  /** The region shows an error: its block has an `app-generic-error`, or a `Part` inside is in `error`. */
+  /** The region's block shows an error. */
   async hasError(region: Locator): Promise<boolean> {
-    return region.first().evaluate((r) => !!r.closest('[data-testid="state-block"]')?.querySelector(':scope > app-generic-error') || !!r.querySelector('[data-part-state="error"]'));
+    return region.first().evaluate((r) => !!r.closest('[data-testid="state-block"]')?.querySelector(':scope > app-generic-error'));
   }
 
   // @s2-end
@@ -274,7 +290,7 @@ export class Console {
   async login() {
     await this.testId('login').click();
     await this.release('login');
-    await expect(this.testId('agent')).toBeVisible();
+    await expect(this.testId('logout')).toBeVisible();
   }
 
   async loginAndSettle() {
@@ -352,5 +368,10 @@ export const scenario = (
   test(`${id} · stage ${stage} · ${title}`, { tag: [`@s${stage}`, ...(options.smoke ? ['@smoke'] : [])] }, async ({ c, page }, info) => {
     await body({ c, page }, info);
   });
+
+/** A failed source shows its error view: an error view is inside `section`. */
+export const expectErrorView = async (c: Console, section: string) => {
+  expect((await c.errorsIn(section)).length, `an error view in ${section}`).toBeGreaterThan(0);
+};
 
 export { expect };

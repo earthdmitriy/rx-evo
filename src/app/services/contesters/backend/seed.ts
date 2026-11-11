@@ -49,7 +49,12 @@ export type OrderRecord = {
 export type TicketRecord = TicketRow & { messages: TicketMessage[] };
 
 /** One product as the backend stores it; the product, pricing and inventory services each expose a part. */
-export type CatalogItem = { sku: string; name: string; price: number; stock: number };
+export type CatalogItem = {
+  sku: string;
+  name: string;
+  price: number;
+  stock: number;
+};
 
 /** The fake backend's tables. Mutated in place by writes. */
 export type DbState = {
@@ -63,7 +68,12 @@ export type DbState = {
   shipments: Map<string, Shipment>;
   activity: Map<number, ActivityEntry[]>;
   notifications: Map<number, AgentNotification[]>;
-  nextIds: { order: number; ticket: number; note: number; notification: number };
+  nextIds: {
+    order: number;
+    ticket: number;
+    note: number;
+    notification: number;
+  };
 };
 
 export const initials = (name: string) =>
@@ -79,8 +89,18 @@ const daysAgo = (f: Faker, min: number, max: number) =>
   iso(SEED_NOW - f.number.int({ min: min * 24, max: max * 24 }) * 3_600_000);
 
 const PRODUCT_KINDS = [
-  'sweater', 'shirt', 'chinos', 'trousers', 'tote', 'belt', 'card holder',
-  'scarf', 'socks, 3-pack', 'pocket square', 'cap', 'jacket',
+  'sweater',
+  'shirt',
+  'chinos',
+  'trousers',
+  'tote',
+  'belt',
+  'card holder',
+  'scarf',
+  'socks, 3-pack',
+  'pocket square',
+  'cap',
+  'jacket',
 ];
 const CARRIERS = ['PostNord', 'DHL Express', 'UPS', 'DB Schenker'];
 const ROLES = ['Support · L1', 'Support · L2'];
@@ -96,41 +116,51 @@ export const createDb = (seed: number): DbState => {
       agentId: i + 1,
       name,
       initials: initials(name),
-      email: f.internet.email({ firstName: name.split(' ')[0], provider: 'shop.example' }).toLowerCase(),
+      email: f.internet
+        .email({ firstName: name.split(' ')[0], provider: 'shop.example' })
+        .toLowerCase(),
       role: f.helpers.arrayElement(ROLES),
     };
   });
 
-  const catalog: CatalogItem[] = Array.from({ length: PRODUCT_COUNT }, (_, i) => ({
-    sku: `${f.string.alpha({ length: 2, casing: 'upper' })}-${String(1000 + i * 37).padStart(4, '0')}`,
-    name: `${f.commerce.productAdjective()} ${f.helpers.arrayElement(PRODUCT_KINDS)}, ${f.color.human()}`,
-    price: f.number.int({ min: 2, max: 40 }) * 5 - 1,
-    stock: f.helpers.weightedArrayElement([
-      { weight: 1, value: 0 },
-      { weight: 6, value: f.number.int({ min: 1, max: 80 }) },
-    ]),
-  }));
-
-  const customers: CustomerRecord[] = Array.from({ length: CUSTOMER_COUNT }, (_, i) => {
-    const first = f.person.firstName();
-    const last = f.person.lastName();
-    const name = `${first} ${last}`;
-    const city = f.location.city();
-    return {
-      customerId: 1001 + i,
-      name,
-      initials: initials(name),
-      email: f.internet.email({ firstName: first, lastName: last }).toLowerCase(),
-      tier: f.helpers.weightedArrayElement<Tier>([
-        { weight: 1, value: 'VIP' },
-        { weight: 6, value: 'Regular' },
-        { weight: 2, value: 'New' },
+  const catalog: CatalogItem[] = Array.from(
+    { length: PRODUCT_COUNT },
+    (_, i) => ({
+      sku: `${f.string.alpha({ length: 2, casing: 'upper' })}-${String(1000 + i * 37).padStart(4, '0')}`,
+      name: `${f.commerce.productAdjective()} ${f.helpers.arrayElement(PRODUCT_KINDS)}, ${f.color.human()}`,
+      price: f.number.int({ min: 2, max: 40 }) * 5 - 1,
+      stock: f.helpers.weightedArrayElement([
+        { weight: 1, value: 0 },
+        { weight: 6, value: f.number.int({ min: 1, max: 80 }) },
       ]),
-      city: `${city}, ${f.location.countryCode()}`,
-      since: daysAgo(f, 30, 2000),
-      address: `${f.location.streetAddress()}, ${f.location.zipCode()} ${city}`,
-    };
-  });
+    }),
+  );
+
+  const customers: CustomerRecord[] = Array.from(
+    { length: CUSTOMER_COUNT },
+    (_, i) => {
+      const first = f.person.firstName();
+      const last = f.person.lastName();
+      const name = `${first} ${last}`;
+      const city = f.location.city();
+      return {
+        customerId: 1001 + i,
+        name,
+        initials: initials(name),
+        email: f.internet
+          .email({ firstName: first, lastName: last })
+          .toLowerCase(),
+        tier: f.helpers.weightedArrayElement<Tier>([
+          { weight: 1, value: 'VIP' },
+          { weight: 6, value: 'Regular' },
+          { weight: 2, value: 'New' },
+        ]),
+        city: `${city}, ${f.location.countryCode()}`,
+        since: daysAgo(f, 30, 2000),
+        address: `${f.location.streetAddress()}, ${f.location.zipCode()} ${city}`,
+      };
+    },
+  );
 
   const pickLines = (count: number): OrderLine[] =>
     f.helpers.arrayElements(catalog, count).map((p) => ({
@@ -146,8 +176,13 @@ export const createDb = (seed: number): DbState => {
   let orderSeq = 50000;
   const orders: OrderRecord[] = [];
   for (const c of customers) {
-    const count = c.tier === 'New' ? f.number.int({ min: 0, max: 2 }) : f.number.int({ min: 1, max: 12 });
-    const dates = Array.from({ length: count }, () => daysAgo(f, 0, 600)).sort().reverse();
+    const count =
+      c.tier === 'New'
+        ? f.number.int({ min: 0, max: 2 })
+        : f.number.int({ min: 1, max: 12 });
+    const dates = Array.from({ length: count }, () => daysAgo(f, 0, 600))
+      .sort()
+      .reverse();
     dates.forEach((date, idx) => {
       const ageDays = (SEED_NOW - Date.parse(date)) / 86_400_000;
       const status: OrderStatus =
@@ -176,7 +211,9 @@ export const createDb = (seed: number): DbState => {
   const guaranteed: OrderRecord[] = [];
   customers.forEach((c, i) => {
     if (i % 8 !== 3) return;
-    const own = orders.filter((o) => o.customerId === c.customerId).sort((x, y) => y.date.localeCompare(x.date));
+    const own = orders
+      .filter((o) => o.customerId === c.customerId)
+      .sort((x, y) => y.date.localeCompare(x.date));
     if (own.length < 2) return;
     own[0].status = 'Processing';
     own[0].date = iso(SEED_NOW - 26 * 3_600_000);
@@ -198,7 +235,9 @@ export const createDb = (seed: number): DbState => {
       orderId: o.orderId,
       carrier: f.helpers.arrayElement(CARRIERS),
       state,
-      eta: iso(Date.parse(o.date) + f.number.int({ min: 2, max: 7 }) * 86_400_000),
+      eta: iso(
+        Date.parse(o.date) + f.number.int({ min: 2, max: 7 }) * 86_400_000,
+      ),
       lastScan:
         state === 'Label created'
           ? 'Waiting for pickup'
@@ -216,7 +255,12 @@ export const createDb = (seed: number): DbState => {
     carts.set(c.customerId, lines);
   }
   // one customer with a cart too big for a single batch call (more than MAX_BATCH skus); no randomness, so other data is unchanged
-  carts.set(customers[5].customerId, catalog.slice(0, BIG_CART).map((p, i) => ({ sku: p.sku, qty: 1 + (i % 2) })));
+  carts.set(
+    customers[5].customerId,
+    catalog
+      .slice(0, BIG_CART)
+      .map((p, i) => ({ sku: p.sku, qty: 1 + (i % 2) })),
+  );
 
   let ticketSeq = 9000;
   const tickets: TicketRecord[] = [];
@@ -225,7 +269,9 @@ export const createDb = (seed: number): DbState => {
     const count = f.number.int({ min: 0, max: Math.min(4, own.length + 1) });
     for (let i = 0; i < count; i++) {
       const order = own.length ? f.helpers.arrayElement(own) : undefined;
-      const product = order ? nameOf(f.helpers.arrayElement(order.lines).sku) : '';
+      const product = order
+        ? nameOf(f.helpers.arrayElement(order.lines).sku)
+        : '';
       const subject = !order
         ? 'Question about my account'
         : order.status === 'Processing'
@@ -242,17 +288,34 @@ export const createDb = (seed: number): DbState => {
       const status: TicketStatus =
         order?.status === 'Processing'
           ? 'Open'
-          : f.helpers.arrayElement<TicketStatus>(['Open', 'Waiting', 'Solved', 'Solved']);
-      const opened = order ? iso(Math.max(Date.parse(order.date), SEED_NOW - 30 * 86_400_000)) : daysAgo(f, 1, 60);
+          : f.helpers.arrayElement<TicketStatus>([
+              'Open',
+              'Waiting',
+              'Solved',
+              'Solved',
+            ]);
+      const opened = order
+        ? iso(Math.max(Date.parse(order.date), SEED_NOW - 30 * 86_400_000))
+        : daysAgo(f, 1, 60);
       const messages: TicketMessage[] = [
-        { from: 'customer', authorId: c.customerId, at: opened, text: `Hi! ${subject}` },
+        {
+          from: 'customer',
+          authorId: c.customerId,
+          at: opened,
+          text: `Hi! ${subject}`,
+        },
       ];
       if (status !== 'Open') {
         messages.push({
           from: 'agent',
           authorId: f.helpers.arrayElement(agents).agentId,
-          at: iso(Date.parse(opened) + 3_600_000 * f.number.int({ min: 1, max: 20 })),
-          text: status === 'Solved' ? 'Done, sorry for the trouble.' : 'Could you send a photo, please?',
+          at: iso(
+            Date.parse(opened) + 3_600_000 * f.number.int({ min: 1, max: 20 }),
+          ),
+          text:
+            status === 'Solved'
+              ? 'Done, sorry for the trouble.'
+              : 'Could you send a photo, please?',
         });
       }
       tickets.push({
@@ -269,7 +332,8 @@ export const createDb = (seed: number): DbState => {
 
   // ...and an open ticket asking to add a product to that Processing order
   for (const o of guaranteed) {
-    if (tickets.some((t) => t.orderId === o.orderId && t.status !== 'Solved')) continue;
+    if (tickets.some((t) => t.orderId === o.orderId && t.status !== 'Solved'))
+      continue;
     const c = customers.find((x) => x.customerId === o.customerId)!;
     const subject = `I forgot to add a ${f.helpers.arrayElement(catalog).name}, could you add it?`;
     const at = iso(SEED_NOW - 5 * 3_600_000);
@@ -280,7 +344,14 @@ export const createDb = (seed: number): DbState => {
       status: 'Open',
       updated: at,
       orderId: o.orderId,
-      messages: [{ from: 'customer', authorId: c.customerId, at, text: `Hi! ${subject}` }],
+      messages: [
+        {
+          from: 'customer',
+          authorId: c.customerId,
+          at,
+          text: `Hi! ${subject}`,
+        },
+      ],
     });
   }
 
@@ -309,12 +380,21 @@ export const createDb = (seed: number): DbState => {
       ...orders
         .filter((o) => o.customerId === c.customerId)
         .slice(0, 3)
-        .map((o): ActivityEntry => ({ at: o.date, kind: 'order-placed', refId: o.orderId })),
-      ...Array.from({ length: f.number.int({ min: 1, max: 3 }) }, (): ActivityEntry => ({
-        at: daysAgo(f, 0, 20),
-        kind: 'product-viewed',
-        refId: f.helpers.arrayElement(catalog).sku,
-      })),
+        .map(
+          (o): ActivityEntry => ({
+            at: o.date,
+            kind: 'order-placed',
+            refId: o.orderId,
+          }),
+        ),
+      ...Array.from(
+        { length: f.number.int({ min: 1, max: 3 }) },
+        (): ActivityEntry => ({
+          at: daysAgo(f, 0, 20),
+          kind: 'product-viewed',
+          refId: f.helpers.arrayElement(catalog).sku,
+        }),
+      ),
     ].sort((a, b) => b.at.localeCompare(a.at));
     activity.set(c.customerId, entries);
   }
@@ -324,14 +404,21 @@ export const createDb = (seed: number): DbState => {
   for (const a of agents) {
     notifications.set(
       a.agentId,
-      f.helpers.arrayElements(tickets.filter((t) => t.status !== 'Solved'), 3).map((t, i): AgentNotification => ({
-        id: notificationSeq++,
-        kind: 'ticket-reply',
-        at: daysAgo(f, 0, 3),
-        unread: i < 2,
-        ticketId: t.ticketId,
-        customerId: t.customerId,
-      })),
+      f.helpers
+        .arrayElements(
+          tickets.filter((t) => t.status !== 'Solved'),
+          3,
+        )
+        .map(
+          (t, i): AgentNotification => ({
+            id: notificationSeq++,
+            kind: 'ticket-reply',
+            at: daysAgo(f, 0, 3),
+            unread: i < 2,
+            ticketId: t.ticketId,
+            customerId: t.customerId,
+          }),
+        ),
     );
   }
 
@@ -346,6 +433,11 @@ export const createDb = (seed: number): DbState => {
     shipments,
     activity,
     notifications,
-    nextIds: { order: orderSeq, ticket: ticketSeq, note: noteSeq, notification: notificationSeq },
+    nextIds: {
+      order: orderSeq,
+      ticket: ticketSeq,
+      note: noteSeq,
+      notification: notificationSeq,
+    },
   };
 };

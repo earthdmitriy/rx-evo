@@ -42,23 +42,33 @@ export const PUSH_PERIOD_MS = 25_000;
 export const PRODUCT_SEARCH_LIMIT = 10;
 
 const readSeed = () => {
-  const value = typeof location === 'undefined' ? null : new URLSearchParams(location.search).get('seed');
+  const value =
+    typeof location === 'undefined'
+      ? null
+      : new URLSearchParams(location.search).get('seed');
   const seed = Number(value);
   return value !== null && Number.isFinite(seed) ? seed : 1;
 };
 
 const now = () => new Date().toISOString();
-const notFound = (what: string, url: string) => httpError(404, `${what} not found`, url);
+const notFound = (what: string, url: string) =>
+  httpError(404, `${what} not found`, url);
 const conflict = (message: string, url: string) => httpError(409, message, url);
-const badRequest = (message: string, url: string) => httpError(400, message, url);
+const badRequest = (message: string, url: string) =>
+  httpError(400, message, url);
 
-const hash = (text: string) => [...text].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+const hash = (text: string) =>
+  [...text].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
 
-/** Batch endpoints accept 1…MAX_BATCH distinct ids. */
+/** The batch endpoints (`tiers`, `ticketCounts`, `prices`) accept 1…MAX_BATCH distinct ids. */
 const batch = <T>(ids: readonly T[], url: string): T[] => {
   const unique = [...new Set(ids)];
   if (!unique.length) throw badRequest('No ids', url);
-  if (unique.length > MAX_BATCH) throw badRequest(`At most ${MAX_BATCH} ids per call, got ${unique.length}`, url);
+  if (unique.length > MAX_BATCH)
+    throw badRequest(
+      `At most ${MAX_BATCH} ids per call, got ${unique.length}`,
+      url,
+    );
   return unique;
 };
 
@@ -85,21 +95,29 @@ export class FakeBackend {
 
   private readonly pushSubject = new Subject<PushEvent>();
   /** Hot: emits whether or not anyone listens; nothing while signed out. */
-  public readonly push$: Observable<PushEvent> = this.pushSubject.asObservable();
+  public readonly push$: Observable<PushEvent> =
+    this.pushSubject.asObservable();
 
   constructor() {
     this.live.seed(readSeed() + 1);
     // `?push=off` (e2e): no timer; tests push explicitly
-    const pushOff = typeof location !== 'undefined' && new URLSearchParams(location.search).get('push') === 'off';
+    const pushOff =
+      typeof location !== 'undefined' &&
+      new URLSearchParams(location.search).get('push') === 'off';
     if (!pushOff) interval(PUSH_PERIOD_MS).subscribe(() => this.pushNow());
   }
 
   // ---------- session service ----------
 
   public login(email: string, password: string): Agent {
-    if (!email.trim() || !password) throw httpError(401, 'Wrong email or password', 'login');
-    const agent = this.db.agents[hash(email.trim().toLowerCase()) % this.db.agents.length];
-    this.sessionState.set({ sessionId: ++this.sessionSeq, agentId: agent.agentId });
+    if (!email.trim() || !password)
+      throw httpError(401, 'Wrong email or password', 'login');
+    const agent =
+      this.db.agents[hash(email.trim().toLowerCase()) % this.db.agents.length];
+    this.sessionState.set({
+      sessionId: ++this.sessionSeq,
+      agentId: agent.agentId,
+    });
     return agent;
   }
 
@@ -108,22 +126,23 @@ export class FakeBackend {
   }
 
   public profile(): Agent {
-    return this.agent();
+    return this.sessionAgent();
   }
 
   // ---------- agent directory ----------
 
-  public agents(ids: number[]): AgentRef[] {
-    return batch(ids, 'agents').flatMap((id) => {
-      const a = this.db.agents.find((x) => x.agentId === id);
-      return a ? [{ agentId: a.agentId, name: a.name, initials: a.initials }] : [];
-    });
+  public agent(id: number): AgentRef {
+    const a = this.db.agents.find((x) => x.agentId === id);
+    if (!a) throw notFound(`Agent ${id}`, 'agent');
+    return { agentId: a.agentId, name: a.name, initials: a.initials };
   }
 
   // ---------- notifications service ----------
 
   public notifications(): AgentNotification[] {
-    return [...this.agentNotifications()].sort((a, b) => b.at.localeCompare(a.at));
+    return [...this.agentNotifications()].sort((a, b) =>
+      b.at.localeCompare(a.at),
+    );
   }
 
   public markNotificationsRead(): void {
@@ -144,11 +163,28 @@ export class FakeBackend {
 
   /** Search, filter, sort and page; the index knows the sort keys but returns names and emails only. */
   public searchCustomers(query: CustomerQuery): Page<CustomerHit> {
-    const { text = '', filter = 'all', sort = 'name', dir = 'asc', page = 1 } = query;
+    const {
+      text = '',
+      filter = 'all',
+      sort = 'name',
+      dir = 'asc',
+      page = 1,
+    } = query;
     const needle = text.trim().toLowerCase();
     const rows = this.db.customers
-      .filter((c) => !needle || c.name.toLowerCase().includes(needle) || c.email.includes(needle))
-      .filter((c) => filter === 'all' || (filter === 'vip' ? c.tier === 'VIP' : this.openTickets(c.customerId) > 0));
+      .filter(
+        (c) =>
+          !needle ||
+          c.name.toLowerCase().includes(needle) ||
+          c.email.includes(needle),
+      )
+      .filter(
+        (c) =>
+          filter === 'all' ||
+          (filter === 'vip'
+            ? c.tier === 'VIP'
+            : this.openTickets(c.customerId) > 0),
+      );
     const key = (customerId: number, name: string): string | number => {
       if (sort === 'name') return name;
       if (sort === 'openTickets') return this.openTickets(customerId);
@@ -159,12 +195,21 @@ export class FakeBackend {
     rows.sort((a, b) => {
       const x = key(a.customerId, a.name);
       const y = key(b.customerId, b.name);
-      const order = typeof x === 'number' ? x - (y as number) : x.localeCompare(y as string);
+      const order =
+        typeof x === 'number'
+          ? x - (y as number)
+          : x.localeCompare(y as string);
       return order * sign || a.customerId - b.customerId;
     });
     const start = (Math.max(1, page) - 1) * CUSTOMER_PAGE_SIZE;
     return {
-      items: rows.slice(start, start + CUSTOMER_PAGE_SIZE).map((c) => ({ customerId: c.customerId, name: c.name, email: c.email })),
+      items: rows
+        .slice(start, start + CUSTOMER_PAGE_SIZE)
+        .map((c) => ({
+          customerId: c.customerId,
+          name: c.name,
+          email: c.email,
+        })),
       total: rows.length,
       page: Math.max(1, page),
       pageSize: CUSTOMER_PAGE_SIZE,
@@ -175,7 +220,15 @@ export class FakeBackend {
 
   public customer(customerId: number): CustomerProfile {
     const c = this.customerRecord(customerId, 'customer');
-    return { customerId, name: c.name, initials: c.initials, email: c.email, tier: c.tier, city: c.city, since: c.since };
+    return {
+      customerId,
+      name: c.name,
+      initials: c.initials,
+      email: c.email,
+      tier: c.tier,
+      city: c.city,
+      since: c.since,
+    };
   }
 
   public tiers(ids: number[]): CustomerTier[] {
@@ -202,7 +255,8 @@ export class FakeBackend {
     return {
       ...orderRow(o),
       lines: o.lines,
-      address: this.db.customers.find((c) => c.customerId === o.customerId)!.address,
+      address: this.db.customers.find((c) => c.customerId === o.customerId)!
+        .address,
       payment: o.payment,
       shipping: o.shipping,
     };
@@ -212,20 +266,31 @@ export class FakeBackend {
    * Replaces the order's lines; existing lines keep their price, new lines
    * get the current price. Optionally replies on a ticket in the same call.
    */
-  public updateOrder(orderId: string, lines: OrderLineChange[], reply?: { ticketId: string; text: string }): OrderDetail {
+  public updateOrder(
+    orderId: string,
+    lines: OrderLineChange[],
+    reply?: { ticketId: string; text: string },
+  ): OrderDetail {
     const url = 'updateOrder';
     const o = this.orderRecord(orderId, url);
-    if (o.status !== 'Processing') throw conflict(`Order ${orderId} has shipped and can't be changed`, url);
+    if (o.status !== 'Processing')
+      throw conflict(`Order ${orderId} has shipped and can't be changed`, url);
     const wanted = lines.filter((l) => l.qty > 0);
-    if (!wanted.length) throw badRequest('An order needs at least one line', url);
+    if (!wanted.length)
+      throw badRequest('An order needs at least one line', url);
 
     const next: OrderLine[] = wanted.map((l) => {
       const existing = o.lines.find((x) => x.sku === l.sku);
       const product = this.db.catalog.find((p) => p.sku === l.sku);
       if (!existing && !product) throw notFound(`Product ${l.sku}`, url);
       const extra = l.qty - (existing?.qty ?? 0);
-      if (product && extra > product.stock) throw conflict(`Only ${product.stock} of ${l.sku} in stock`, url);
-      return { sku: l.sku, qty: l.qty, unitPrice: existing?.unitPrice ?? product!.price };
+      if (product && extra > product.stock)
+        throw conflict(`Only ${product.stock} of ${l.sku} in stock`, url);
+      return {
+        sku: l.sku,
+        qty: l.qty,
+        unitPrice: existing?.unitPrice ?? product!.price,
+      };
     });
     if (reply) this.checkReply(reply.ticketId, reply.text, url);
 
@@ -250,7 +315,8 @@ export class FakeBackend {
   public shipment(orderId: string): Shipment {
     const o = this.orderRecord(orderId, 'shipment');
     const s = this.db.shipments.get(orderId);
-    if (!IN_FLIGHT.includes(o.status) || !s) throw notFound(`Shipment of ${orderId}`, 'shipment');
+    if (!IN_FLIGHT.includes(o.status) || !s)
+      throw notFound(`Shipment of ${orderId}`, 'shipment');
     return s;
   }
 
@@ -263,8 +329,9 @@ export class FakeBackend {
 
   // ---------- product, pricing and inventory services ----------
 
-  public products(skus: string[]): Product[] {
-    return this.items(skus, 'products').map((p) => ({ sku: p.sku, name: p.name }));
+  public product(sku: string): Product {
+    const p = this.catalogItem(sku, 'product');
+    return { sku: p.sku, name: p.name };
   }
 
   /** Server-side search by name; at most PRODUCT_SEARCH_LIMIT hits, names only. */
@@ -278,11 +345,15 @@ export class FakeBackend {
   }
 
   public prices(skus: string[]): Price[] {
-    return this.items(skus, 'prices').map((p) => ({ sku: p.sku, price: p.price }));
+    return this.items(skus, 'prices').map((p) => ({
+      sku: p.sku,
+      price: p.price,
+    }));
   }
 
-  public stock(skus: string[]): Stock[] {
-    return this.items(skus, 'stock').map((p) => ({ sku: p.sku, stock: p.stock }));
+  public stock(sku: string): Stock {
+    const p = this.catalogItem(sku, 'stock');
+    return { sku: p.sku, stock: p.stock };
   }
 
   // ---------- tickets service ----------
@@ -305,14 +376,21 @@ export class FakeBackend {
   }
 
   public ticketCounts(customerIds: number[]): TicketCount[] {
-    return batch(customerIds, 'ticketCounts').map((customerId) => ({ customerId, open: this.openTickets(customerId) }));
+    return batch(customerIds, 'ticketCounts').map((customerId) => ({
+      customerId,
+      open: this.openTickets(customerId),
+    }));
   }
 
   public ticket(ticketId: string): TicketThread {
     return this.ticketRecord(ticketId, 'ticket');
   }
 
-  public replyTicket(ticketId: string, text: string, status: TicketStatus): TicketThread {
+  public replyTicket(
+    ticketId: string,
+    text: string,
+    status: TicketStatus,
+  ): TicketThread {
     this.checkReply(ticketId, text, 'replyTicket');
     this.appendAgentMessage(ticketId, text, status);
     return this.ticket(ticketId);
@@ -322,13 +400,21 @@ export class FakeBackend {
 
   public notes(customerId: number): Note[] {
     this.customerRecord(customerId, 'notes');
-    return this.db.notes.filter((n) => n.customerId === customerId).sort((a, b) => b.at.localeCompare(a.at));
+    return this.db.notes
+      .filter((n) => n.customerId === customerId)
+      .sort((a, b) => b.at.localeCompare(a.at));
   }
 
   public addNote(customerId: number, text: string): Note {
     this.customerRecord(customerId, 'addNote');
     if (!text.trim()) throw badRequest('A note needs some text', 'addNote');
-    const note: Note = { noteId: this.db.nextIds.note++, customerId, authorId: this.agent().agentId, at: now(), text: text.trim() };
+    const note: Note = {
+      noteId: this.db.nextIds.note++,
+      customerId,
+      authorId: this.sessionAgent().agentId,
+      at: now(),
+      text: text.trim(),
+    };
     this.db.notes.push(note);
     return note;
   }
@@ -345,7 +431,12 @@ export class FakeBackend {
     this.customerRecord(customerId, 'activity');
     const calls = this.activityCalls.get(customerId) ?? 0;
     this.activityCalls.set(customerId, calls + 1);
-    if (calls > 0) this.logActivity(customerId, 'product-viewed', this.live.helpers.arrayElement(this.db.catalog).sku);
+    if (calls > 0)
+      this.logActivity(
+        customerId,
+        'product-viewed',
+        this.live.helpers.arrayElement(this.db.catalog).sku,
+      );
     return this.db.activity.get(customerId) ?? [];
   }
 
@@ -356,21 +447,47 @@ export class FakeBackend {
    * Test support only; not part of the console's API.
    */
   public testFixtures() {
-    const inFlight = (cid: number) => this.ordersOf(cid).filter((o) => IN_FLIGHT.includes(o.status));
-    const linked = (o: OrderRecord) => [...this.db.tickets].reverse().find((t) => t.orderId === o.orderId);
-    const withTicket = this.db.orders.find((o) => o.status === 'Processing' && linked(o) && linked(o)!.status !== 'Solved');
-    const shipped = this.db.orders.find((o) => o.status === 'Shipped' || o.status === 'Delivered');
+    const inFlight = (cid: number) =>
+      this.ordersOf(cid).filter((o) => IN_FLIGHT.includes(o.status));
+    const linked = (o: OrderRecord) =>
+      [...this.db.tickets].reverse().find((t) => t.orderId === o.orderId);
+    const withTicket = this.db.orders.find(
+      (o) =>
+        o.status === 'Processing' &&
+        linked(o) &&
+        linked(o)!.status !== 'Solved',
+    );
+    const shipped = this.db.orders.find(
+      (o) => o.status === 'Shipped' || o.status === 'Delivered',
+    );
     const openTicket = this.db.tickets.find((t) => t.status !== 'Solved');
-    const name = (cid?: number) => this.db.customers.find((c) => c.customerId === cid)?.name;
-    const twoInFlight = this.db.customers.find((c) => inFlight(c.customerId).length >= 2)?.customerId;
+    const name = (cid?: number) =>
+      this.db.customers.find((c) => c.customerId === cid)?.name;
+    const twoInFlight = this.db.customers.find(
+      (c) => inFlight(c.customerId).length >= 2,
+    )?.customerId;
     const allDelivered = this.db.customers.find((c) => {
       const orders = this.ordersOf(c.customerId);
-      return orders.length > 0 && orders.every((o) => o.status === 'Delivered' || o.status === 'Refunded');
+      return (
+        orders.length > 0 &&
+        orders.every((o) => o.status === 'Delivered' || o.status === 'Refunded')
+      );
     })?.customerId;
-    const threaded = this.db.tickets.find((t) => t.status !== 'Solved' && t.messages.some((m) => m.from === 'agent'));
-    const noted = this.db.customers.find((c) => this.db.notes.some((n) => n.customerId === c.customerId))?.customerId;
-    const bigCart = this.db.customers.find((c) => (this.db.carts.get(c.customerId)?.length ?? 0) > MAX_BATCH)?.customerId;
-    const addable = withTicket && this.db.catalog.find((p) => p.stock > 3 && !withTicket.lines.some((l) => l.sku === p.sku));
+    const threaded = this.db.tickets.find(
+      (t) =>
+        t.status !== 'Solved' && t.messages.some((m) => m.from === 'agent'),
+    );
+    const noted = this.db.customers.find((c) =>
+      this.db.notes.some((n) => n.customerId === c.customerId),
+    )?.customerId;
+    const bigCart = this.db.customers.find(
+      (c) => (this.db.carts.get(c.customerId)?.length ?? 0) > MAX_BATCH,
+    )?.customerId;
+    const addable =
+      withTicket &&
+      this.db.catalog.find(
+        (p) => p.stock > 3 && !withTicket.lines.some((l) => l.sku === p.sku),
+      );
     return {
       /** A Processing order with an open linked ticket (G1). */
       editable: withTicket && {
@@ -382,33 +499,57 @@ export class FakeBackend {
         addName: addable!.name,
       },
       /** An order that can no longer be edited (G5). */
-      shipped: shipped && { customerId: shipped.customerId, customerName: name(shipped.customerId), orderId: shipped.orderId },
+      shipped: shipped && {
+        customerId: shipped.customerId,
+        customerName: name(shipped.customerId),
+        orderId: shipped.orderId,
+      },
       /** A ticket that is not solved (G6, G7). */
-      openTicket: openTicket && { customerId: openTicket.customerId, customerName: name(openTicket.customerId), ticketId: openTicket.ticketId },
+      openTicket: openTicket && {
+        customerId: openTicket.customerId,
+        customerName: name(openTicket.customerId),
+        ticketId: openTicket.ticketId,
+      },
       /** A customer with at least two in-flight orders (D2, D3, E3). */
-      twoInFlight: twoInFlight && { customerId: twoInFlight, customerName: name(twoInFlight), orderIds: inFlight(twoInFlight).map((o) => o.orderId) },
+      twoInFlight: twoInFlight && {
+        customerId: twoInFlight,
+        customerName: name(twoInFlight),
+        orderIds: inFlight(twoInFlight).map((o) => o.orderId),
+      },
       /** A ticket with an agent's reply, not solved (H5, E15). */
-      threaded: threaded && { customerId: threaded.customerId, customerName: name(threaded.customerId), ticketId: threaded.ticketId },
+      threaded: threaded && {
+        customerId: threaded.customerId,
+        customerName: name(threaded.customerId),
+        ticketId: threaded.ticketId,
+      },
       /** A customer with at least one note (H6, E16). */
       noted: noted && { customerId: noted, customerName: name(noted) },
       /** A customer whose cart has more skus than one batch call takes (H12, C12). */
-      bigCart: bigCart && { customerId: bigCart, customerName: name(bigCart), lines: this.db.carts.get(bigCart)!.length },
+      bigCart: bigCart && {
+        customerId: bigCart,
+        customerName: name(bigCart),
+        lines: this.db.carts.get(bigCart)!.length,
+      },
       /** A customer with orders, none in flight (C8). */
-      allDelivered: allDelivered && { customerId: allDelivered, customerName: name(allDelivered) },
+      allDelivered: allDelivered && {
+        customerId: allDelivered,
+        customerName: name(allDelivered),
+      },
     };
   }
 
   // ---------- internals ----------
 
-  private agent(): Agent {
+  private sessionAgent(): Agent {
     const session = this.sessionState();
-    const agent = session && this.db.agents.find((a) => a.agentId === session.agentId);
+    const agent =
+      session && this.db.agents.find((a) => a.agentId === session.agentId);
     if (!agent) throw httpError(401, 'Not signed in', 'profile');
     return agent;
   }
 
   private agentNotifications(): AgentNotification[] {
-    return this.db.notifications.get(this.agent().agentId)!;
+    return this.db.notifications.get(this.sessionAgent().agentId)!;
   }
 
   private customerRecord(customerId: number, url: string) {
@@ -429,13 +570,24 @@ export class FakeBackend {
     return t;
   }
 
-  /** Catalog items for a batch of skus; unknown skus are skipped. */
+  /** One catalog item; 404 for an unknown sku. */
+  private catalogItem(sku: string, url: string) {
+    const item = this.db.catalog.find((p) => p.sku === sku);
+    if (!item) throw notFound(`Product ${sku}`, url);
+    return item;
+  }
+
+  /** Catalog items for a batch of skus; unknown skus are skipped (the pricing service is a batch endpoint). */
   private items(skus: string[], url: string) {
-    return batch(skus, url).flatMap((sku) => this.db.catalog.filter((p) => p.sku === sku));
+    return batch(skus, url).flatMap((sku) =>
+      this.db.catalog.filter((p) => p.sku === sku),
+    );
   }
 
   private ordersOf(customerId: number) {
-    return this.db.orders.filter((o) => o.customerId === customerId).sort((a, b) => b.date.localeCompare(a.date));
+    return this.db.orders
+      .filter((o) => o.customerId === customerId)
+      .sort((a, b) => b.date.localeCompare(a.date));
   }
 
   private stats(customerId: number): OrderStats {
@@ -452,7 +604,9 @@ export class FakeBackend {
   }
 
   private openTickets(customerId: number) {
-    return this.db.tickets.filter((t) => t.customerId === customerId && t.status !== 'Solved').length;
+    return this.db.tickets.filter(
+      (t) => t.customerId === customerId && t.status !== 'Solved',
+    ).length;
   }
 
   private checkReply(ticketId: string, text: string, url: string) {
@@ -460,10 +614,19 @@ export class FakeBackend {
     if (!text.trim()) throw badRequest('A reply needs some text', url);
   }
 
-  private appendAgentMessage(ticketId: string, text: string, status: TicketStatus) {
+  private appendAgentMessage(
+    ticketId: string,
+    text: string,
+    status: TicketStatus,
+  ) {
     const t = this.ticketRecord(ticketId, 'replyTicket');
     const at = now();
-    t.messages.push({ from: 'agent', authorId: this.agent().agentId, at, text: text.trim() });
+    t.messages.push({
+      from: 'agent',
+      authorId: this.sessionAgent().agentId,
+      at,
+      text: text.trim(),
+    });
     t.status = status;
     t.updated = at;
   }
@@ -490,13 +653,33 @@ export class FakeBackend {
         o.status = 'Delivered';
         this.db.shipments.delete(o.orderId);
         this.logActivity(o.customerId, 'order-delivered', o.orderId);
-        return { kind, notification: { id, kind, at, unread: true, orderId: o.orderId, customerId: o.customerId } };
+        return {
+          kind,
+          notification: {
+            id,
+            kind,
+            at,
+            unread: true,
+            orderId: o.orderId,
+            customerId: o.customerId,
+          },
+        };
       }
     }
 
     const ticket = this.live.helpers.arrayElement(this.db.tickets);
     if (kind === 'ticket-escalated') {
-      return { kind, notification: { id, kind, at, unread: true, ticketId: ticket.ticketId, customerId: ticket.customerId } };
+      return {
+        kind,
+        notification: {
+          id,
+          kind,
+          at,
+          unread: true,
+          ticketId: ticket.ticketId,
+          customerId: ticket.customerId,
+        },
+      };
     }
 
     // a customer replied: the thread grows and the ticket reopens
@@ -504,15 +687,30 @@ export class FakeBackend {
       from: 'customer',
       authorId: ticket.customerId,
       at,
-      text: this.live.helpers.arrayElement(['Any news?', 'Thanks! One more thing…', 'It still has not arrived.']),
+      text: this.live.helpers.arrayElement([
+        'Any news?',
+        'Thanks! One more thing…',
+        'It still has not arrived.',
+      ]),
     });
     ticket.status = 'Open';
     ticket.updated = at;
-    return { kind: 'ticket-reply', notification: { id, kind: 'ticket-reply', at, unread: true, ticketId: ticket.ticketId, customerId: ticket.customerId } };
+    return {
+      kind: 'ticket-reply',
+      notification: {
+        id,
+        kind: 'ticket-reply',
+        at,
+        unread: true,
+        ticketId: ticket.ticketId,
+        customerId: ticket.customerId,
+      },
+    };
   }
 }
 
-const total = (lines: OrderLine[]) => lines.reduce((sum, l) => sum + l.qty * l.unitPrice, 0);
+const total = (lines: OrderLine[]) =>
+  lines.reduce((sum, l) => sum + l.qty * l.unitPrice, 0);
 
 const orderRow = (o: OrderRecord): OrderRow => ({
   orderId: o.orderId,
@@ -523,4 +721,7 @@ const orderRow = (o: OrderRecord): OrderRow => ({
   total: total(o.lines),
 });
 
-const ticketRow = ({ messages: _, ...row }: TicketRow & { messages: unknown }): TicketRow => row;
+const ticketRow = ({
+  messages: _,
+  ...row
+}: TicketRow & { messages: unknown }): TicketRow => row;

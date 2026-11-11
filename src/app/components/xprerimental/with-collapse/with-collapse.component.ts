@@ -25,7 +25,7 @@ import {
   ClientsFilterFormValue,
 } from '../../content/clients-filter-form/clients-filter-form.component';
 import { GenericErrorComponent } from '../../content/generic-error/generic-error.component';
-import { StatefulObservableBlockComponent } from '../../content/stateful-observable-block/stateful-observable-block.component';
+import { StatefulBlockComponent } from '../../content/stateful-block/stateful-block.component';
 
 @Component({
   selector: 'app-with-collapse',
@@ -34,7 +34,7 @@ import { StatefulObservableBlockComponent } from '../../content/stateful-observa
     CommonModule,
     ReactiveFormsModule,
     GenericErrorComponent,
-    StatefulObservableBlockComponent,
+    StatefulBlockComponent,
     ClientInfoComponent,
   ],
   templateUrl: './with-collapse.component.html',

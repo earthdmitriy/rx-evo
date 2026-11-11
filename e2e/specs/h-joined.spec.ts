@@ -7,7 +7,7 @@ import { searchProducts, signedIn, usd, usd0, withCart } from '../support/flows'
 type Product = { sku: string; name: string };
 
 const productNames = async (c: Console, skus: string[]) =>
-  new Map(((await c.truth('products', skus)) as Product[]).map((p) => [p.sku, p.name]));
+  new Map(await Promise.all(skus.map(async (sku): Promise<[string, string]> => [sku, ((await c.truth('product', sku)) as Product).name])));
 
 /** The sentence R-J6 prescribes for an activity entry. */
 const activitySentence = (e: { kind: string; refId: string }, names: Map<string, string>) =>
@@ -43,11 +43,11 @@ scenario('H1', 1, 'list rows show the tier and the open tickets of their own cus
     const profile = await c.truth('customer', id);
     await expect(row).toContainText(profile.name);
     await expect(row).toContainText(profile.email);
-    await expect(row.getByTestId('row-tier')).toHaveText(tiers.get(id) === 'VIP' ? 'VIP' : '');
-    await expect(row.getByTestId('row-open-tickets')).toHaveText(counts.get(id) ? String(counts.get(id)) : '');
+    await expect(row.getByTestId('row-tier')).toHaveText(tiers.get(id)!);
+    await expect(row.getByTestId('row-open-tickets')).toHaveText(String(counts.get(id)));
   }
-  await c.expectParts(c.testId('customers'), 'row-tier', 'ready');
-  await c.expectParts(c.testId('customers'), 'row-open-tickets', 'ready');
+  await c.expectFields(c.testId('customers'), 'row-tier', 'shown');
+  await c.expectFields(c.testId('customers'), 'row-open-tickets', 'shown');
 }, { smoke: true });
 
 scenario('H2', 1, 'the header and KPIs show their own services', async ({ c }) => {
@@ -67,7 +67,7 @@ scenario('H2', 1, 'the header and KPIs show their own services', async ({ c }) =
   await expect(c.testId('kpi-open-tickets')).toHaveText(String(open));
   await expect(c.testId('tab-orders-toggle')).toHaveText(new RegExp('Orders\\s*' + stats.orders + '\\s*$'));
   await expect(c.testId('tab-tickets-toggle')).toHaveText(new RegExp('Tickets\\s*' + open + '\\s*$'));
-  await c.expectParts(header, 'kpi-spend', 'ready');
+  await c.expectFields(header, 'kpi-spend', 'shown');
 });
 
 scenario('H3', 1, 'cart lines show the product name and the current price', async ({ c }) => {
@@ -103,7 +103,7 @@ scenario('H4', 1, 'order lines show the product name and the price they were sol
     await expect(row.getByTestId('line-name')).toHaveText(names.get(l.sku)!);
     await expect(row).toContainText(usd(l.unitPrice));
   }
-  await c.expectParts(c.testId('order-panel'), 'line-name', 'ready');
+  await c.expectFields(c.testId('order-panel'), 'line-name', 'shown');
 });
 
 scenario('H5', 1, 'thread messages show the names of their authors', async ({ c }) => {
@@ -119,7 +119,7 @@ scenario('H5', 1, 'thread messages show the names of their authors', async ({ c 
   for (const m of ticket.messages as { from: string; authorId: number }[]) {
     expected.push(
       m.from === 'agent'
-        ? ((await c.truth('agents', [m.authorId])) as { name: string }[])[0].name
+        ? ((await c.truth('agent', m.authorId)) as { name: string }).name
         : (await c.truth('customer', m.authorId)).name,
     );
   }
@@ -134,7 +134,7 @@ scenario('H6', 1, 'notes show the names of their authors', async ({ c }) => {
   await c.tab('notes');
   await c.settle();
   const notes = (await c.truth('notes', customerId)) as { authorId: number; text: string }[];
-  const names = new Map(((await c.truth('agents', [...new Set(notes.map((n) => n.authorId))])) as { agentId: number; name: string }[]).map((a) => [a.agentId, a.name]));
+  const names = new Map(await Promise.all([...new Set(notes.map((n) => n.authorId))].map(async (id): Promise<[number, string]> => [id, ((await c.truth('agent', id)) as { name: string }).name])));
   await expect(c.testId('note-author')).toHaveText(notes.map((n) => names.get(n.authorId)!));
   await expect(c.testId('note')).toHaveCount(notes.length);
   for (const [i, n] of notes.entries()) await expect(c.testId('note').nth(i)).toContainText(n.text);
@@ -184,7 +184,7 @@ scenario('H9', 1, 'editor hits show name, current price and stock', async ({ c }
   expect(hits.length).toBeLessThanOrEqual(10);
   const skus = hits.map((h) => h.sku);
   const prices = new Map(((await c.truth('prices', skus)) as { sku: string; price: number }[]).map((p) => [p.sku, p.price]));
-  const stock = new Map(((await c.truth('stock', skus)) as { sku: string; stock: number }[]).map((p) => [p.sku, p.stock]));
+  const stock = new Map(await Promise.all(skus.map(async (sku): Promise<[string, number]> => [sku, ((await c.truth('stock', sku)) as { stock: number }).stock])));
   for (const h of hits) {
     const row = c.testId('catalog-search').locator(`li[data-sku="${h.sku}"]`);
     await expect(row).toContainText(h.name);
@@ -214,7 +214,7 @@ scenario('H10', 1, 'the ticket box shows the order\'s open ticket, none when the
   await expect(c.testId('order-ticket')).toHaveCount(0);
 });
 
-scenario('H11', 1, 'switching customer leaves no name, price or counter of the previous one', async ({ c }) => {
+scenario('H11', 1, 'a block that is not loading leaves no name, price or counter of the previous customer', async ({ c }) => {
   await signedIn(c);
   const a = await withCart(c, 0);
   const b = await withCart(c, 1);
@@ -223,7 +223,8 @@ scenario('H11', 1, 'switching customer leaves no name, price or counter of the p
   await c.settle();
   await c.selectCustomer(b.customerId, b.customerName);
   await c.idle(200);
-  await expect(c.testId('console-main')).not.toContainText(a.customerName);
+  // old data may stay under a block's spinner; outside a loading block nothing of the previous customer shows
+  expect(await c.settledContentOf('console-main')).not.toContain(a.customerName);
   await c.settle();
   const rows = c.testId('tab-cart').locator('tr[data-sku]');
   await expect(rows).toHaveCount(b.skus.length);
@@ -241,11 +242,11 @@ scenario('H12', 1, 'a cart with more than 20 skus shows every name and price', a
   await c.tab('cart');
   await c.settle();
   await expect(c.testId('tab-cart').locator('tr[data-sku]')).toHaveCount(lines);
-  await c.expectParts(c.testId('tab-cart'), 'line-name', 'ready');
-  await c.expectParts(c.testId('tab-cart'), 'line-price', 'ready');
-  expect((await c.stats('products')).errors).toBe(0);
+  await c.expectFields(c.testId('tab-cart'), 'line-name', 'shown');
+  await c.expectFields(c.testId('tab-cart'), 'line-price', 'shown');
+  expect((await c.stats('product')).errors).toBe(0);
   expect((await c.stats('prices')).errors).toBe(0);
   const first = ((await c.truth('cart', customerId)) as { sku: string }[])[0].sku;
-  const name = ((await c.truth('products', [first])) as Product[])[0].name;
+  const name = ((await c.truth('product', first)) as Product).name;
   await expect(c.testId('tab-cart').locator(`tr[data-sku="${first}"]`).getByTestId('line-name')).toHaveText(name);
 });

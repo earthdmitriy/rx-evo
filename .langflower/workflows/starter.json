@@ -1,0 +1,213 @@
+{
+	"$schema": "../schemas/workflow.schema.json",
+	"metadata": {
+		"name": "Starter",
+		"description": "Chat loop with an onboarding agent (skill langflower-helper) plus a Writer Sub-Agent (workflow-writer + node-writer). After bootstrap — product capabilities, workflows, editor chrome, and custom nodes.",
+		"createdAt": "2026-07-24T00:00:00.000Z",
+		"updatedAt": "2026-11-13T20:25:01.578Z"
+	},
+	"graph": {
+		"viewport": {
+			"x": -117.86676025390625,
+			"y": -161.066650390625,
+			"scale": 0.85,
+			"width": 799.453125,
+			"height": 1009.0625
+		},
+		"nodes": [
+			{
+				"id": "compile",
+				"type": "common-langflower-tools",
+				"params": {},
+				"inputs": {},
+				"ui": {
+					"position": {
+						"x": 40,
+						"y": 40
+					},
+					"label": "Langflower Tools"
+				}
+			},
+			{
+				"id": "chat",
+				"type": "common-chat-input",
+				"params": {},
+				"inputs": {},
+				"ui": {
+					"position": {
+						"x": 40,
+						"y": 280
+					},
+					"label": "Ask"
+				}
+			},
+			{
+				"id": "helper",
+				"type": "common-openai-llm",
+				"params": {
+					"rolePreset": "custom",
+					"skillId": "langflower-helper",
+					"providerId": "",
+					"model": "",
+					"maxIterations": 8,
+					"maxFeedbackTurns": 4,
+					"toolPermissions": {
+						"read": "allow",
+						"glob": "allow",
+						"grep": "allow",
+						"edit": "allow",
+						"write": "allow",
+						"create": "allow",
+						"delete": "ask",
+						"move": "ask",
+						"bash": "ask"
+					},
+					"includeAgentsMd": true,
+					"includeReadme": true
+				},
+				"inputs": {
+					"systemPrompt": "You are the Langflower onboarding assistant. Use the langflower-helper skill. The user already started Langflower and configured a provider — do not lead with CLI start or provider setup. Help with what Langflower can do, workflows, editor chrome, and custom nodes. Keep answers short and actionable.\n\nA reply with no tool call is the final answer. Plain text does not run a tool.\n\n- Product questions covered by the skill: answer from the skill. If a fact is missing, say not in my facts.\n- Anything about files on disk, what this project contains, or whether work is finished: call read, glob, or grep first, then answer from the tool result.\n- Draft or edit a workflow JSON or a custom node pack: call Writer(subagent) (toolId Writer_subagent) with a concrete task. Do not paste the files in chat as if they were saved.\n- After custom-node file changes (yours or Writer's): call compile_custom_nodes with no arguments. Report status, nodeTypes, and errors from that tool result. Do not send the user to Custom → Update as the only path. You cannot place a new type on the canvas mid-run; already-placed custom types hot-swap, and already-wired custom tools can be invoked later in this run.\n- Say a file was written, Writer finished, or compile succeeded only when that tool result is already in this turn. Otherwise call the tool. Do not send a plan or a done-summary in place of the call."
+				},
+				"ui": {
+					"position": {
+						"x": 300,
+						"y": 240
+					},
+					"label": "Helper"
+				}
+			},
+			{
+				"id": "writer",
+				"type": "common-sub-agent",
+				"params": {
+					"name": "Writer",
+					"description": "Drafts or edits workflow JSON and custom nodes using langflower-workflow-writer and langflower-node-writer skills",
+					"skillIds": [
+						"langflower-workflow-writer",
+						"langflower-node-writer"
+					],
+					"rolePreset": "custom",
+					"providerId": "",
+					"model": "",
+					"maxIterations": 16,
+					"contextSize": 32768,
+					"compactOnError": false,
+					"toolPermissions": {
+						"read": "allow",
+						"glob": "allow",
+						"grep": "allow",
+						"edit": "allow",
+						"write": "allow",
+						"create": "allow",
+						"delete": "ask",
+						"move": "ask",
+						"bash": "ask"
+					}
+				},
+				"inputs": {
+					"systemPrompt": "You are Writer. Follow langflower-workflow-writer and/or langflower-node-writer.\n\nA reply with no tool call is the final result Helper will treat as done. Plain text does not write or compile files.\n\n- Create and edit files with write, edit, or create under .langflower/workflows/ and .langflower/nodes/. Use only catalog node types and real ports.\n- After writing or editing .langflower/nodes/ files, call compile_custom_nodes with no arguments. Quote status and COMPILATION_ERRORS.md from the tool result. Do not only remind the user to click Update.\n- Wire common-langflower-tools into an agent only when that agent should be allowed to recompile.\n- The closing summary lists only paths and compile status that appear in tool results from this task, plus open risks. If the file is not written yet, call the tool instead of summarizing."
+				},
+				"ui": {
+					"position": {
+						"x": 320,
+						"y": 1060
+					},
+					"label": "Writer"
+				}
+			},
+			{
+				"id": "review",
+				"type": "common-hitl-review-gate",
+				"params": {},
+				"inputs": {},
+				"ui": {
+					"position": {
+						"x": 640,
+						"y": 720
+					},
+					"label": "Review"
+				}
+			}
+		],
+		"edges": [
+			{
+				"edgeId": "e-compile-helper",
+				"fromNodeId": "compile",
+				"fromPort": [
+					"tools",
+					0
+				],
+				"toNodeId": "helper",
+				"toPort": [
+					"tools",
+					0
+				]
+			},
+			{
+				"edgeId": "e-compile-writer",
+				"fromNodeId": "compile",
+				"fromPort": [
+					"tools",
+					0
+				],
+				"toNodeId": "writer",
+				"toPort": [
+					"tools",
+					0
+				]
+			},
+			{
+				"edgeId": "e-chat-helper",
+				"fromNodeId": "chat",
+				"fromPort": [
+					"message",
+					0
+				],
+				"toNodeId": "helper",
+				"toPort": [
+					"userPrompt",
+					0
+				]
+			},
+			{
+				"edgeId": "e-helper-review",
+				"fromNodeId": "helper",
+				"fromPort": [
+					"response",
+					0
+				],
+				"toNodeId": "review",
+				"toPort": [
+					"result",
+					0
+				]
+			},
+			{
+				"edgeId": "e-review-feedback",
+				"fromNodeId": "review",
+				"fromPort": [
+					"feedback",
+					0
+				],
+				"toNodeId": "helper",
+				"toPort": [
+					"feedback",
+					0
+				]
+			},
+			{
+				"edgeId": "e-tools-writer",
+				"fromNodeId": "writer",
+				"fromPort": [
+					"subagent-registration",
+					0
+				],
+				"toNodeId": "helper",
+				"toPort": [
+					"tools",
+					1
+				]
+			}
+		]
+	}
+}

@@ -13,7 +13,7 @@ attributes. Same scenario ids and stages as the e2e suite (`H1 · stage 1 · …
 - `flows.ts` — shared flows (`prepareOrderEdit`, `searchProducts`, …).
 - `*.spec.ts` — 131 scenarios, ported from e2e (A–H, P).
 - `page-env.ts` — sets the URL (`?seed&latency=manual&push=off`) before the
-  implementation loads; `PAGE_DEFECT=<names>` switches the reference's defects.
+  implementation loads; `PAGE_DEFECT=<names>` switches the test oracle's defects.
 - `validate.mjs` — the defect matrix (`npm run pages:validate`): clean run
   passes, each defect fails its scenarios, `stage-1` / `stage-2` keep the
   earlier stages intact.

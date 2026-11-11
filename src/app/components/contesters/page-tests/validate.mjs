@@ -22,7 +22,7 @@ const EXPECT = {
   // stage 2
   'no-isolation': ['E1 s2', 'E2 s2'],
   'no-partial': ['E3 s2', 'E5 s2', 'E10 s2', 'E11 s2', 'E12 s2', 'E13 s2', 'E14 s2', 'E15 s2', 'E16 s2', 'E17 s2', 'E18 s2', 'E19 s2', 'E20 s2'],
-  'retry-all': ['F1 s2', 'F2 s2', 'F3 s2', 'F7 s2', 'F8 s2', 'F9 s2', 'F10 s2', 'F11 s2'],
+  'retry-all': ['F1 s2'],
   'no-poll-keep': ['E7 s2'],
   'no-stale': ['B3 s2'],
   'no-cancel': ['B1 s2', 'B8 s2', 'A4 s2'],

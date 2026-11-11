@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
-import { PartComponent } from './part.component';
+import { NgComponentOutlet } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+} from '@angular/core';
+import { CUSTOMER_TIER_FIELD, OPEN_TICKETS_FIELD } from './fields';
 import { CustomerListQuery, CustomerPageVm } from './view-models';
 
 type CustomerFilter = CustomerListQuery['filter'];
@@ -18,16 +26,23 @@ const SORTS: { id: CustomerSort; label: string }[] = [
 ];
 
 /**
- * S3: search, filter, sort, pages and rows. Each row's tier badge and
- * open-ticket badge are `Part`s: the row shows while they load or fail.
+ * S3: search, filter, sort, pages and rows. The tier badge and the
+ * open-ticket badge of a row are field components by customer id
+ * (`CUSTOMER_TIER_FIELD`, `OPEN_TICKETS_FIELD`): a row shows without them
+ * until they arrive.
  * Emits query changes as they happen (every keystroke for the search text);
  * debouncing and resetting the page are the data layer's job.
  */
 @Component({
   selector: 'app-console-customer-list',
-  imports: [PartComponent],
+  imports: [NgComponentOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'card block overflow-hidden', 'data-testid': 'customers', '[attr.data-content]': 'page() === null ? "none" : page()!.rows.length ? "shown" : "empty"' },
+  host: {
+    class: 'card block overflow-hidden',
+    'data-testid': 'customers',
+    '[attr.data-content]':
+      'page() === null ? "none" : page()!.rows.length ? "shown" : "empty"',
+  },
   template: `
     <div class="space-y-2 border-b border-slate-200 p-3">
       <input
@@ -54,8 +69,18 @@ const SORTS: { id: CustomerSort; label: string }[] = [
         }
       </div>
       <div class="flex items-center gap-2">
-        <label class="text-xs whitespace-nowrap text-slate-500" for="console-sort">Sort by</label>
-        <select id="console-sort" class="input py-1 text-xs" data-testid="sort" [value]="query().sort" (change)="queryChange.emit({ sort: $any($event.target).value })">
+        <label
+          class="text-xs whitespace-nowrap text-slate-500"
+          for="console-sort"
+          >Sort by</label
+        >
+        <select
+          id="console-sort"
+          class="input py-1 text-xs"
+          data-testid="sort"
+          [value]="query().sort"
+          (change)="queryChange.emit({ sort: $any($event.target).value })"
+        >
           @for (s of sorts; track s.id) {
             <option [value]="s.id">{{ s.label }}</option>
           }
@@ -64,7 +89,11 @@ const SORTS: { id: CustomerSort; label: string }[] = [
           type="button"
           class="btn btn-ghost btn-icon shrink-0"
           data-testid="sort-dir"
-          [attr.aria-label]="dir() === 'desc' ? 'Descending, switch to ascending' : 'Ascending, switch to descending'"
+          [attr.aria-label]="
+            dir() === 'desc'
+              ? 'Descending, switch to ascending'
+              : 'Ascending, switch to descending'
+          "
           (click)="queryChange.emit({ dir: dir() === 'desc' ? 'asc' : 'desc' })"
         >
           {{ dir() === 'desc' ? '↓' : '↑' }}
@@ -79,29 +108,48 @@ const SORTS: { id: CustomerSort; label: string }[] = [
             <button
               type="button"
               class="flex w-full items-center gap-3 border-l-2 px-3 py-2.5 text-left transition-colors"
-              [class]="c.customerId === selectedId() ? 'border-indigo-600 bg-indigo-50/70' : 'border-transparent hover:bg-slate-50'"
+              [class]="
+                c.customerId === selectedId()
+                  ? 'border-indigo-600 bg-indigo-50/70'
+                  : 'border-transparent hover:bg-slate-50'
+              "
               [attr.data-testid]="'customer-' + c.customerId"
               [attr.data-customer-id]="c.customerId"
               [attr.aria-current]="c.customerId === selectedId()"
               (click)="select.emit(c.customerId)"
             >
-              <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">{{ c.initials }}</span>
+              <span
+                class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600"
+                >{{ c.initials }}</span
+              >
               <span class="min-w-0 flex-1">
                 <span class="flex items-center gap-1.5">
-                  <span class="truncate text-sm font-medium text-slate-900">{{ c.name }}</span>
-                  <app-part (retry)="retryParts.emit()" class="shrink-0" data-testid="row-tier" [part]="c.tier" [width]="1.5">
-                    @if (c.tier.value === 'VIP') {
-                      <span class="badge badge-accent px-1.5 py-0 text-[10px]">VIP</span>
-                    }
-                  </app-part>
+                  <span class="truncate text-sm font-medium text-slate-900">{{
+                    c.name
+                  }}</span>
+                  <span
+                    class="inline-block min-w-8 shrink-0"
+                    data-testid="row-tier"
+                    ><ng-container
+                      *ngComponentOutlet="
+                        tierField;
+                        inputs: { customerId: c.customerId }
+                      "
+                  /></span>
                 </span>
-                <span class="block truncate text-xs text-slate-500">{{ c.email }}</span>
+                <span class="block truncate text-xs text-slate-500">{{
+                  c.email
+                }}</span>
               </span>
-              <app-part (retry)="retryParts.emit()" data-testid="row-open-tickets" [part]="c.openTickets" [width]="1">
-                @if (c.openTickets.value) {
-                  <span class="badge badge-bad" [title]="c.openTickets.value + ' open tickets'">{{ c.openTickets.value }}</span>
-                }
-              </app-part>
+              <span
+                class="inline-block min-w-5 text-right"
+                data-testid="row-open-tickets"
+                ><ng-container
+                  *ngComponentOutlet="
+                    openTicketsField;
+                    inputs: { customerId: c.customerId, variant: 'row' }
+                  "
+              /></span>
             </button>
           </li>
         }
@@ -111,19 +159,37 @@ const SORTS: { id: CustomerSort; label: string }[] = [
       }
     </div>
 
-    <div class="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500">
-      <button type="button" class="btn btn-ghost btn-sm" data-testid="page-prev" [disabled]="pageNo() <= 1" (click)="queryChange.emit({ page: pageNo() - 1 })">Prev</button>
+    <div
+      class="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-xs text-slate-500"
+    >
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        data-testid="page-prev"
+        [disabled]="pageNo() <= 1"
+        (click)="queryChange.emit({ page: pageNo() - 1 })"
+      >
+        Prev
+      </button>
       <span class="tabular-nums" data-testid="page-info">{{ range() }}</span>
-      <button type="button" class="btn btn-ghost btn-sm" data-testid="page-next" [disabled]="!hasNext()" (click)="queryChange.emit({ page: pageNo() + 1 })">Next</button>
+      <button
+        type="button"
+        class="btn btn-ghost btn-sm"
+        data-testid="page-next"
+        [disabled]="!hasNext()"
+        (click)="queryChange.emit({ page: pageNo() + 1 })"
+      >
+        Next
+      </button>
     </div>
   `,
 })
 export class ConsoleCustomerListComponent {
-  // @s2-begin
-  /** A failed `Part` of this view asked to be tried again. */
-  public readonly retryParts = output<void>();
-  // @s2-end
   public readonly page = input<CustomerPageVm | null>(null);
+  /** Shows the tier of a customer (CRM): supplied by the implementation (`CUSTOMER_TIER_FIELD`). */
+  protected readonly tierField = inject(CUSTOMER_TIER_FIELD);
+  /** Shows the open tickets of a customer (tickets service): supplied by the implementation (`OPEN_TICKETS_FIELD`). */
+  protected readonly openTicketsField = inject(OPEN_TICKETS_FIELD);
   public readonly query = input.required<CustomerListQuery>();
   public readonly selectedId = input<number | null>(null);
   /** One changed field at a time. */

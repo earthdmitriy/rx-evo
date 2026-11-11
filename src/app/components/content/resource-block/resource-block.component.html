@@ -1,0 +1,17 @@
+@if (resource(); as resource) {
+  @if (resource.status() === "idle") {
+    <div class="empty-state">{{ inactiveText() }}</div>
+  } @else {
+    <div data-testid="state-block" [class.loading]="resource.isLoading()">
+      @if (resource.error(); as error) {
+        <app-generic-error
+          [error]="error"
+          [showReload]="true"
+          (reload)="resource.reload()"
+        ></app-generic-error>
+      } @else {
+        <ng-content></ng-content>
+      }
+    </div>
+  }
+}

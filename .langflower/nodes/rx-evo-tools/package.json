@@ -1,0 +1,10 @@
+{
+	"name": "rx-evo-tools",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"peerDependencies": {
+		"@langflower/node-sdk": "0.2.0",
+		"rxjs": "^7.8.1"
+	}
+}

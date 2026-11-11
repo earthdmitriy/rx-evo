@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  output,
+} from '@angular/core';
 
 const NAV: { label: string; owner?: string }[] = [
   { label: 'Customers' },
@@ -15,7 +20,8 @@ const NAV: { label: string; owner?: string }[] = [
  * then a responsive grid. Slots, by attribute on the projected element:
  * `consoleBell`, `consoleAgent` (top bar), `consoleList` (left column),
  * `consoleMain` (centre, shown while a customer is selected), `consoleRail`
- * (right column, same), `consolePanel` (overlay panels).
+ * (right column, same), `consolePanel` (overlay panels). Log out is the
+ * frame's: it is there whatever state the sections are in.
  */
 @Component({
   selector: 'app-console-frame',
@@ -32,23 +38,50 @@ const NAV: { label: string; owner?: string }[] = [
               <div class="text-xs text-slate-500">Support console</div>
             </div>
             <div class="relative mx-auto w-full max-w-md">
-              <input class="input" type="search" placeholder="Search orders, customers, tickets…" aria-label="Global search (not available)" disabled />
+              <input
+                class="input"
+                type="search"
+                placeholder="Search orders, customers, tickets…"
+                aria-label="Global search (not available)"
+                disabled
+              />
             </div>
             <ng-content select="[consoleBell]" />
-            <div class="flex items-center gap-2.5 border-l border-slate-200 pl-3">
+            <div
+              class="flex items-center gap-2.5 border-l border-slate-200 pl-3"
+            >
               <ng-content select="[consoleAgent]" />
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm whitespace-nowrap"
+                data-testid="logout"
+                (click)="logout.emit()"
+              >
+                Log out
+              </button>
             </div>
           </div>
-          <nav class="flex gap-1 overflow-x-auto overflow-y-hidden border-t border-slate-200 px-3" aria-label="Console sections">
+          <nav
+            class="flex gap-1 overflow-x-auto overflow-y-hidden border-t border-slate-200 px-3"
+            aria-label="Console sections"
+          >
             @for (item of nav; track item.label) {
               @if (!item.owner) {
-                <a class="border-b-2 border-indigo-600 px-3 py-2.5 text-sm font-medium whitespace-nowrap text-indigo-700" aria-current="page">{{ item.label }}</a>
+                <a
+                  class="border-b-2 border-indigo-600 px-3 py-2.5 text-sm font-medium whitespace-nowrap text-indigo-700"
+                  aria-current="page"
+                  >{{ item.label }}</a
+                >
               } @else {
                 <a
                   class="flex cursor-not-allowed items-center gap-1.5 px-3 py-2.5 text-sm whitespace-nowrap text-slate-400"
                   role="link"
                   aria-disabled="true"
-                  [title]="'Owned by ' + item.owner + ' — ask your team lead for access'"
+                  [title]="
+                    'Owned by ' +
+                    item.owner +
+                    ' — ask your team lead for access'
+                  "
                   >{{ item.label }} 🔒</a
                 >
               }
@@ -56,7 +89,9 @@ const NAV: { label: string; owner?: string }[] = [
           </nav>
         </header>
 
-        <div class="grid items-start gap-4 @3xl:grid-cols-[16rem_minmax(0,1fr)] @6xl:grid-cols-[16rem_minmax(0,1fr)_17rem]">
+        <div
+          class="grid items-start gap-4 @3xl:grid-cols-[16rem_minmax(0,1fr)] @6xl:grid-cols-[16rem_minmax(0,1fr)_17rem]"
+        >
           <div class="min-w-0 @3xl:row-span-2 @6xl:row-span-1">
             <ng-content select="[consoleList]" />
           </div>
@@ -64,12 +99,17 @@ const NAV: { label: string; owner?: string }[] = [
             <div class="flex min-w-0 flex-col gap-4" data-testid="console-main">
               <ng-content select="[consoleMain]" />
             </div>
-            <div class="grid min-w-0 gap-4 @3xl:col-start-2 @3xl:grid-cols-2 @6xl:col-start-3 @6xl:row-start-1 @6xl:grid-cols-1" data-testid="console-rail">
+            <div
+              class="grid min-w-0 gap-4 @3xl:col-start-2 @3xl:grid-cols-2 @6xl:col-start-3 @6xl:row-start-1 @6xl:grid-cols-1"
+              data-testid="console-rail"
+            >
               <ng-content select="[consoleRail]" />
             </div>
           } @else {
             <section class="card @6xl:col-span-2" data-testid="console-main">
-              <div class="empty-state py-24">Select a customer to see their orders, cart and tickets.</div>
+              <div class="empty-state py-24">
+                Select a customer to see their orders, cart and tickets.
+              </div>
             </section>
           }
         </div>
@@ -80,5 +120,6 @@ const NAV: { label: string; owner?: string }[] = [
 })
 export class ConsoleFrameComponent {
   public readonly customerSelected = input(false);
+  public readonly logout = output<void>();
   protected readonly nav = NAV;
 }
